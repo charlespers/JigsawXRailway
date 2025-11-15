@@ -1,0 +1,85 @@
+{
+  "components": [
+    {
+      "id": "MCU_ESP32",
+      "name": "ESP32 Microcontroller",
+      "type": "mcu",
+      "description": "Wireless MCU with WiFi/BLE, dual core",
+      "inputs": ["VCC", "GND", "RESET"],
+      "outputs": ["GPIO1", "GPIO2", "TX", "RX"],
+      "signals": {
+        "power": {
+          "voltage": "3.3V",
+          "current_max": 0.5
+        },
+        "interfaces": ["UART", "SPI", "I2C", "GPIO"]
+      },
+      "footprints": ["ESP32-WROOM", "QFN48"]
+    },
+    {
+      "id": "LED_RED_0805",
+      "name": "Red LED",
+      "type": "led",
+      "description": "Indicator LED 0805 package",
+      "inputs": ["ANODE", "CATHODE"],
+      "outputs": [],
+      "signals": {
+        "forward_voltage": 2.0,
+        "forward_current": 0.02
+      },
+      "footprints": ["LED_0805", "LED_SMD"]
+    },
+    {
+      "id": "RES_330",
+      "name": "330Ω Resistor",
+      "type": "resistor",
+      "description": "Current limiting resistor",
+      "inputs": ["IN"],
+      "outputs": ["OUT"],
+      "signals": {
+        "resistance": 330,
+        "power_rating": 0.125
+      },
+      "footprints": ["R_0805", "R_0603"]
+    },
+    {
+      "id": "TEMP_SENSOR_I2C",
+      "name": "Temperature Sensor",
+      "type": "sensor",
+      "description": "Digital I2C temperature sensor",
+      "inputs": ["VCC", "GND", "SCL", "SDA"],
+      "outputs": ["DATA"],
+      "signals": {
+        "voltage": "3.3V",
+        "interface": "I2C"
+      },
+      "footprints": ["SOT23", "SOIC8"]
+    },
+    {
+      "id": "LDO_5V_3V3",
+      "name": "5V to 3.3V LDO",
+      "type": "regulator",
+      "description": "Low dropout regulator",
+      "inputs": ["VIN", "GND"],
+      "outputs": ["VOUT"],
+      "signals": {
+        "vin_range": "4.5-12V",
+        "vout": "3.3V",
+        "current_max": 0.3
+      },
+      "footprints": ["SOT223", "SOT23-5"]
+    },
+    {
+      "id": "CONN_HEADER_2",
+      "name": "2-pin Header",
+      "type": "connector",
+      "description": "General purpose 2-pin connector",
+      "inputs": ["PIN1", "PIN2"],
+      "outputs": [],
+      "signals": {
+        "type": "generic"
+      },
+      "footprints": ["PinHeader_1x02"]
+    }
+  ]
+}
