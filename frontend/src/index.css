@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-dark-border;
+  }
+  
+  html {
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply bg-dark-bg text-white antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'Inter', sans-serif;
+  }
+}
+
+@layer utilities {
+  .circuit-trace {
+    background: linear-gradient(90deg, transparent, rgba(0, 212, 184, 0.08), transparent);
+    height: 1px;
+  }
+  
+  .grid-background {
+    background-image: 
+      linear-gradient(rgba(0, 212, 184, 0.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 184, 0.02) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  @keyframes scroll {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  
+  @keyframes scroll-reverse {
+    0% {
+      transform: translateX(-50%);
+    }
+    100% {
+      transform: translateX(0);
+    }
+  }
+  
+  .animate-scroll {
+    animation: scroll 60s linear infinite;
+    display: flex;
+    width: fit-content;
+  }
+  
+  .animate-scroll-reverse {
+    animation: scroll-reverse 60s linear infinite;
+    display: flex;
+    width: fit-content;
+  }
+}
+
