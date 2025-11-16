@@ -1,0 +1,129 @@
+{
+  "components": [
+    {
+      "id": "LED_RED_5MM",
+      "type": "led",
+      "name": "Red LED 5mm",
+      "datasheet": "https://www.sparkfun.com/datasheets/Components/YSL-R596CR5G4B5C-C10.pdf",
+      "specs": {
+        "forward_voltage": 2.0,
+        "test_current": 0.02,
+        "max_current": 0.03,
+        "wavelength": 620
+      },
+      "behavior": [
+        "LED conducts when anode voltage exceeds forward voltage.",
+        "Current must be limited to avoid damage.",
+        "Brightness proportional to current."
+      ]
+    },
+    {
+      "id": "RES_330_0805",
+      "type": "resistor",
+      "name": "Resistor 330Ω 0805",
+      "datasheet": "https://www.sparkfun.com/datasheets/Components/General/Resistor_Datasheet.pdf",
+      "specs": {
+        "resistance": 330,
+        "power_rating": 0.125,
+        "tolerance": 0.05
+      },
+      "behavior": [
+        "Voltage drop = I * R.",
+        "Power dissipation = I² * R.",
+        "Warn if power exceeds rating."
+      ]
+    },
+    {
+      "id": "VCC_5V_BATTERY",
+      "type": "supply",
+      "name": "5V Battery",
+      "specs": {
+        "voltage": 5.0,
+        "max_current": 1.0
+      },
+      "behavior": [
+        "Provides constant 5.0V DC.",
+        "Internal resistance limits current."
+      ]
+    },
+    {
+      "id": "LM358_OPAMP",
+      "type": "opamp",
+      "name": "LM358 Dual Op-Amp",
+      "datasheet": "https://www.ti.com/lit/ds/symlink/lm358.pdf",
+      "specs": {
+        "supply_voltage_min": 3.0,
+        "supply_voltage_max": 32.0,
+        "input_offset_voltage": 0.007,
+        "gain_bandwidth": 1.0,
+        "slew_rate": 0.5
+      },
+      "behavior": [
+        "Output voltage = gain * (V+ - V-).",
+        "For voltage follower: gain = 1, output follows input.",
+        "Supply voltage must be within min/max range.",
+        "Warn if input exceeds supply rails by 0.3V."
+      ]
+    },
+    {
+      "id": "RES_10K_0805",
+      "type": "resistor",
+      "name": "Resistor 10kΩ 0805",
+      "datasheet": "https://www.sparkfun.com/datasheets/Components/General/Resistor_Datasheet.pdf",
+      "specs": {
+        "resistance": 10000,
+        "power_rating": 0.125,
+        "tolerance": 0.05
+      },
+      "behavior": [
+        "Voltage drop = I * R.",
+        "Power dissipation = I² * R.",
+        "Warn if power exceeds rating."
+      ]
+    }
+  ],
+  "circuits": [
+    {
+      "name": "Basic_LED_Circuit",
+      "description": "Simple LED circuit with current-limiting resistor from SparkFun tutorial",
+      "components": [
+        {"ref": "BAT1", "component_id": "VCC_5V_BATTERY", "pins": ["+", "-"]},
+        {"ref": "R1", "component_id": "RES_330_0805", "pins": ["IN", "OUT"]},
+        {"ref": "D1", "component_id": "LED_RED_5MM", "pins": ["ANODE", "CATHODE"]}
+      ],
+      "connections": [
+        {"net": "VCC", "nodes": [["BAT1", "+"], ["R1", "IN"]]},
+        {"net": "SIGNAL", "nodes": [["R1", "OUT"], ["D1", "ANODE"]]},
+        {"net": "GND", "nodes": [["D1", "CATHODE"], ["BAT1", "-"]]}
+      ],
+      "expected_behavior": [
+        "LED should be on with ~9mA current.",
+        "Power supply: 5V",
+        "Resistor drops ~3V, LED drops 2V",
+        "Current = (5-2)/330 ≈ 0.009A = 9mA"
+      ]
+    },
+    {
+      "name": "OpAmp_Voltage_Follower",
+      "description": "Basic op-amp voltage follower (buffer) circuit",
+      "components": [
+        {"ref": "U1", "component_id": "LM358_OPAMP", "pins": ["VCC", "GND", "IN+", "IN-", "OUT"]},
+        {"ref": "R1", "component_id": "RES_10K_0805", "pins": ["IN", "OUT"]},
+        {"ref": "VIN", "component_id": "VCC_5V_BATTERY", "pins": ["+", "-"]}
+      ],
+      "connections": [
+        {"net": "VCC", "nodes": [["VIN", "+"], ["U1", "VCC"]]},
+        {"net": "GND", "nodes": [["VIN", "-"], ["U1", "GND"]]},
+        {"net": "INPUT", "nodes": [["VIN", "+"], ["R1", "IN"], ["U1", "IN+"]]},
+        {"net": "FEEDBACK", "nodes": [["U1", "OUT"], ["U1", "IN-"]]},
+        {"net": "OUTPUT", "nodes": [["U1", "OUT"]]}
+      ],
+      "expected_behavior": [
+        "Op-amp output follows input voltage.",
+        "Gain = 1 (voltage follower/buffer).",
+        "High input impedance, low output impedance.",
+        "Output = input voltage (within op-amp limitations)."
+      ]
+    }
+  ]
+}
