@@ -4,7 +4,7 @@ import { Heading } from '@/components/ui'
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 
 export default function PricingMarket() {
-  const { ref, hasIntersected } = useIntersectionObserver()
+  const { ref, hasIntersected } = useIntersectionObserver<HTMLDivElement>()
 
   return (
     <div id="pricing" ref={ref} className="py-20 relative px-6">

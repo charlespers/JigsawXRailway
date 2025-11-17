@@ -5,7 +5,7 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 import droneSwarm from '@/assets/droneswarm.png'
 
 export default function SimulationSandbox() {
-  const { ref, hasIntersected } = useIntersectionObserver()
+  const { ref, hasIntersected } = useIntersectionObserver<HTMLDivElement>()
 
   return (
     <div id="simulation" ref={ref} className="py-20 relative px-6">

@@ -5,7 +5,7 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver'
 import abstractionCircuit from '@/assets/abstractioncircuit.png'
 
 export default function PCBCopilot() {
-  const { ref, hasIntersected } = useIntersectionObserver()
+  const { ref, hasIntersected } = useIntersectionObserver<HTMLDivElement>()
 
   return (
     <div id="pcb-copilot" ref={ref} className="pt-12 pb-20 relative px-6">
