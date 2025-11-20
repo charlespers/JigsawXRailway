@@ -39,7 +39,7 @@ export interface ComponentAnalysisConfig {
 
 const defaultConfig: ComponentAnalysisConfig = {
   baseUrl: "http://localhost:3001",
-  analysisEndpoint: "/api/component-analysis",
+  analysisEndpoint: "/mcp/component-analysis",
   timeout: 60000,
 };
 
@@ -364,6 +364,7 @@ async function mockStartAnalysis(
 
 async function realStartAnalysis(
   query: string,
+  provider: "openai" | "xai",
   config: ComponentAnalysisConfig,
   onUpdate: (update: ComponentAnalysisResponse) => void,
   signal?: AbortSignal,
@@ -380,9 +381,13 @@ async function realStartAnalysis(
   try {
     const requestBody: {
       query: string;
+      provider: "openai" | "xai";
       contextQueryId?: string;
       context?: string;
-    } = { query };
+    } = { 
+      query,
+      provider: provider || "openai"
+    };
 
     if (contextQueryId && context) {
       requestBody.contextQueryId = contextQueryId;
@@ -501,6 +506,7 @@ class ComponentAnalysisService {
 
   async startAnalysis(
     query: string,
+    provider: "openai" | "xai" = "openai",
     onUpdate: (update: ComponentAnalysisResponse) => void,
     signal?: AbortSignal,
     contextQueryId?: string,
@@ -527,6 +533,7 @@ class ComponentAnalysisService {
       } else {
         await realStartAnalysis(
           query,
+          provider,
           this.config,
           onUpdate,
           abortSignal,

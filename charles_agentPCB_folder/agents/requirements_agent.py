@@ -64,6 +64,12 @@ class RequirementsAgent:
             provider_name = "XAI" if self.provider == "xai" else "OpenAI"
             raise ValueError(f"{provider_name}_API_KEY not found. Set environment variable to enable reasoning.")
         
+        # Validate API key format (basic check)
+        if self.provider == "xai" and len(self.api_key) < 20:
+            raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your .env file.")
+        if self.provider == "openai" and not self.api_key.startswith("sk-"):
+            raise ValueError("OPENAI_API_KEY appears to be invalid (should start with 'sk-'). Please check your .env file.")
+        
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",

@@ -1,23 +1,74 @@
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target } from "lucide-react";
+import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, X } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
 import { Card } from "../ui/card";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
 import type { PartObject } from "../services/types";
 
 interface PartsListProps {
   parts?: PartObject[];
+  onQuantityChange?: (mpn: string, quantity: number) => void;
+  onPartRemove?: (mpn: string) => void;
+  onNoteChange?: (mpn: string, note: string) => void;
 }
 
-export default function PartsList({ parts = [] }: PartsListProps) {
-  const totalCost = parts.reduce((sum, part) => {
+export default function PartsList({ 
+  parts = [], 
+  onQuantityChange,
+  onPartRemove,
+  onNoteChange 
+}: PartsListProps) {
+  const [editingNotes, setEditingNotes] = useState<Map<string, boolean>>(new Map());
+  const [notes, setNotes] = useState<Map<string, string>>(new Map());
+  const [localParts, setLocalParts] = useState<PartObject[]>(parts);
+
+  // Sync local parts when props change
+  useEffect(() => {
+    setLocalParts(parts);
+  }, [parts]);
+
+  const handleQuantityChange = (mpn: string, delta: number) => {
+    const updatedParts = localParts.map(part => {
+      if (part.mpn === mpn) {
+        const newQuantity = Math.max(1, (part.quantity || 1) + delta);
+        const updatedPart = { ...part, quantity: newQuantity };
+        if (onQuantityChange) {
+          onQuantityChange(mpn, newQuantity);
+        }
+        return updatedPart;
+      }
+      return part;
+    });
+    setLocalParts(updatedParts);
+  };
+
+  const handleRemove = (mpn: string) => {
+    const updatedParts = localParts.filter(part => part.mpn !== mpn);
+    setLocalParts(updatedParts);
+    if (onPartRemove) {
+      onPartRemove(mpn);
+    }
+  };
+
+  const handleNoteSave = (mpn: string) => {
+    const note = notes.get(mpn) || "";
+    if (onNoteChange) {
+      onNoteChange(mpn, note);
+    }
+    setEditingNotes(new Map(editingNotes.set(mpn, false)));
+  };
+
+  const totalCost = localParts.reduce((sum, part) => {
     return sum + (part.price * (part.quantity || 1));
   }, 0);
 
-  const currency = parts[0]?.currency || "USD";
+  const currency = localParts[0]?.currency || "USD";
 
-  const totalItems = parts.reduce((sum, part) => {
+  const totalItems = localParts.reduce((sum, part) => {
     return sum + (part.quantity || 1);
   }, 0);
 
@@ -37,13 +88,13 @@ export default function PartsList({ parts = [] }: PartsListProps) {
       {/* Parts List */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <AnimatePresence mode="popLayout">
-          {parts.length === 0 ? (
+          {localParts.length === 0 ? (
             <div className="text-center py-12 text-zinc-500">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>No parts added yet</p>
             </div>
           ) : (
-            parts.map((part, index) => (
+            localParts.map((part, index) => (
               <motion.div
                 key={`${part.mpn}-${index}`}
                 initial={{ opacity: 0, y: 20 }}
@@ -71,11 +122,35 @@ export default function PartsList({ parts = [] }: PartsListProps) {
                       <div className="text-lg font-semibold text-emerald-400">
                         {part.currency || "USD"} {part.price.toFixed(2)}
                       </div>
-                      {part.quantity && part.quantity > 1 && (
-                        <div className="text-xs text-zinc-500">
-                          x{part.quantity}
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 mt-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleQuantityChange(part.mpn, -1)}
+                          className="h-6 w-6 p-0 hover:bg-zinc-800"
+                          title="Decrease quantity">
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="text-xs text-zinc-300 min-w-[20px] text-center">
+                          {part.quantity || 1}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleQuantityChange(part.mpn, 1)}
+                          className="h-6 w-6 p-0 hover:bg-zinc-800"
+                          title="Increase quantity">
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(part.mpn)}
+                          className="h-6 w-6 p-0 hover:bg-red-500/10 hover:text-red-400"
+                          title="Remove part">
+                          <Trash2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -238,15 +313,72 @@ export default function PartsList({ parts = [] }: PartsListProps) {
                     )}
                   </div>
 
-                  {/* Footer with quantity and datasheet */}
-                  <div className="mt-3 pt-3 border-t border-zinc-800 flex items-center justify-between">
-                    {part.quantity && part.quantity > 1 && (
-                      <Badge
-                        variant="outline"
-                        className="text-xs border-zinc-700 text-zinc-400">
-                        Quantity: {part.quantity}
-                      </Badge>
+                  {/* Notes Section */}
+                  <div className="mt-3 pt-3 border-t border-zinc-800">
+                    {editingNotes.get(part.mpn) ? (
+                      <div className="space-y-2">
+                        <Textarea
+                          value={notes.get(part.mpn) || ""}
+                          onChange={(e) => {
+                            const newNotes = new Map(notes);
+                            newNotes.set(part.mpn, e.target.value);
+                            setNotes(newNotes);
+                          }}
+                          placeholder="Add notes for this part..."
+                          className="bg-zinc-900/60 border-zinc-700 text-zinc-100 text-xs min-h-[60px]"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleNoteSave(part.mpn)}
+                            className="h-7 text-xs bg-emerald-500 hover:bg-emerald-600">
+                            Save
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const newEditing = new Map(editingNotes);
+                              newEditing.set(part.mpn, false);
+                              setEditingNotes(newEditing);
+                            }}
+                            className="h-7 text-xs">
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          {notes.get(part.mpn) ? (
+                            <p className="text-xs text-zinc-400 italic">{notes.get(part.mpn)}</p>
+                          ) : (
+                            <p className="text-xs text-zinc-600">No notes</p>
+                          )}
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newEditing = new Map(editingNotes);
+                            newEditing.set(part.mpn, true);
+                            setEditingNotes(newEditing);
+                            if (!notes.has(part.mpn)) {
+                              const newNotes = new Map(notes);
+                              newNotes.set(part.mpn, "");
+                              setNotes(newNotes);
+                            }
+                          }}
+                          className="h-7 w-7 p-0 hover:bg-zinc-800"
+                          title="Add/edit notes">
+                          <Edit2 className="w-3 h-3" />
+                        </Button>
+                      </div>
                     )}
+                  </div>
+
+                  {/* Footer with datasheet */}
+                  <div className="mt-2 flex items-center justify-end">
                     {part.datasheet && (
                       <a
                         href={part.datasheet}
@@ -290,10 +422,84 @@ export default function PartsList({ parts = [] }: PartsListProps) {
             <div className="text-xs text-zinc-500 text-center">
               Unit price • Bulk discounts available
             </div>
-            <Button className="w-full bg-emerald-500 hover:bg-emerald-600 text-white">
-              <Download className="w-4 h-4 mr-2" />
-              Export Parts List
-            </Button>
+            <div className="flex gap-2">
+              <Button 
+                className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
+                onClick={() => {
+                  // Export to CSV
+                  const headers = ["MPN", "Manufacturer", "Description", "Quantity", "Unit Price", "Total Price", "Currency", "Package", "Footprint", "Voltage", "Interfaces", "Datasheet", "Notes"];
+                  const rows = localParts.map(part => [
+                    part.mpn,
+                    part.manufacturer,
+                    part.description,
+                    part.quantity || 1,
+                    part.price,
+                    (part.price * (part.quantity || 1)).toFixed(2),
+                    part.currency || "USD",
+                    part.package || "",
+                    part.footprint || "",
+                    part.voltage || "",
+                    (part.interfaces || []).join("; "),
+                    part.datasheet || "",
+                    notes.get(part.mpn) || ""
+                  ]);
+                  
+                  const csvContent = [
+                    headers.join(","),
+                    ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+                  ].join("\n");
+                  
+                  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+                  const link = document.createElement("a");
+                  const url = URL.createObjectURL(blob);
+                  link.setAttribute("href", url);
+                  link.setAttribute("download", `bom_${new Date().toISOString().split('T')[0]}.csv`);
+                  link.style.visibility = "hidden";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}>
+                <Download className="w-4 h-4 mr-2" />
+                Export CSV
+              </Button>
+              <Button 
+                className="flex-1 bg-blue-500 hover:bg-blue-600 text-white"
+                onClick={async () => {
+                  try {
+                    const XLSX = await import("xlsx");
+                    const workbook = XLSX.utils.book_new();
+                    
+                    // Create data array
+                    const data = localParts.map(part => ({
+                      "MPN": part.mpn,
+                      "Manufacturer": part.manufacturer,
+                      "Description": part.description,
+                      "Quantity": part.quantity || 1,
+                      "Unit Price": part.price,
+                      "Total Price": (part.price * (part.quantity || 1)).toFixed(2),
+                      "Currency": part.currency || "USD",
+                      "Package": part.package || "",
+                      "Footprint": part.footprint || "",
+                      "Voltage": part.voltage || "",
+                      "Interfaces": (part.interfaces || []).join("; "),
+                      "Datasheet": part.datasheet || "",
+                      "Notes": notes.get(part.mpn) || ""
+                    }));
+                    
+                    const worksheet = XLSX.utils.json_to_sheet(data);
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "BOM");
+                    
+                    // Generate Excel file
+                    XLSX.writeFile(workbook, `bom_${new Date().toISOString().split('T')[0]}.xlsx`);
+                  } catch (error) {
+                    console.error("Excel export failed:", error);
+                    alert("Excel export failed. Please try CSV export instead.");
+                  }
+                }}>
+                <Download className="w-4 h-4 mr-2" />
+                Export Excel
+              </Button>
+            </div>
             <div className="flex items-center justify-center gap-2 text-xs text-zinc-400">
               <CheckCircle2 className="w-3 h-3 text-emerald-400" />
               <span>All parts verified compatible</span>

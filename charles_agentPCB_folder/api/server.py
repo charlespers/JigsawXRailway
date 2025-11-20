@@ -5,6 +5,7 @@ Provides SSE streaming endpoint for component analysis
 
 import asyncio
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
@@ -15,6 +16,14 @@ import uvicorn
 
 # Add development_demo to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Load .env file if python-dotenv is available
+try:
+    from dotenv import load_dotenv
+    env_path = Path(__file__).parent.parent / ".env"
+    load_dotenv(env_path)
+except ImportError:
+    pass
 
 from agents.design_orchestrator import DesignOrchestrator
 from api.data_mapper import part_data_to_part_object
@@ -80,7 +89,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": f"Analyzing user query: '{query}'. Extracting functional blocks, constraints, and preferences...",
             "hierarchyLevel": 0
         })
-        await asyncio.sleep(0.1)
         
         requirements = orchestrator.requirements_agent.extract_requirements(query)
         orchestrator.design_state["requirements"] = requirements
@@ -95,7 +103,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": f"Identified {len(functional_blocks)} functional blocks: {', '.join(block_names[:5])}" + ("..." if len(block_names) > 5 else ""),
             "hierarchyLevel": 0
         })
-        await asyncio.sleep(0.1)
         
         # Step 2: Architecture
         await queue.put({
@@ -105,7 +112,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": "Building functional hierarchy and dependency graph. Identifying the anchor component (most connected)...",
             "hierarchyLevel": 0
         })
-        await asyncio.sleep(0.1)
         
         architecture = orchestrator.architecture_agent.build_architecture(requirements)
         orchestrator.design_state["architecture"] = architecture
@@ -121,7 +127,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": f"Selected {anchor_desc} as anchor component. It connects to {len(child_blocks)} supporting blocks: {', '.join([b.get('description', b.get('type', '')) for b in child_blocks[:3]])}" + ("..." if len(child_blocks) > 3 else ""),
             "hierarchyLevel": 0
         })
-        await asyncio.sleep(0.1)
         
         # Step 3: Select anchor part
         await queue.put({
@@ -131,7 +136,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": f"Searching part database for {anchor_desc}. Matching interfaces: {', '.join(anchor_block.get('required_interfaces', [])[:3])}" + ("..." if len(anchor_block.get('required_interfaces', [])) > 3 else ""),
             "hierarchyLevel": 0
         })
-        await asyncio.sleep(0.1)
         
         anchor_part = orchestrator._select_anchor_part(anchor_block, requirements)
         if anchor_part:
@@ -179,7 +183,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "reasoning": reasoning_msg,
                 "hierarchyLevel": 0
             })
-            await asyncio.sleep(0.1)
             
             part_object = part_data_to_part_object(anchor_part)
             await queue.put({
@@ -189,7 +192,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "partData": part_object,
                 "hierarchyLevel": 0
             })
-            await asyncio.sleep(0.1)
         
         # Step 4: Expand requirements
         expanded_requirements = orchestrator._expand_requirements(anchor_part, architecture)
@@ -213,7 +215,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "reasoning": f"Searching part database for {block_name}. Requirements: {', '.join(required_interfaces[:2])}" + (f" and {len(required_interfaces)-2} more" if len(required_interfaces) > 2 else ""),
                 "hierarchyLevel": hierarchy_level
             })
-            await asyncio.sleep(0.1)
             
             part = orchestrator._select_supporting_part(block, expanded_requirements, requirements)
             if part:
@@ -260,7 +261,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                     "reasoning": reasoning_msg,
                     "hierarchyLevel": hierarchy_level
                 })
-                await asyncio.sleep(0.1)
                 # Check compatibility
                 if anchor_part:
                     provides_power = block_type == "power" or block.get("depends_on", []) == ["power"]
@@ -279,7 +279,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                                     "reasoning": "Voltage mismatch detected, searching for intermediary component...",
                                     "hierarchyLevel": hierarchy_level
                                 })
-                                await asyncio.sleep(0.1)
                                 
                                 intermediary = orchestrator._resolve_voltage_mismatch(
                                     anchor_part, part, "power", power_compat
@@ -296,7 +295,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                                         "partData": part_object,
                                         "hierarchyLevel": hierarchy_level
                                     })
-                                    await asyncio.sleep(0.1)
                     
                     interface_compat = orchestrator.compatibility_agent.check_compatibility(
                         anchor_part, part, connection_type="interface"
@@ -327,7 +325,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                                 "reasoning": f"Compatibility check passed. {part_mpn} is compatible with anchor component.",
                                 "hierarchyLevel": hierarchy_level
                             })
-                        await asyncio.sleep(0.1)
                     elif not power_compat.get("compatible", True):
                         # Use agent's reasoning for incompatibility
                         compat_reasoning = power_compat.get("reasoning", "Voltage mismatch detected")
@@ -338,7 +335,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                             "reasoning": compat_reasoning,
                             "hierarchyLevel": hierarchy_level
                         })
-                        await asyncio.sleep(0.1)
                     elif not interface_compat.get("compatible", True):
                         # Use agent's reasoning for interface incompatibility
                         compat_reasoning = interface_compat.get("reasoning", "Interface mismatch detected")
@@ -349,7 +345,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                             "reasoning": compat_reasoning,
                             "hierarchyLevel": hierarchy_level
                         })
-                        await asyncio.sleep(0.1)
                 
                 orchestrator.design_state["selected_parts"][block_name] = part
                 part_object = part_data_to_part_object(part)
@@ -360,7 +355,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                     "partData": part_object,
                     "hierarchyLevel": hierarchy_level
                 })
-                await asyncio.sleep(0.1)
                 
                 # Add external components
                 from utils.part_database import get_recommended_external_components
@@ -394,7 +388,6 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": "Performing power consumption analysis, thermal analysis, and design rule checks...",
             "hierarchyLevel": 0
         })
-        await asyncio.sleep(0.1)
         
         design_analysis = orchestrator.design_analyzer.analyze_design(
             orchestrator.design_state["selected_parts"],
@@ -429,15 +422,41 @@ async def component_analysis(request: Request):
     
     body = await request.json()
     query = body.get("query", "")
+    provider = body.get("provider", "openai")  # Default to openai
     context_query_id = body.get("contextQueryId")
     context = body.get("context", "")
     
     if not query:
         return {"error": "Query is required"}, 400
     
+    # Validate provider
+    if provider not in ["openai", "xai"]:
+        return {"error": f"Invalid provider '{provider}'. Must be 'openai' or 'xai'."}, 400
+    
+    # Store original provider to restore later
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    
     async def event_stream():
+        # Set provider in environment BEFORE creating orchestrator
+        # This ensures agents read the correct provider during initialization
+        os.environ["LLM_PROVIDER"] = provider
+        
         queue = asyncio.Queue()
-        orchestrator = StreamingOrchestrator()
+        # Create orchestrator AFTER setting provider in environment
+        # Agents will read LLM_PROVIDER during their __init__
+        try:
+            orchestrator = StreamingOrchestrator()
+        except ValueError as e:
+            # If agent initialization fails (e.g., missing API key), send error
+            await queue.put({
+                "type": "error",
+                "message": f"Failed to initialize agents: {str(e)}. Please check your API keys in .env file."
+            })
+            # Restore original provider
+            os.environ["LLM_PROVIDER"] = original_provider
+            # Yield error and return
+            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            return
         
         # Start design generation in background
         task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
@@ -472,6 +491,8 @@ async def component_analysis(request: Request):
                     await task
                 except asyncio.CancelledError:
                     pass
+            # Restore original provider
+            os.environ["LLM_PROVIDER"] = original_provider
     
     return StreamingResponse(
         event_stream(),

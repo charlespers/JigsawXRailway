@@ -20,6 +20,7 @@ import ComponentGraph from "./components/ComponentGraph";
 import PCBViewer from "./components/PCBViewer";
 import PartsList from "./components/PartsList";
 import DesignChat from "./components/DesignChat";
+import SettingsPanel from "./components/SettingsPanel";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";
 
@@ -49,6 +50,7 @@ export default function JigsawDemo({
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisQuery, setAnalysisQuery] = useState<string>(initialQuery);
+  const [provider, setProvider] = useState<"openai" | "xai">("openai");
   const [parts, setParts] = useState<PartObject[]>([]);
   const [selectedComponents, setSelectedComponents] = useState<
     Map<
@@ -84,7 +86,7 @@ export default function JigsawDemo({
   }, [initialQuery]);
 
   // Handle query sent from chat - start analysis
-  const handleQuerySent = (query: string) => {
+  const handleQuerySent = (query: string, selectedProvider: "openai" | "xai" = "openai") => {
     // Reset if this is a new query (different from previous)
     if (previousQueryRef.current !== query && previousQueryRef.current !== "") {
       setParts([]);
@@ -92,6 +94,7 @@ export default function JigsawDemo({
       highestHierarchyRef.current = -1;
     }
     previousQueryRef.current = query;
+    setProvider(selectedProvider);
     setAnalysisQuery(query);
     setIsAnalyzing(true);
   };
@@ -252,11 +255,36 @@ export default function JigsawDemo({
     setIsAnalyzing(false);
   };
 
+  // Load settings from localStorage
+  useEffect(() => {
+    const savedBackendUrl = localStorage.getItem("demo_backend_url");
+    const savedProvider = localStorage.getItem("demo_provider");
+    if (savedBackendUrl) {
+      componentAnalysisApi.updateConfig({ baseUrl: savedBackendUrl });
+    }
+    // Only use saved provider if it's valid, otherwise default to "openai"
+    if (savedProvider === "openai" || savedProvider === "xai") {
+      setProvider(savedProvider);
+    } else {
+      // Ensure default is "openai" if localStorage has invalid value
+      setProvider("openai");
+      localStorage.setItem("demo_provider", "openai");
+    }
+  }, []);
+
   return (
     <div
       className={`h-screen bg-zinc-950 text-white flex flex-col overflow-hidden ${className}`}
       style={{ height }}
     >
+      <SettingsPanel
+        backendUrl={backendUrl}
+        defaultProvider={provider}
+        onBackendUrlChange={(url) => {
+          componentAnalysisApi.updateConfig({ baseUrl: url });
+        }}
+        onProviderChange={(p) => setProvider(p)}
+      />
       {/* Main Content */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Panel - Component Graph */}
@@ -270,6 +298,7 @@ export default function JigsawDemo({
             <ComponentGraph
               onComponentSelected={handleComponentSelected}
               analysisQuery={analysisQuery}
+              provider={provider}
               isAnalyzing={isAnalyzing}
               onAnalysisComplete={handleAnalysisComplete}
               onReset={() => {
@@ -315,7 +344,28 @@ export default function JigsawDemo({
           className="w-[24vw] min-w-[320px] max-w-[480px] border-l border-zinc-800 bg-zinc-900/30 flex flex-col overflow-hidden h-full"
         >
           <div className="flex-1 overflow-y-auto min-h-0">
-            <PartsList parts={parts} />
+            <PartsList 
+              parts={parts}
+              onQuantityChange={(mpn, quantity) => {
+                setParts(prev => prev.map(p => p.mpn === mpn ? { ...p, quantity } : p));
+              }}
+              onPartRemove={(mpn) => {
+                setParts(prev => prev.filter(p => p.mpn !== mpn));
+                setSelectedComponents(prev => {
+                  const newMap = new Map(prev);
+                  for (const [key, value] of prev.entries()) {
+                    if (value.partData?.mpn === mpn) {
+                      newMap.delete(key);
+                    }
+                  }
+                  return newMap;
+                });
+              }}
+              onNoteChange={(mpn, note) => {
+                // Notes are stored locally in PartsList component
+                // Could be extended to store in parent state if needed
+              }}
+            />
           </div>
         </motion.div>
       </div>

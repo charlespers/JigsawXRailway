@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Send, X, Loader2, AlertCircle, CheckCircle2, Cpu } from "lucide-react";
+import { Send, X, Loader2, AlertCircle, CheckCircle2, Cpu, ChevronDown } from "lucide-react";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { ScrollArea } from "../ui/scroll-area";
@@ -8,6 +8,7 @@ import { Badge } from "../ui/badge";
 import JigsawIcon from "./JigsawIcon";
 
 type ChatState = "idle" | "waiting" | "error";
+type Provider = "openai" | "xai";
 
 interface Message {
   id: string;
@@ -22,7 +23,7 @@ interface DesignChatProps {
   /** Whether analysis is currently running */
   isAnalyzing?: boolean;
   /** Callback when user sends a query (triggers component analysis) */
-  onQuerySent?: (query: string) => void;
+  onQuerySent?: (query: string, provider: Provider) => void;
   /** Callback to reset/clear everything */
   onQueryKilled?: () => void;
 }
@@ -32,12 +33,15 @@ export default function DesignChat({
   isAnalyzing = false,
   onQuerySent,
   onQueryKilled,
-}: MCPChatProps) {
+}: DesignChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<Provider>("openai");
+  const [showProviderDropdown, setShowProviderDropdown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Update state based on isAnalyzing prop
   const state: ChatState = isAnalyzing ? "waiting" : error ? "error" : "idle";
@@ -66,6 +70,17 @@ export default function DesignChat({
     }
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowProviderDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const sendQuery = (query: string) => {
     if (!query.trim() || isAnalyzing) return;
 
@@ -73,9 +88,9 @@ export default function DesignChat({
     addMessage("user", query);
     setInput("");
 
-    // Trigger component analysis via parent callback
+    // Trigger component analysis via parent callback with provider
     if (onQuerySent) {
-      onQuerySent(query);
+      onQuerySent(query, provider);
     }
   };
 
@@ -210,6 +225,46 @@ export default function DesignChat({
       <form
         onSubmit={handleSubmit}
         className="p-4 border-t border-zinc-800/50 bg-zinc-900/30 backdrop-blur-sm flex-shrink-0">
+        {/* Provider Selection */}
+        <div className="mb-2 flex items-center gap-2">
+          <label className="text-xs text-zinc-400">AI Provider:</label>
+          <div className="relative" ref={dropdownRef}>
+            <button
+              type="button"
+              onClick={() => setShowProviderDropdown(!showProviderDropdown)}
+              disabled={isAnalyzing}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs bg-zinc-800/60 border border-zinc-700/50 rounded-md text-zinc-300 hover:bg-zinc-800/80 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <span className="capitalize">{provider === "xai" ? "XAI (Grok)" : "OpenAI"}</span>
+              <ChevronDown className="w-3 h-3" />
+            </button>
+            {showProviderDropdown && (
+              <div className="absolute bottom-full left-0 mb-1 w-40 bg-zinc-900 border border-zinc-700 rounded-md shadow-lg z-50">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProvider("openai");
+                    setShowProviderDropdown(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-800 transition-colors ${
+                    provider === "openai" ? "bg-zinc-800 text-emerald-400" : "text-zinc-300"
+                  }`}>
+                  OpenAI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProvider("xai");
+                    setShowProviderDropdown(false);
+                  }}
+                  className={`w-full text-left px-3 py-2 text-xs hover:bg-zinc-800 transition-colors ${
+                    provider === "xai" ? "bg-zinc-800 text-emerald-400" : "text-zinc-300"
+                  }`}>
+                  XAI (Grok)
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
         <div className="flex gap-2.5">
           <Textarea
             ref={inputRef}
