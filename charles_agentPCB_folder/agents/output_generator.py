@@ -5,10 +5,18 @@ Produces connection list (netlist) and BOM
 
 from typing import Dict, Any, List, Optional
 from collections import defaultdict
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from agents.testpoint_fiducial_agent import TestPointFiducialAgent
 
 
 class OutputGenerator:
     """Generates connection lists and BOMs from selected parts."""
+    
+    def __init__(self):
+        self.testpoint_agent = TestPointFiducialAgent()
     
     def generate_connections(
         self,
@@ -308,7 +316,8 @@ class OutputGenerator:
     def generate_bom(
         self,
         selected_parts: Dict[str, Dict[str, Any]],
-        external_components: List[Dict[str, Any]]
+        external_components: List[Dict[str, Any]],
+        connections: Optional[List[Dict[str, Any]]] = None
     ) -> Dict[str, Any]:
         """
         Generate BOM from selected parts and external components.
@@ -395,6 +404,30 @@ class OutputGenerator:
             if "TH" in package or "THROUGH" in package or "DIP" in package:
                 mounting_type = "through_hole"
             
+            # Extract IPC-7351 compliant footprint (use footprint field if available, otherwise derive from package)
+            footprint = part_data.get("footprint", "")
+            if not footprint and part_data.get("package"):
+                # Derive IPC-7351 footprint name from package
+                footprint = self._derive_footprint_name(part_data.get("package", ""))
+            
+            # Determine assembly side (default to top for SMT, bottom for through-hole)
+            assembly_side = "top"
+            if mounting_type == "through_hole":
+                assembly_side = "both"  # Through-hole spans both sides
+            elif "bottom" in category.lower() or "back" in category.lower():
+                assembly_side = "bottom"
+            
+            # Extract MSL level (Moisture Sensitivity Level) for ICs
+            msl_level = part_data.get("msl_level") or part_data.get("moisture_sensitivity_level")
+            
+            # Extract alternate part numbers
+            alternate_part_numbers = part_data.get("alternate_part_numbers", [])
+            if isinstance(alternate_part_numbers, str):
+                alternate_part_numbers = [alternate_part_numbers]
+            
+            # Generate assembly notes based on MSL and special handling
+            assembly_notes = self._generate_assembly_notes(part_data, msl_level)
+            
             bom_items.append({
                 "designator": designator,
                 "qty": 1,
@@ -403,6 +436,7 @@ class OutputGenerator:
                 "description": part_data.get("description", ""),
                 "category": category,
                 "package": part_data.get("package", ""),
+                "footprint": footprint,  # IPC-7351 compliant footprint name
                 "value": self._extract_value(part_data),
                 "tolerance": f"±{tolerance*100}%" if tolerance else "",
                 "temperature_rating": self._extract_temperature_rating(part_data),
@@ -412,6 +446,13 @@ class OutputGenerator:
                 "lead_time_days": part_data.get("lead_time_days"),
                 "distributor_part_numbers": part_data.get("distributor_part_numbers", {}),
                 "mounting_type": mounting_type,
+                "assembly_side": assembly_side,  # "top", "bottom", or "both"
+                "msl_level": msl_level,  # Moisture Sensitivity Level (1-6)
+                "datasheet_url": part_data.get("datasheet_url", ""),
+                "alternate_part_numbers": alternate_part_numbers,  # Approved substitutes
+                "assembly_notes": assembly_notes,  # Special handling instructions
+                "test_point": False,  # Flag for test points
+                "fiducial": False,  # Flag for fiducial marks
                 "unit_cost": round(unit_cost, 4),
                 "extended_cost": round(extended_cost, 4),
                 "notes": ""
@@ -482,6 +523,11 @@ class OutputGenerator:
             if tolerance and isinstance(tolerance, dict):
                 tolerance = tolerance.get("value") or tolerance.get("typical")
             
+            # Extract footprint for external components
+            footprint = first.get("footprint", "")
+            if not footprint and package:
+                footprint = self._derive_footprint_name(package)
+            
             bom_items.append({
                 "designator": designator,
                 "qty": qty,
@@ -490,6 +536,7 @@ class OutputGenerator:
                 "description": description,
                 "category": comp_type,
                 "package": package,
+                "footprint": footprint,  # IPC-7351 compliant footprint name
                 "value": value,
                 "tolerance": f"±{tolerance*100}%" if tolerance else "",
                 "temperature_rating": first.get("temperature_coefficient", ""),
@@ -499,13 +546,40 @@ class OutputGenerator:
                 "lead_time_days": first.get("lead_time_days"),
                 "distributor_part_numbers": first.get("distributor_part_numbers", {}),
                 "mounting_type": "SMT" if package else "unknown",
+                "assembly_side": "top",  # Passives typically on top
+                "msl_level": None,  # Passives don't have MSL
+                "datasheet_url": first.get("datasheet_url", ""),
+                "alternate_part_numbers": first.get("alternate_part_numbers", []),
+                "assembly_notes": "",
+                "test_point": False,
+                "fiducial": False,
                 "unit_cost": round(unit_cost, 4),
                 "extended_cost": round(extended_cost, 4),
                 "notes": first.get("purpose", "")
             })
         
+        # Add test points and fiducials
+        if connections:
+            test_points = self.testpoint_agent.generate_test_points(connections, selected_parts)
+            bom_items = self.testpoint_agent.add_test_points_to_bom(bom_items, test_points)
+            total_cost += sum(tp.get("unit_cost", 0.01) for tp in test_points)
+        
+        # Always add fiducials (required for automated assembly)
+        fiducials = self.testpoint_agent.generate_fiducials()
+        bom_items = self.testpoint_agent.add_fiducials_to_bom(bom_items, fiducials)
+        total_cost += sum(fid.get("unit_cost", 0.01) for fid in fiducials)
+        
         # Calculate totals
         total_qty = sum(item["qty"] for item in bom_items)
+        
+        # Add BOM metadata
+        from datetime import datetime
+        bom_metadata = {
+            "revision": "1.0",
+            "revision_date": datetime.now().strftime("%Y-%m-%d"),
+            "generated_by": "PCB Design Agent System",
+            "standard": "IPC-2581 compatible"
+        }
         
         return {
             "items": bom_items,
@@ -513,7 +587,8 @@ class OutputGenerator:
                 "total_cost": round(total_cost, 2),
                 "total_parts": len(bom_items),
                 "total_qty": total_qty
-            }
+            },
+            "metadata": bom_metadata
         }
     
     def _extract_voltage(self, text: Any) -> Optional[str]:
@@ -565,4 +640,76 @@ class OutputGenerator:
             return str(temp_coeff)
         
         return ""
+    
+    def _derive_footprint_name(self, package: str) -> str:
+        """
+        Derive IPC-7351 compliant footprint name from package string.
+        This is a simplified mapping - in production, use a comprehensive footprint library.
+        """
+        package_upper = package.upper()
+        
+        # Common IPC-7351 footprint patterns
+        if "0402" in package_upper:
+            return "RESC1005X40N" if "RES" in package_upper else "CAPC1005X40N"
+        elif "0603" in package_upper:
+            return "RESC1608X55N" if "RES" in package_upper else "CAPC1608X55N"
+        elif "0805" in package_upper:
+            return "RESC2012X55N" if "RES" in package_upper else "CAPC2012X55N"
+        elif "1206" in package_upper:
+            return "RESC3216X90N" if "RES" in package_upper else "CAPC3216X90N"
+        elif "SOIC" in package_upper or "SO" in package_upper:
+            # Extract pin count
+            import re
+            pin_match = re.search(r'(\d+)', package_upper)
+            pins = int(pin_match.group(1)) if pin_match else 8
+            return f"SOIC{pins}P127_600X175X120-8N"
+        elif "QFN" in package_upper:
+            pin_match = re.search(r'(\d+)', package_upper)
+            pins = int(pin_match.group(1)) if pin_match else 48
+            return f"QFN{pins}P{int(pins/4)}X{int(pins/4)}X{int(pins/4)}-{pins}N"
+        elif "QFP" in package_upper:
+            pin_match = re.search(r'(\d+)', package_upper)
+            pins = int(pin_match.group(1)) if pin_match else 64
+            return f"QFP{pins}P{int(pins/4)}X{int(pins/4)}X{int(pins/4)}-{pins}N"
+        elif "DIP" in package_upper:
+            pin_match = re.search(r'(\d+)', package_upper)
+            pins = int(pin_match.group(1)) if pin_match else 8
+            return f"DIP{pins}P254_600X{int(pins/2)*254}N"
+        else:
+            # Return generic footprint name based on package
+            return f"FOOTPRINT_{package_upper.replace(' ', '_')}"
+    
+    def _generate_assembly_notes(self, part_data: Dict[str, Any], msl_level: Optional[str]) -> str:
+        """
+        Generate assembly notes based on MSL level and special handling requirements.
+        """
+        notes = []
+        
+        # MSL-based baking requirements
+        if msl_level:
+            msl_num = int(msl_level) if str(msl_level).isdigit() else None
+            if msl_num:
+                if msl_num >= 3:
+                    notes.append(f"MSL {msl_num}: Requires baking before assembly (see IPC/JEDEC J-STD-033)")
+                if msl_num >= 5:
+                    notes.append("Critical: Must be assembled within 168 hours after baking")
+        
+        # ESD sensitivity
+        if part_data.get("esd_sensitivity"):
+            esd_level = part_data.get("esd_sensitivity")
+            notes.append(f"ESD sensitive: Handle with ESD precautions ({esd_level})")
+        
+        # Special reflow profile
+        if part_data.get("reflow_profile"):
+            notes.append(f"Special reflow profile required: {part_data.get('reflow_profile')}")
+        
+        # Orientation requirements
+        if part_data.get("orientation_required"):
+            notes.append("Orientation critical: Verify pin 1 marker before placement")
+        
+        # Polarity requirements
+        if part_data.get("polarity_required"):
+            notes.append("Polarity critical: Verify polarity marking before placement")
+        
+        return "; ".join(notes) if notes else ""
 

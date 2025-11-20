@@ -187,7 +187,8 @@ class DesignOrchestrator:
             
             bom = self.output_generator.generate_bom(
                 self.design_state["selected_parts"],
-                self.design_state["external_components"]
+                self.design_state["external_components"],
+                connections  # Pass connections for test point generation
             )
             self.design_state["bom"] = bom
             

@@ -33,9 +33,17 @@
     "tolerance",
     "temperature_coefficient",
     "moisture_sensitivity_level",
+    "msl_level",
     "thermal_resistance",
     "max_junction_temp",
-    "efficiency"
+    "efficiency",
+    "footprint",
+    "alternate_part_numbers",
+    "assembly_notes",
+    "reflow_profile",
+    "esd_sensitivity",
+    "orientation_required",
+    "polarity_required"
   ],
   "field_descriptions": {
     "rohs_compliant": "Boolean indicating RoHS compliance (default: true)",
@@ -48,7 +56,15 @@
     "moisture_sensitivity_level": "String indicating MSL level (for ICs)",
     "thermal_resistance": "Number or dict with 'theta_ja' or 'junction_to_ambient' in °C/W",
     "max_junction_temp": "Number or dict indicating maximum junction temperature in °C",
-    "efficiency": "Number (0-1) indicating efficiency percentage (for power converters)"
+    "efficiency": "Number (0-1) indicating efficiency percentage (for power converters)",
+    "footprint": "IPC-7351 compliant footprint name (e.g., 'RESC1005X40N', 'SOIC8P127_600X175X120-8N')",
+    "msl_level": "Moisture Sensitivity Level (1-6) for ICs, alternative to 'moisture_sensitivity_level'",
+    "alternate_part_numbers": "List of approved alternate/alternative part numbers",
+    "assembly_notes": "String with special assembly instructions or handling requirements",
+    "reflow_profile": "String indicating required reflow profile (e.g., 'Standard', 'Low-Temp', 'Lead-Free')",
+    "esd_sensitivity": "String indicating ESD sensitivity level (e.g., 'Class 1', 'Class 2', 'Class 3')",
+    "orientation_required": "Boolean indicating if component orientation is critical",
+    "polarity_required": "Boolean indicating if component polarity is critical"
   }
 }
 
