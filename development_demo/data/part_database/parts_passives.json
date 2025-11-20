@@ -1,0 +1,641 @@
+{
+  "parts": [
+    {
+      "id": "CAP-0.1uF-16V-0603",
+      "name": "0.1µF 16V X7R Ceramic Capacitor",
+      "category": "capacitor",
+      "manufacturer": "Murata",
+      "mfr_part_number": "GRM188R71C104KA01D",
+      "description": "0.1µF ±10% 16V X7R ceramic capacitor, 0603 package",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8801161785374/GRM188R71C104KA01D.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.01,
+        "quantity": 10000
+      },
+      "capacitance": {
+        "value": 0.1,
+        "tolerance": 0.1,
+        "unit": "uF"
+      },
+      "voltage_rating": {
+        "value": 16,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Decoupling, filtering",
+        "note": "Common decoupling capacitor value"
+      }
+    },
+    {
+      "id": "CAP-10uF-16V-0805",
+      "name": "10µF 16V X7R Ceramic Capacitor",
+      "category": "capacitor",
+      "manufacturer": "Murata",
+      "mfr_part_number": "GRM21BR71C106KE15L",
+      "description": "10µF ±10% 16V X7R ceramic capacitor, 0805 package",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8801161785374/GRM21BR71C106KE15L.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0805",
+      "footprint": "0805",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.02,
+        "quantity": 10000
+      },
+      "capacitance": {
+        "value": 10,
+        "tolerance": 0.1,
+        "unit": "uF"
+      },
+      "voltage_rating": {
+        "value": 16,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Bulk decoupling, regulator output",
+        "note": "Common bulk capacitor value"
+      }
+    },
+    {
+      "id": "CAP-22uF-16V-0805",
+      "name": "22µF 16V X7R Ceramic Capacitor",
+      "category": "capacitor",
+      "manufacturer": "Murata",
+      "mfr_part_number": "GRM21BR71C226ME15L",
+      "description": "22µF ±20% 16V X7R ceramic capacitor, 0805 package",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8801161785374/GRM21BR71C226ME15L.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0805",
+      "footprint": "0805",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.03,
+        "quantity": 10000
+      },
+      "capacitance": {
+        "value": 22,
+        "tolerance": 0.2,
+        "unit": "uF"
+      },
+      "voltage_rating": {
+        "value": 16,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Regulator output capacitor",
+        "note": "Common LDO output capacitor value"
+      }
+    },
+    {
+      "id": "RES-4.7k-0603",
+      "name": "4.7kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-074K7L",
+      "description": "4.7kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 4700,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "I2C pull-up, general pull-up",
+        "note": "Common I2C pull-up resistor value"
+      }
+    },
+    {
+      "id": "RES-5.1k-0603",
+      "name": "5.1kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-075K1L",
+      "description": "5.1kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 5100,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "USB-C CC pull-down",
+        "note": "Standard USB-C 5V sink CC resistor value"
+      }
+    },
+    {
+      "id": "RES-10k-0603",
+      "name": "10kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-0710KL",
+      "description": "10kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 10000,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Pull-up, pull-down, general purpose",
+        "note": "Very common resistor value"
+      }
+    },
+    {
+      "id": "CAP-1uF-16V-0603",
+      "name": "1µF 16V X7R Ceramic Capacitor",
+      "category": "capacitor",
+      "manufacturer": "Murata",
+      "mfr_part_number": "GRM188R71C105KA12D",
+      "description": "1µF ±10% 16V X7R ceramic capacitor, 0603 package",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8801161785374/GRM188R71C105KA12D.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.015,
+        "quantity": 10000
+      },
+      "capacitance": {
+        "value": 1.0,
+        "tolerance": 0.1,
+        "unit": "uF"
+      },
+      "voltage_rating": {
+        "value": 16,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Decoupling, filtering",
+        "note": "Common decoupling capacitor value"
+      }
+    },
+    {
+      "id": "CAP-4.7uF-16V-0805",
+      "name": "4.7µF 16V X7R Ceramic Capacitor",
+      "category": "capacitor",
+      "manufacturer": "Murata",
+      "mfr_part_number": "GRM21BR71C475KE15L",
+      "description": "4.7µF ±10% 16V X7R ceramic capacitor, 0805 package",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8801161785374/GRM21BR71C475KE15L.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0805",
+      "footprint": "0805",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.025,
+        "quantity": 10000
+      },
+      "capacitance": {
+        "value": 4.7,
+        "tolerance": 0.1,
+        "unit": "uF"
+      },
+      "voltage_rating": {
+        "value": 16,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Decoupling, regulator output",
+        "note": "Common regulator capacitor value"
+      }
+    },
+    {
+      "id": "CAP-100uF-16V-1210",
+      "name": "100µF 16V X7R Ceramic Capacitor",
+      "category": "capacitor",
+      "manufacturer": "Murata",
+      "mfr_part_number": "GRM32ER71C107ME20L",
+      "description": "100µF ±20% 16V X7R ceramic capacitor, 1210 package",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8801161785374/GRM32ER71C107ME20L.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "1210",
+      "footprint": "1210",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.12,
+        "quantity": 10000
+      },
+      "capacitance": {
+        "value": 100,
+        "tolerance": 0.2,
+        "unit": "uF"
+      },
+      "voltage_rating": {
+        "value": 16,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Bulk decoupling, switching regulator input/output",
+        "note": "High capacitance for power supply filtering"
+      }
+    },
+    {
+      "id": "RES-1k-0603",
+      "name": "1kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-071KL",
+      "description": "1kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 1000,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Pull-up, current limiting, voltage divider",
+        "note": "Very common resistor value"
+      }
+    },
+    {
+      "id": "RES-100-0603",
+      "name": "100Ω ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-07100RL",
+      "description": "100Ω ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 100,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Current limiting, termination",
+        "note": "Common current limiting resistor value"
+      }
+    },
+    {
+      "id": "RES-2.2k-0603",
+      "name": "2.2kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-072K2L",
+      "description": "2.2kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 2200,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Pull-up, voltage divider",
+        "note": "Common resistor value"
+      }
+    },
+    {
+      "id": "RES-47k-0603",
+      "name": "47kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-0747KL",
+      "description": "47kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 47000,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Pull-up, voltage divider",
+        "note": "Common pull-up resistor value"
+      }
+    },
+    {
+      "id": "RES-100k-0603",
+      "name": "100kΩ ±5% Resistor",
+      "category": "resistor",
+      "manufacturer": "Yageo",
+      "mfr_part_number": "RC0603FR-07100KL",
+      "description": "100kΩ ±5% 1/10W thick film resistor, 0603 package",
+      "datasheet_url": "https://www.yageo.com/upload/media/product/products/datasheet/rchip/PYu-RC_Group_51_RoHS_L_11.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "value": 0.1,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0603",
+      "footprint": "0603",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 155,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.005,
+        "quantity": 10000
+      },
+      "resistance": {
+        "value": 100000,
+        "tolerance": 0.05,
+        "unit": "ohm"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Pull-up, voltage divider, high-impedance circuits",
+        "note": "Common high-value resistor"
+      }
+    }
+  ]
+}
+

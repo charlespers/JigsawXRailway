@@ -1,0 +1,532 @@
+{
+  "parts": [
+    {
+      "id": "TMP102",
+      "name": "TMP102 Temperature Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TMP102",
+      "description": "Digital temperature sensor with I2C interface, ±0.5°C accuracy",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/tmp102.pdf",
+      "supply_voltage_range": {
+        "min": 1.4,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.00001,
+        "max": 0.000015,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 1.4-3.6V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ALERT": "Alert output (optional)"
+      },
+      "package": "SOT23-6",
+      "footprint": "SOT23-6",
+      "operating_temp_range": {
+        "min": -25,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.85,
+        "quantity": 1000
+      },
+      "i2c_address": "0x48",
+      "accuracy": {
+        "value": 0.5,
+        "unit": "C"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C SDA pull-up",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C SCL pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "TMP117",
+      "name": "TMP117 Temperature Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TMP117",
+      "description": "High-accuracy digital temperature sensor with I2C interface, ±0.1°C accuracy",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/tmp117.pdf",
+      "supply_voltage_range": {
+        "min": 1.8,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.0000035,
+        "max": 0.000005,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 1.8-5.5V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ALERT": "Alert output (optional)"
+      },
+      "package": "WSON-6",
+      "footprint": "WSON-6",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 150,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.25,
+        "quantity": 1000
+      },
+      "i2c_address": "0x48",
+      "accuracy": {
+        "value": 0.1,
+        "unit": "C"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C SDA pull-up",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C SCL pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "DS18B20",
+      "name": "DS18B20 Temperature Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Maxim Integrated",
+      "mfr_part_number": "DS18B20",
+      "description": "1-Wire digital temperature sensor, ±0.5°C accuracy",
+      "datasheet_url": "https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 2.8,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.8,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.000001,
+        "max": 0.0000015,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["1-Wire"],
+      "pinout": {
+        "VDD": "Power supply 3.0-5.5V",
+        "GND": "Ground",
+        "DQ": "1-Wire Data"
+      },
+      "package": "TO-92",
+      "footprint": "TO-92",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.50,
+        "quantity": 1000
+      },
+      "accuracy": {
+        "value": 0.5,
+        "unit": "C"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "1-Wire pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["1-Wire"],
+        "note": "Requires 1-Wire protocol support on MCU"
+      }
+    },
+    {
+      "id": "LM35",
+      "name": "LM35 Temperature Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM35",
+      "description": "Analog temperature sensor, 10mV/°C output, ±0.5°C accuracy",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm35.pdf",
+      "supply_voltage_range": {
+        "min": 4.0,
+        "max": 30.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.000056,
+        "max": 0.0001,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["Analog"],
+      "pinout": {
+        "VCC": "Power supply 4-30V",
+        "GND": "Ground",
+        "VOUT": "Analog output (10mV/°C)"
+      },
+      "package": "TO-92",
+      "footprint": "TO-92",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 150,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.95,
+        "quantity": 1000
+      },
+      "accuracy": {
+        "value": 0.5,
+        "unit": "C"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "50V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["5V"],
+        "required_interfaces": ["ADC"],
+        "note": "Requires ADC on MCU to read analog output"
+      }
+    },
+    {
+      "id": "SHT30-DIS",
+      "name": "SHT30 Temperature & Humidity Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Sensirion",
+      "mfr_part_number": "SHT30-DIS",
+      "description": "Digital temperature and humidity sensor with I2C interface, ±0.3°C accuracy, ±2%RH",
+      "datasheet_url": "https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/2_Humidity_Sensors/Datasheets/Sensirion_Humidity_Sensors_SHT3x_Datasheet.pdf",
+      "supply_voltage_range": {
+        "min": 2.4,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.0000015,
+        "max": 0.000002,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 2.4-5.5V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ALERT": "Alert output (optional)"
+      },
+      "package": "DFN-8",
+      "footprint": "DFN-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.85,
+        "quantity": 1000
+      },
+      "i2c_address": "0x44",
+      "accuracy": {
+        "temperature": 0.3,
+        "humidity": 2.0,
+        "unit": "C/%RH"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C SDA pull-up",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C SCL pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "BMP280",
+      "name": "BMP280 Pressure Sensor",
+      "category": "sensor_pressure",
+      "manufacturer": "Bosch",
+      "mfr_part_number": "BMP280",
+      "description": "Digital barometric pressure sensor with I2C/SPI interface, ±1hPa accuracy",
+      "datasheet_url": "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp280-ds001.pdf",
+      "supply_voltage_range": {
+        "min": 1.71,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.0000025,
+        "max": 0.0000036,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI"],
+      "pinout": {
+        "VDD": "Power supply 1.71-3.6V",
+        "GND": "Ground",
+        "SDA": "I2C Data / SPI SDI",
+        "SCL": "I2C Clock / SPI SCK",
+        "CSB": "SPI Chip Select / I2C Address",
+        "SDO": "SPI SDO / I2C Address"
+      },
+      "package": "LGA-8",
+      "footprint": "LGA-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.95,
+        "quantity": 1000
+      },
+      "i2c_address": "0x76",
+      "accuracy": {
+        "value": 1.0,
+        "unit": "hPa"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "MPU6050",
+      "name": "MPU6050 6-Axis Motion Sensor",
+      "category": "sensor_motion",
+      "manufacturer": "InvenSense",
+      "mfr_part_number": "MPU-6050",
+      "description": "6-axis accelerometer and gyroscope with I2C interface",
+      "datasheet_url": "https://invensense.tdk.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf",
+      "supply_voltage_range": {
+        "min": 2.375,
+        "max": 3.46,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.0000035,
+        "max": 0.000005,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 2.375-3.46V",
+        "GND": "Ground",
+        "VDDIO": "I/O power supply",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "AD0": "I2C Address LSB",
+        "INT": "Interrupt output"
+      },
+      "package": "QFN-24",
+      "footprint": "QFN-24",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.50,
+        "quantity": 1000
+      },
+      "i2c_address": "0x68",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 2
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    }
+  ]
+}
+

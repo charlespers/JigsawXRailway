@@ -1,0 +1,313 @@
+{
+  "parts": [
+    {
+      "id": "LED-RED-0805",
+      "name": "Red LED 0805",
+      "category": "led",
+      "manufacturer": "Kingbright",
+      "mfr_part_number": "KPHHS-1005SURCK",
+      "description": "Red LED, 0805 package, 2.0V forward voltage, 20mA forward current",
+      "datasheet_url": "https://www.kingbright.com/attachments/file/psearch/000/00/00/KPHHS-1005SURCK(Ver.15).pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "forward": 0.02,
+        "max": 0.03,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "ANODE": "Anode (positive)",
+        "CATHODE": "Cathode (negative)"
+      },
+      "package": "0805",
+      "footprint": "0805",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.08,
+        "quantity": 1000
+      },
+      "forward_voltage": {
+        "typical": 2.0,
+        "max": 2.4,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "150",
+          "package": "0603",
+          "purpose": "Current limiting (for 3.3V supply)",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Status indicator, general purpose LED",
+        "note": "Requires current limiting resistor"
+      }
+    },
+    {
+      "id": "LED-GREEN-0805",
+      "name": "Green LED 0805",
+      "category": "led",
+      "manufacturer": "Kingbright",
+      "mfr_part_number": "KPHHS-1005SGCK",
+      "description": "Green LED, 0805 package, 3.2V forward voltage, 20mA forward current",
+      "datasheet_url": "https://www.kingbright.com/attachments/file/psearch/000/00/00/KPHHS-1005SGCK(Ver.15).pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "forward": 0.02,
+        "max": 0.03,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "ANODE": "Anode (positive)",
+        "CATHODE": "Cathode (negative)"
+      },
+      "package": "0805",
+      "footprint": "0805",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.08,
+        "quantity": 1000
+      },
+      "forward_voltage": {
+        "typical": 3.2,
+        "max": 3.6,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "10",
+          "package": "0603",
+          "purpose": "Current limiting (for 3.3V supply, may need higher voltage)",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Status indicator",
+        "note": "Requires current limiting resistor. May need 5V supply for proper brightness."
+      }
+    },
+    {
+      "id": "CRYSTAL-32.768KHZ",
+      "name": "32.768kHz Crystal",
+      "category": "crystal",
+      "manufacturer": "Abracon",
+      "mfr_part_number": "ABL-32.768KHZ-B2",
+      "description": "32.768kHz tuning fork crystal for RTC, 12.5pF load capacitance",
+      "datasheet_url": "https://abracon.com/Precisionfrequency/ABL-32.768KHZ-B2.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Crystal terminal 1",
+        "PIN2": "Crystal terminal 2"
+      },
+      "package": "HC-49S",
+      "footprint": "HC-49S",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "frequency": {
+        "value": 32.768,
+        "tolerance": 0.002,
+        "unit": "kHz"
+      },
+      "load_capacitance": {
+        "value": 12.5,
+        "unit": "pF"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "12pF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Load capacitor (2x for crystal)",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Real-time clock (RTC) oscillator",
+        "note": "Requires load capacitors matching specified load capacitance"
+      }
+    },
+    {
+      "id": "CRYSTAL-8MHZ",
+      "name": "8MHz Crystal",
+      "category": "crystal",
+      "manufacturer": "Abracon",
+      "mfr_part_number": "ABL-8.000MHZ-B2",
+      "description": "8MHz fundamental mode crystal, 18pF load capacitance",
+      "datasheet_url": "https://abracon.com/Precisionfrequency/ABL-8.000MHZ-B2.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Crystal terminal 1",
+        "PIN2": "Crystal terminal 2"
+      },
+      "package": "HC-49S",
+      "footprint": "HC-49S",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.25,
+        "quantity": 1000
+      },
+      "frequency": {
+        "value": 8.0,
+        "tolerance": 0.003,
+        "unit": "MHz"
+      },
+      "load_capacitance": {
+        "value": 18,
+        "unit": "pF"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "18pF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Load capacitor (2x for crystal)",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "usage": "MCU system clock oscillator",
+        "note": "Requires load capacitors matching specified load capacitance"
+      }
+    },
+    {
+      "id": "HEADER-2.54MM-2X5",
+      "name": "2.54mm Pitch 2x5 Header",
+      "category": "connector_header",
+      "manufacturer": "Sullins",
+      "mfr_part_number": "PRPC002SAAN-RC",
+      "description": "2.54mm pitch, 2x5 position, through-hole pin header",
+      "datasheet_url": "https://www.sullinscorp.com/wp-content/uploads/PRPC002SAAN-RC.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "per_pin": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Row 1, Pin 1",
+        "PIN2": "Row 1, Pin 2",
+        "PIN3": "Row 1, Pin 3",
+        "PIN4": "Row 1, Pin 4",
+        "PIN5": "Row 1, Pin 5",
+        "PIN6": "Row 2, Pin 1",
+        "PIN7": "Row 2, Pin 2",
+        "PIN8": "Row 2, Pin 3",
+        "PIN9": "Row 2, Pin 4",
+        "PIN10": "Row 2, Pin 5"
+      },
+      "package": "Through-Hole",
+      "footprint": "Header_2x05_2.54mm",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 105,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.25,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Programming header, debug connector, general purpose I/O",
+        "note": "Common for SWD/JTAG programming headers"
+      }
+    },
+    {
+      "id": "HEADER-2.54MM-1X4",
+      "name": "2.54mm Pitch 1x4 Header",
+      "category": "connector_header",
+      "manufacturer": "Sullins",
+      "mfr_part_number": "PRPC004SAAN-RC",
+      "description": "2.54mm pitch, 1x4 position, through-hole pin header",
+      "datasheet_url": "https://www.sullinscorp.com/wp-content/uploads/PRPC004SAAN-RC.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "per_pin": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Pin 1",
+        "PIN2": "Pin 2",
+        "PIN3": "Pin 3",
+        "PIN4": "Pin 4"
+      },
+      "package": "Through-Hole",
+      "footprint": "Header_1x04_2.54mm",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 105,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "UART header, power connector, general purpose",
+        "note": "Common for UART (TX, RX, GND, VCC) connections"
+      }
+    }
+  ]
+}
+
