@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, X, Search, Filter, ArrowUpDown } from "lucide-react";
+import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, Search } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";

@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
-import { motion } from "motion/react";
 import { 
   DollarSign, AlertTriangle, CheckCircle2, Zap, 
-  TrendingDown, Package, Shield, Activity, Wrench, Plus
+  TrendingDown, Shield, Activity, Wrench, Plus
 } from "lucide-react";
 import { Card } from "../ui/card";
 import { Badge } from "../ui/badge";

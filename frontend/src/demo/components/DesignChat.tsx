@@ -29,7 +29,7 @@ interface DesignChatProps {
 }
 
 export default function DesignChat({
-  backendUrl = "http://localhost:3001",
+  backendUrl: _backendUrl = "http://localhost:3001",
   isAnalyzing = false,
   onQuerySent,
   onQueryKilled,

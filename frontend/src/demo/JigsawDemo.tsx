@@ -54,7 +54,7 @@ export default function JigsawDemo({
   const [provider, setProvider] = useState<"openai" | "xai">("openai");
   const [parts, setParts] = useState<PartObject[]>([]);
   const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis">("design");
-  const [connections, setConnections] = useState<any[]>([]);
+  const [_connections, _setConnections] = useState<any[]>([]);
   const [selectedComponents, setSelectedComponents] = useState<
     Map<
       string,
@@ -120,7 +120,7 @@ export default function JigsawDemo({
       position: { x: number; y: number };
       size?: { w: number; h: number };
     }>,
-    hierarchyLevel: number
+    _hierarchyLevel: number
   ): { x: number; y: number } => {
     const componentTypes: Record<string, { row: number; col: number }> = {
       // Main components (demo naming)
@@ -219,7 +219,7 @@ export default function JigsawDemo({
   const handleComponentSelected = (
     componentId: string,
     partData: any,
-    position?: { x: number; y: number },
+    _position?: { x: number; y: number },
     hierarchyOffset?: number
   ) => {
     setParts((prev) => {
@@ -408,7 +408,7 @@ export default function JigsawDemo({
                     return newMap;
                   });
                 }}
-                onNoteChange={(mpn, note) => {
+                onNoteChange={(_mpn, _note) => {
                   // Notes are stored locally in PartsList component
                   // Could be extended to store in parent state if needed
                 }}

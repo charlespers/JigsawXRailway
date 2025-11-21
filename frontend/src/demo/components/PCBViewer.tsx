@@ -57,7 +57,7 @@ const getComponentColor = (componentId: string): string => {
 };
 
 // Get component size based on type - responsive to viewport
-const getComponentSize = (componentId: string, partData?: PartObject): { w: number; h: number } => {
+const getComponentSize = (componentId: string, _partData?: PartObject): { w: number; h: number } => {
   // Base sizes as proportions of viewport (scaled down for canvas)
   const baseScale = typeof window !== "undefined" 
     ? Math.max(0.5, Math.min(1.0, (window.innerWidth + window.innerHeight) / 2000))
@@ -162,7 +162,7 @@ function determineConnections(components: PCBComponent[]): Connection[] {
     return id === "passives" || id.includes("passive");
   });
   // Find intermediaries (voltage converters, level shifters)
-  const intermediaries = components.filter((c) => {
+  const _intermediaries = components.filter((c) => {
     const id = c.id.toLowerCase();
     return id.includes("intermediary") || id.includes("converter") || id.includes("level_shifter");
   });

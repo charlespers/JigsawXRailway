@@ -269,12 +269,12 @@ const waitWithAbort = (
 };
 
 async function mockStartAnalysis(
-  query: string,
-  config: ComponentAnalysisConfig,
+  _query: string,
+  _config: ComponentAnalysisConfig,
   onUpdate: (update: ComponentAnalysisResponse) => void,
-  signal?: AbortSignal,
+  _signal?: AbortSignal,
   contextQueryId?: string,
-  context?: string
+  _context?: string
 ): Promise<void> {
   if (!contextQueryId && Math.random() < 0.1) {
     const testQueryId = `query_${Date.now()}`;

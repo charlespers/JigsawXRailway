@@ -45,7 +45,7 @@ const mockActiveQueries = new Map<
 
 async function mockQuery(
   request: DesignQueryRequest,
-  config: DesignApiConfig
+  _config: DesignApiConfig
 ): Promise<DesignQueryResponse> {
   await new Promise((resolve) =>
     setTimeout(resolve, 9000 + Math.random() * 11000)
@@ -76,7 +76,7 @@ async function mockQuery(
 
 async function mockContinue(
   request: DesignContinueRequest,
-  config: DesignApiConfig
+  _config: DesignApiConfig
 ): Promise<DesignContinueResponse> {
   await new Promise((resolve) =>
     setTimeout(resolve, 9000 + Math.random() * 11000)
@@ -106,7 +106,7 @@ async function mockContinue(
 
 async function realQuery(
   request: DesignQueryRequest,
-  config: DesignApiConfig,
+  _config: DesignApiConfig,
   signal?: AbortSignal
 ): Promise<DesignQueryResponse> {
   const controller = signal ? undefined : new AbortController();
@@ -165,7 +165,7 @@ async function realQuery(
 
 async function realContinue(
   request: DesignContinueRequest,
-  config: DesignApiConfig,
+  _config: DesignApiConfig,
   signal?: AbortSignal
 ): Promise<DesignContinueResponse> {
   const controller = signal ? undefined : new AbortController();
@@ -236,8 +236,8 @@ class DesignApiService {
    * Use componentAnalysisApi.startAnalysis() instead to trigger component analysis.
    */
   async sendQuery(
-    query: string,
-    signal?: AbortSignal
+    _query: string,
+    _signal?: AbortSignal
   ): Promise<DesignQueryResponse> {
     console.warn(
       "Design query endpoint is not available in the demo backend. " +
@@ -253,9 +253,9 @@ class DesignApiService {
    * Context handling is integrated into component analysis API.
    */
   async sendContext(
-    context: string,
-    queryId: string,
-    signal?: AbortSignal
+    _context: string,
+    _queryId: string,
+    _signal?: AbortSignal
   ): Promise<DesignContinueResponse> {
     console.warn(
       "Design continue endpoint is not available in the demo backend. " +

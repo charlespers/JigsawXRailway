@@ -43,10 +43,10 @@ export default function ComponentGraph({
   provider = "openai",
   isAnalyzing = false,
   onAnalysisComplete,
-  onReset,
+  onReset: _onReset,
   onGetHighestHierarchy,
   onSetHighestHierarchy,
-  onContextRequested,
+  onContextRequested: _onContextRequested,
   onContextProvided,
   contextQueryId,
 }: ComponentGraphProps) {
@@ -146,7 +146,7 @@ export default function ComponentGraph({
           
           const existing = newMap.get(update.componentId!) || {
             id: update.componentId!,
-            label: update.componentName || update.componentId,
+            label: update.componentName || update.componentId || "Unknown",
             status: "reasoning" as const,
             reasoning: [] as string[],
             hierarchyLevel: adjustedHierarchy,
@@ -157,6 +157,7 @@ export default function ComponentGraph({
             status: "reasoning",
             reasoning: [...existing.reasoning, update.reasoning || ""],
             hierarchyLevel: adjustedHierarchy,
+            label: existing.label || update.componentName || update.componentId || "Unknown",
           });
 
           return newMap;
@@ -180,7 +181,7 @@ export default function ComponentGraph({
           
           const existing = newMap.get(update.componentId!) || {
             id: update.componentId!,
-            label: update.componentName || update.componentId,
+            label: update.componentName || update.componentId || "Unknown",
             status: "pending" as const,
             reasoning: [] as string[],
             hierarchyLevel: adjustedHierarchy,
@@ -191,6 +192,7 @@ export default function ComponentGraph({
             status: "selected" as const,
             partData: update.partData,
             hierarchyLevel: adjustedHierarchy,
+            label: existing.label || update.componentName || update.componentId || "Unknown",
           };
 
           newMap.set(update.componentId!, updated);
