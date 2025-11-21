@@ -3,6 +3,6 @@
 # Ensures PORT environment variable is used correctly
 
 PORT=${PORT:-3000}
-echo "Starting serve on port $PORT"
-npx serve -s dist -l $PORT
+echo "Starting Express server on port $PORT"
+node server.js
 
