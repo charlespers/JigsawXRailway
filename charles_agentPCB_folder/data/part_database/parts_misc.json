@@ -307,6 +307,263 @@
         "usage": "UART header, power connector, general purpose",
         "note": "Common for UART (TX, RX, GND, VCC) connections"
       }
+    },
+    {
+      "id": "SN74LVC1T45",
+      "name": "SN74LVC1T45 Single-Bit Level Shifter",
+      "category": "ic_level_shifter",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "SN74LVC1T45DBVR",
+      "description": "Single-bit dual-supply voltage level translator, 1.65V to 5.5V, auto-direction",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/sn74lvc1t45.pdf",
+      "supply_voltage_range": {
+        "min": 1.65,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "va_range": "1.65-5.5V",
+        "vb_range": "1.65-5.5V",
+        "unit": "V"
+      },
+      "current_max": {
+        "output": 0.032,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["Level Shifter"],
+      "pinout": {
+        "VCCA": "Supply voltage for A port",
+        "VCCB": "Supply voltage for B port",
+        "GND": "Ground",
+        "A": "A port I/O",
+        "B": "B port I/O",
+        "DIR": "Direction control"
+      },
+      "package": "SOT-23-6",
+      "footprint": "SOT-23-6",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCCA",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCCB",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Voltage level translation between different logic levels",
+        "note": "Bidirectional, auto-direction sensing"
+      }
+    },
+    {
+      "id": "FERRITE-BEAD-0805-600R",
+      "name": "Ferrite Bead 0805 600Ω @ 100MHz",
+      "category": "passive_ferrite",
+      "manufacturer": "Murata",
+      "mfr_part_number": "BLM21PG600SN1D",
+      "description": "Ferrite bead, 0805 package, 600Ω impedance @ 100MHz, 0.5A DC current",
+      "datasheet_url": "https://www.murata.com/en-us/products/productdata/8796781166622/BLM21PG600SN1D.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "dc": 0.5,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "0805",
+      "footprint": "0805",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.05,
+        "quantity": 10000
+      },
+      "impedance": {
+        "value": 600,
+        "frequency": 100,
+        "unit": "Ohm @ MHz"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "EMI suppression, power supply filtering",
+        "note": "Place in series with power supply lines to suppress high-frequency noise"
+      }
+    },
+    {
+      "id": "PC817",
+      "name": "PC817 Optocoupler",
+      "category": "ic_optocoupler",
+      "manufacturer": "Sharp",
+      "mfr_part_number": "PC817",
+      "description": "Phototransistor optocoupler, 4-pin DIP, 5000V isolation, CTR 50-600%",
+      "datasheet_url": "https://www.sharpsde.com/products/opto-coupler/opto-coupler/PC817",
+      "supply_voltage_range": {
+        "min": 1.0,
+        "max": 1.3,
+        "nominal": 1.2,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "forward_voltage": 1.2,
+        "collector_voltage": 35,
+        "unit": "V"
+      },
+      "current_max": {
+        "forward": 0.05,
+        "collector": 0.05,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["Optical"],
+      "pinout": {
+        "ANODE": "LED anode",
+        "CATHODE": "LED cathode",
+        "EMITTER": "Phototransistor emitter",
+        "COLLECTOR": "Phototransistor collector"
+      },
+      "package": "DIP-4",
+      "footprint": "DIP-4",
+      "operating_temp_range": {
+        "min": -30,
+        "max": 100,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "isolation_voltage": {
+        "value": 5000,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "220",
+          "package": "0603",
+          "purpose": "LED current limiting",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Pull-up resistor for output",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Electrical isolation, signal isolation, relay driving",
+        "note": "Provides galvanic isolation between input and output"
+      }
+    },
+    {
+      "id": "IRF540N",
+      "name": "IRF540N N-Channel MOSFET",
+      "category": "ic_mosfet",
+      "manufacturer": "Infineon",
+      "mfr_part_number": "IRF540N",
+      "description": "N-channel power MOSFET, 100V, 33A, TO-220 package, low RDS(on)",
+      "datasheet_url": "https://www.infineon.com/dgdl/irf540n.pdf",
+      "supply_voltage_range": {
+        "min": 0,
+        "max": 100,
+        "nominal": 12,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "gate_threshold": 2.0,
+        "max_gate_voltage": 20,
+        "unit": "V"
+      },
+      "current_max": {
+        "drain": 33,
+        "unit": "A"
+      },
+      "power_rating": {
+        "value": 150,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "GATE": "Gate terminal",
+        "DRAIN": "Drain terminal",
+        "SOURCE": "Source terminal"
+      },
+      "package": "TO-220",
+      "footprint": "TO-220",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 175,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.85,
+        "quantity": 1000
+      },
+      "rds_on": {
+        "value": 0.044,
+        "unit": "Ohm"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Gate pull-down",
+          "quantity": 1
+        },
+        {
+          "type": "diode",
+          "part": "1N4007",
+          "purpose": "Flyback diode for inductive loads",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Power switching, motor control, relay driving",
+        "note": "Requires gate driver for fast switching"
+      }
     }
   ]
 }

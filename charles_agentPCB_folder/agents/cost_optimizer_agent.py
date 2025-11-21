@@ -40,8 +40,12 @@ class CostOptimizerAgent:
             cost_est = part.get("cost_estimate", {})
             if isinstance(cost_est, dict):
                 unit_cost = cost_est.get("value", 0)
+                # Ensure unit_cost is a float, not a dict
+                if isinstance(unit_cost, dict):
+                    unit_cost = unit_cost.get("value") or 0.0
+                unit_cost = float(unit_cost) if unit_cost else 0.0
             else:
-                unit_cost = cost_est or 0
+                unit_cost = float(cost_est) if cost_est else 0.0
             
             item_cost = unit_cost * quantity
             total_cost += item_cost
@@ -82,14 +86,22 @@ class CostOptimizerAgent:
                 alt_cost = best_alt.get("cost_estimate", {})
                 if isinstance(alt_cost, dict):
                     alt_cost_value = alt_cost.get("value", 0)
+                    # Ensure alt_cost_value is a float, not a dict
+                    if isinstance(alt_cost_value, dict):
+                        alt_cost_value = alt_cost_value.get("value") or 0.0
+                    alt_cost_value = float(alt_cost_value) if alt_cost_value else 0.0
                 else:
-                    alt_cost_value = alt_cost or 0
+                    alt_cost_value = float(alt_cost) if alt_cost else 0.0
                 
                 current_cost = part.get("cost_estimate", {})
                 if isinstance(current_cost, dict):
                     current_cost_value = current_cost.get("value", 0)
+                    # Ensure current_cost_value is a float, not a dict
+                    if isinstance(current_cost_value, dict):
+                        current_cost_value = current_cost_value.get("value") or 0.0
+                    current_cost_value = float(current_cost_value) if current_cost_value else 0.0
                 else:
-                    current_cost_value = current_cost or 0
+                    current_cost_value = float(current_cost) if current_cost else 0.0
                 
                 if alt_cost_value > 0 and current_cost_value > alt_cost_value:
                     savings = (current_cost_value - alt_cost_value) * item.get("quantity", 1)

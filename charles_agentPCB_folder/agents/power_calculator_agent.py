@@ -45,15 +45,23 @@ class PowerCalculatorAgent:
             voltage_range = part.get("supply_voltage_range", {})
             if isinstance(voltage_range, dict):
                 voltage = voltage_range.get("nominal") or voltage_range.get("max", 0)
+                # Ensure voltage is a float, not a dict
+                if isinstance(voltage, dict):
+                    voltage = voltage.get("value") or voltage.get("nominal") or 0.0
+                voltage = float(voltage) if voltage else 0.0
             else:
-                voltage = 0
+                voltage = float(voltage_range) if voltage_range else 0.0
             
             # Get current consumption
             current_max = part.get("current_max", {})
             if isinstance(current_max, dict):
                 current = current_max.get("typical") or current_max.get("max", 0)
+                # Ensure current is a float, not a dict
+                if isinstance(current, dict):
+                    current = current.get("value") or current.get("max") or 0.0
+                current = float(current) if current else 0.0
             else:
-                current = current_max or 0
+                current = float(current_max) if current_max else 0.0
             
             # Apply duty cycle if specified
             duty_cycle = operating_modes.get(part_id, 1.0)

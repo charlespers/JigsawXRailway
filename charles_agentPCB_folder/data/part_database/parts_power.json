@@ -1249,6 +1249,451 @@
         "placement": "Between USB connector and downstream circuits",
         "note": "Protects against ESD events on USB lines"
       }
+    },
+    {
+      "id": "AMS1117-5.0",
+      "name": "AMS1117 5.0V LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "AMS",
+      "mfr_part_number": "AMS1117-5.0",
+      "description": "1A low dropout voltage regulator, fixed 5.0V output",
+      "datasheet_url": "https://www.advanced-monolithic.com/pdf/ds1117.pdf",
+      "supply_voltage_range": {
+        "min": 6.0,
+        "max": 15.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "nominal": 5.0,
+        "tolerance": 0.02,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.8,
+        "max": 1.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOT-223",
+      "footprint": "SOT-223",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "25V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "6-15V",
+        "output_voltage": "5.0V",
+        "max_current": "1A"
+      }
+    },
+    {
+      "id": "LM2596-ADJ",
+      "name": "LM2596 Adjustable Switching Regulator",
+      "category": "regulator_switching",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM2596S-ADJ",
+      "description": "3A step-down switching regulator, adjustable output 1.23V to 37V, 150kHz",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm2596.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 40.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "min": 1.23,
+        "max": 37.0,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 2.5,
+        "max": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "TO-263-5",
+      "footprint": "TO-263-5",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.80,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "100uH",
+          "current_rating": "3A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "100uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "220uF",
+          "voltage_rating": "25V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "diode",
+          "part": "1N5822",
+          "purpose": "Schottky rectifier",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "1k",
+          "package": "0603",
+          "purpose": "Feedback divider (adjustable)",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "4.5-40V",
+        "output_voltage": "1.23-37V (adjustable)",
+        "max_current": "3A",
+        "efficiency": "80-90%"
+      }
+    },
+    {
+      "id": "XL6009",
+      "name": "XL6009 Boost Converter",
+      "category": "regulator_switching",
+      "manufacturer": "XLSEMI",
+      "mfr_part_number": "XL6009",
+      "description": "4A step-up switching regulator, adjustable output up to 35V, 400kHz",
+      "datasheet_url": "https://www.xlsemi.com/datasheet/xl6009%20datasheet.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 32.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "min": 5.0,
+        "max": 35.0,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 3.5,
+        "max": 4.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOP-8",
+      "footprint": "SOP-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.85,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "47uH",
+          "current_rating": "4A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "100uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "diode",
+          "part": "SS34",
+          "purpose": "Schottky rectifier",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Feedback divider",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "3-32V",
+        "output_voltage": "5-35V (adjustable)",
+        "max_current": "4A",
+        "efficiency": "85-92%"
+      }
+    },
+    {
+      "id": "TP4056",
+      "name": "TP4056 Li-ion Battery Charger",
+      "category": "battery_charger",
+      "manufacturer": "Top Power",
+      "mfr_part_number": "TP4056",
+      "description": "1A linear Li-ion battery charger with charge termination, USB powered",
+      "datasheet_url": "https://datasheet.lcsc.com/lcsc/1811061432_Top-Power-Assembly-TP4056_C82425.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 8.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "nominal": 4.2,
+        "tolerance": 0.01,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.8,
+        "max": 1.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOP-8",
+      "footprint": "SOP-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.25,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "1.2k",
+          "package": "0603",
+          "purpose": "Charge current set (1A)",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "LED",
+          "color": "red",
+          "package": "0603",
+          "purpose": "Charging indicator",
+          "quantity": 1
+        },
+        {
+          "type": "LED",
+          "color": "blue",
+          "package": "0603",
+          "purpose": "Charge complete indicator",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "4.5-8V (USB)",
+        "output_voltage": "4.2V (Li-ion)",
+        "charge_current": "1A",
+        "charge_termination": "CC/CV with auto-termination"
+      }
+    },
+    {
+      "id": "MCP73831",
+      "name": "MCP73831 Li-ion Battery Charger",
+      "category": "battery_charger",
+      "manufacturer": "Microchip",
+      "mfr_part_number": "MCP73831-2ACI/OT",
+      "description": "500mA linear Li-ion battery charger with charge termination, thermal regulation",
+      "datasheet_url": "https://ww1.microchip.com/downloads/en/DeviceDoc/20001984g.pdf",
+      "supply_voltage_range": {
+        "min": 4.25,
+        "max": 6.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "nominal": 4.2,
+        "tolerance": 0.01,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.45,
+        "max": 0.5,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOT-23-5",
+      "footprint": "SOT-23-5",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.55,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "2k",
+          "package": "0603",
+          "purpose": "Charge current set (500mA)",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "4.25-6V",
+        "output_voltage": "4.2V (Li-ion)",
+        "charge_current": "500mA",
+        "thermal_regulation": "Yes"
+      }
+    },
+    {
+      "id": "MAX17048",
+      "name": "MAX17048 Fuel Gauge",
+      "category": "battery_monitor",
+      "manufacturer": "Maxim Integrated",
+      "mfr_part_number": "MAX17048G+",
+      "description": "Li-ion fuel gauge IC, I2C interface, battery capacity and voltage monitoring",
+      "datasheet_url": "https://datasheets.maximintegrated.com/en/ds/MAX17048-MAX17049.pdf",
+      "supply_voltage_range": {
+        "min": 2.5,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.000015,
+        "max": 0.00003,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 2.5-5.5V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ALERT": "Low battery alert"
+      },
+      "package": "TDFN-8",
+      "footprint": "TDFN-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.50,
+        "quantity": 1000
+      },
+      "i2c_address": "0x36",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "monitors": "Battery voltage, capacity, state of charge",
+        "pullup_voltage": "3.3V"
+      }
     }
   ]
 }

@@ -226,7 +226,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             })
             
             try:
-                part = orchestrator._select_supporting_part(block, expanded_requirements, requirements)
+            part = orchestrator._select_supporting_part(block, expanded_requirements, requirements)
                 if not part:
                     # Part search returned None - emit detailed reasoning
                     await queue.put({
@@ -490,7 +490,7 @@ async def component_analysis(request: Request):
         # Create orchestrator AFTER setting provider in environment
         # Agents will read LLM_PROVIDER during their __init__
         try:
-            orchestrator = StreamingOrchestrator()
+        orchestrator = StreamingOrchestrator()
         except ValueError as e:
             # If agent initialization fails (e.g., missing API key), send error
             await queue.put({
@@ -558,6 +558,16 @@ from agents.supply_chain_agent import SupplyChainAgent
 from agents.design_validator_agent import DesignValidatorAgent
 from agents.power_calculator_agent import PowerCalculatorAgent
 from agents.auto_fix_agent import AutoFixAgent
+from agents.bom_insights_agent import BOMInsightsAgent
+from agents.thermal_analysis_agent import ThermalAnalysisAgent
+from agents.signal_integrity_agent import SignalIntegrityAgent
+from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+from agents.design_review_agent import DesignReviewAgent
+from agents.compliance_agent import ComplianceAgent
+from agents.design_comparison_agent import DesignComparisonAgent
+from agents.obsolescence_forecast_agent import ObsolescenceForecastAgent
+from agents.design_reuse_agent import DesignReuseAgent
+from agents.cost_forecast_agent import CostForecastAgent
 
 
 @app.get("/api/health")
@@ -690,6 +700,162 @@ async def suggest_fixes(request: Request):
         suggestions.extend(auto_fix.suggest_missing_msl(bom_items))
         
         return {"suggestions": suggestions}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/bom-insights")
+async def analyze_bom_insights(request: Request):
+    """Get comprehensive BOM insights and statistics."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        
+        agent = BOMInsightsAgent()
+        insights = agent.analyze_bom(bom_items)
+        return insights
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/thermal")
+async def analyze_thermal(request: Request):
+    """Perform detailed thermal analysis."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        ambient_temp = data.get("ambient_temp", 25.0)
+        pcb_area_cm2 = data.get("pcb_area_cm2")
+        
+        agent = ThermalAnalysisAgent()
+        analysis = agent.analyze_thermal(bom_items, ambient_temp, pcb_area_cm2)
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/signal-integrity")
+async def analyze_signal_integrity(request: Request):
+    """Perform signal integrity and EMI/EMC analysis."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        connections = data.get("connections", [])
+        pcb_thickness_mm = data.get("pcb_thickness_mm", 1.6)
+        trace_width_mils = data.get("trace_width_mils", 5.0)
+        
+        agent = SignalIntegrityAgent()
+        analysis = agent.analyze_signal_integrity(
+            bom_items, connections, pcb_thickness_mm, trace_width_mils
+        )
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/manufacturing-readiness")
+async def analyze_manufacturing_readiness(request: Request):
+    """Perform manufacturing readiness analysis."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        connections = data.get("connections", [])
+        
+        agent = ManufacturingReadinessAgent()
+        analysis = agent.analyze_manufacturing_readiness(bom_items, connections)
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/review/design")
+async def review_design(request: Request):
+    """Perform executive-level design review."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        connections = data.get("connections", [])
+        design_metadata = data.get("design_metadata", {})
+        
+        agent = DesignReviewAgent()
+        review = agent.review_design(bom_items, connections, design_metadata)
+        return review
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/compliance/check")
+async def check_compliance(request: Request):
+    """Check regulatory and environmental compliance."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        regions = data.get("regions", ["EU", "US", "China"])
+        
+        agent = ComplianceAgent()
+        compliance = agent.check_compliance(bom_items, regions)
+        return compliance
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/design/compare")
+async def compare_designs(request: Request):
+    """Compare multiple design versions."""
+    try:
+        data = await request.json()
+        designs = data.get("designs", [])
+        baseline_index = data.get("baseline_index", 0)
+        
+        agent = DesignComparisonAgent()
+        comparison = agent.compare_designs(designs, baseline_index)
+        return comparison
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/forecast/obsolescence")
+async def forecast_obsolescence(request: Request):
+    """Forecast component obsolescence risks."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        forecast_years = data.get("forecast_years", 5)
+        
+        agent = ObsolescenceForecastAgent()
+        forecast = agent.forecast_obsolescence(bom_items, forecast_years)
+        return forecast
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/design-reuse")
+async def analyze_design_reuse(request: Request):
+    """Analyze design for reusability."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        existing_designs = data.get("existing_designs")
+        
+        agent = DesignReuseAgent()
+        analysis = agent.analyze_reusability(bom_items, existing_designs)
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/forecast/cost")
+async def forecast_costs(request: Request):
+    """Forecast BOM costs over time."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        forecast_months = data.get("forecast_months", 12)
+        production_volume = data.get("production_volume", 1000)
+        
+        agent = CostForecastAgent()
+        forecast = agent.forecast_costs(bom_items, forecast_months, production_volume)
+        return forecast
     except Exception as e:
         return {"error": str(e)}
 

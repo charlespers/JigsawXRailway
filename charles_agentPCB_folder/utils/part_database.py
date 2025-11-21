@@ -33,6 +33,7 @@ def load_part_database() -> Dict[str, List[Dict[str, Any]]]:
         "ics": "parts_ics.json",
         "mechanical": "parts_mechanical.json",
         "misc": "parts_misc.json",
+        "intermediaries": "parts_intermediaries.json",
     }
     
     for category, filename in category_files.items():

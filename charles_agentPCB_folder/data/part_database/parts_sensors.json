@@ -526,6 +526,566 @@
         "required_interfaces": ["I2C"],
         "pullup_voltage": "3.3V"
       }
+    },
+    {
+      "id": "DS18B20",
+      "name": "DS18B20 Temperature Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Maxim Integrated",
+      "mfr_part_number": "DS18B20",
+      "description": "Digital temperature sensor with 1-Wire interface, ±0.5°C accuracy, -55°C to +125°C",
+      "datasheet_url": "https://datasheets.maximintegrated.com/en/ds/DS18B20.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 2.8,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.8,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.001,
+        "max": 0.0015,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["1-Wire"],
+      "pinout": {
+        "VDD": "Power supply 3-5.5V",
+        "GND": "Ground",
+        "DQ": "Data/Open-drain I/O"
+      },
+      "package": "TO-92",
+      "footprint": "TO-92",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.50,
+        "quantity": 1000
+      },
+      "accuracy": {
+        "value": 0.5,
+        "unit": "C"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "1-Wire pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V", "5V"],
+        "required_interfaces": ["1-Wire"],
+        "pullup_voltage": "3.3V or 5V"
+      }
+    },
+    {
+      "id": "LM35",
+      "name": "LM35 Temperature Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM35",
+      "description": "Analog temperature sensor, 10mV/°C, -55°C to +150°C",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm35.pdf",
+      "supply_voltage_range": {
+        "min": 4.0,
+        "max": 30.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.00005,
+        "max": 0.0001,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["Analog"],
+      "pinout": {
+        "VCC": "Power supply 4-30V",
+        "GND": "Ground",
+        "VOUT": "Analog output (10mV/°C)"
+      },
+      "package": "TO-92",
+      "footprint": "TO-92",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 150,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.20,
+        "quantity": 1000
+      },
+      "accuracy": {
+        "value": 0.5,
+        "unit": "C"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "50V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["5V"],
+        "required_interfaces": ["ADC"],
+        "note": "Requires ADC for reading"
+      }
+    },
+    {
+      "id": "DHT22",
+      "name": "DHT22 Temperature and Humidity Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Aosong",
+      "mfr_part_number": "AM2302",
+      "description": "Digital temperature and humidity sensor, ±0.5°C, ±2% RH, single-wire interface",
+      "datasheet_url": "https://www.sparkfun.com/datasheets/Sensors/Temperature/DHT22.pdf",
+      "supply_voltage_range": {
+        "min": 3.3,
+        "max": 5.5,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 2.4,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.8,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.001,
+        "max": 0.0025,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["Single-wire"],
+      "pinout": {
+        "VCC": "Power supply 3.3-5.5V",
+        "GND": "Ground",
+        "DATA": "Data pin"
+      },
+      "package": "Module",
+      "footprint": "DHT22",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 80,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 4.50,
+        "quantity": 1000
+      },
+      "accuracy": {
+        "temperature": 0.5,
+        "humidity": 2.0,
+        "unit": "C/%RH"
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Data pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["5V"],
+        "required_interfaces": ["GPIO"],
+        "note": "Single-wire protocol, requires pull-up resistor"
+      }
+    },
+    {
+      "id": "SHT31",
+      "name": "SHT31 Temperature and Humidity Sensor",
+      "category": "sensor_temperature",
+      "manufacturer": "Sensirion",
+      "mfr_part_number": "SHT31-DIS",
+      "description": "High-accuracy digital temperature and humidity sensor, I2C interface, ±0.2°C, ±2% RH",
+      "datasheet_url": "https://www.sensirion.com/fileadmin/user_upload/customers/sensirion/Dokumente/2_Humidity_Sensors/Sensirion_Humidity_Sensors_SHT3x_Datasheet_digital.pdf",
+      "supply_voltage_range": {
+        "min": 2.4,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.00015,
+        "max": 0.0003,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 2.4-5.5V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ADDR": "I2C Address select"
+      },
+      "package": "DFN-8",
+      "footprint": "DFN-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 3.80,
+        "quantity": 1000
+      },
+      "i2c_address": "0x44",
+      "accuracy": {
+        "temperature": 0.2,
+        "humidity": 2.0,
+        "unit": "C/%RH"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "MPU6050",
+      "name": "MPU6050 6-Axis Motion Sensor",
+      "category": "sensor_motion",
+      "manufacturer": "InvenSense",
+      "mfr_part_number": "MPU-6050",
+      "description": "6-axis accelerometer and gyroscope, I2C interface, ±2g to ±16g, ±250°/s to ±2000°/s",
+      "datasheet_url": "https://www.invensense.com/wp-content/uploads/2015/02/MPU-6000-Datasheet1.pdf",
+      "supply_voltage_range": {
+        "min": 2.375,
+        "max": 3.46,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.0035,
+        "max": 0.005,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VCC": "Power supply 2.375-3.46V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "INT": "Interrupt output"
+      },
+      "package": "QFN24",
+      "footprint": "QFN24",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.80,
+        "quantity": 1000
+      },
+      "i2c_address": "0x68",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "ADXL345",
+      "name": "ADXL345 3-Axis Accelerometer",
+      "category": "sensor_motion",
+      "manufacturer": "Analog Devices",
+      "mfr_part_number": "ADXL345",
+      "description": "3-axis digital accelerometer, I2C/SPI interface, ±2g to ±16g range",
+      "datasheet_url": "https://www.analog.com/media/en/technical-documentation/data-sheets/ADXL345.pdf",
+      "supply_voltage_range": {
+        "min": 2.0,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.00014,
+        "max": 0.00025,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI"],
+      "pinout": {
+        "VCC": "Power supply 2-3.6V",
+        "GND": "Ground",
+        "SDA": "I2C Data / SPI MOSI",
+        "SCL": "I2C Clock / SPI SCK",
+        "CS": "SPI Chip Select",
+        "INT1": "Interrupt 1",
+        "INT2": "Interrupt 2"
+      },
+      "package": "LFCSP14",
+      "footprint": "LFCSP14",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 3.20,
+        "quantity": 1000
+      },
+      "i2c_address": "0x53",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C", "SPI"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "BMP280",
+      "name": "BMP280 Pressure Sensor",
+      "category": "sensor_pressure",
+      "manufacturer": "Bosch",
+      "mfr_part_number": "BMP280",
+      "description": "Digital barometric pressure sensor, I2C/SPI interface, ±1 hPa accuracy",
+      "datasheet_url": "https://www.bosch-sensortec.com/media/boschsensortec/downloads/datasheets/bst-bmp280-ds001.pdf",
+      "supply_voltage_range": {
+        "min": 1.71,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.0000025,
+        "max": 0.000012,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI"],
+      "pinout": {
+        "VCC": "Power supply 1.71-3.6V",
+        "GND": "Ground",
+        "SDA": "I2C Data / SPI MOSI",
+        "SCL": "I2C Clock / SPI SCK",
+        "CSB": "SPI Chip Select",
+        "SDO": "SPI MISO / I2C Address"
+      },
+      "package": "LGA8",
+      "footprint": "LGA8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.20,
+        "quantity": 1000
+      },
+      "i2c_address": "0x76",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C", "SPI"],
+        "pullup_voltage": "3.3V"
+      }
+    },
+    {
+      "id": "BH1750",
+      "name": "BH1750 Light Sensor",
+      "category": "sensor_light",
+      "manufacturer": "ROHM",
+      "mfr_part_number": "BH1750FVI",
+      "description": "Digital ambient light sensor, I2C interface, 1-65535 lux range",
+      "datasheet_url": "https://www.mouser.com/datasheet/2/348/bh1750fvi-e-186247.pdf",
+      "supply_voltage_range": {
+        "min": 2.4,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.00012,
+        "max": 0.00019,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VCC": "Power supply 2.4-3.6V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ADDR": "I2C Address select"
+      },
+      "package": "DFN6",
+      "footprint": "DFN6",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.80,
+        "quantity": 1000
+      },
+      "i2c_address": "0x23",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "pullup_voltage": "3.3V"
+      }
     }
   ]
 }

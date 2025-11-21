@@ -509,6 +509,397 @@
         "required_interfaces": ["I2C", "SPI", "UART", "USB"],
         "note": "Programmable I/O (PIO) for custom protocols"
       }
+    },
+    {
+      "id": "STM32F401CEU6",
+      "name": "STM32F401CEU6 Microcontroller",
+      "category": "mcu",
+      "manufacturer": "STMicroelectronics",
+      "mfr_part_number": "STM32F401CEU6",
+      "description": "ARM Cortex-M4 MCU, 512KB Flash, 96KB RAM, 84MHz, USB 2.0",
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/stm32f401ce.pdf",
+      "supply_voltage_range": {
+        "min": 1.7,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.08,
+        "max": 0.15,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI", "UART", "USB", "ADC", "GPIO"],
+      "package": "UFQFPN48",
+      "footprint": "UFQFPN48",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.80,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 2
+        },
+        {
+          "type": "capacitor",
+          "value": "4.7uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Bulk decoupling",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C", "SPI", "UART", "USB"]
+      }
+    },
+    {
+      "id": "STM32F407VGT6",
+      "name": "STM32F407VGT6 Microcontroller",
+      "category": "mcu",
+      "manufacturer": "STMicroelectronics",
+      "mfr_part_number": "STM32F407VGT6",
+      "description": "ARM Cortex-M4 MCU, 1MB Flash, 192KB RAM, 168MHz, Ethernet, USB OTG",
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/stm32f407vg.pdf",
+      "supply_voltage_range": {
+        "min": 1.8,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.15,
+        "max": 0.25,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI", "UART", "USB", "Ethernet", "CAN", "ADC", "GPIO"],
+      "package": "LQFP100",
+      "footprint": "LQFP100",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 5.20,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 3
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Bulk decoupling",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C", "SPI", "UART", "USB", "Ethernet"]
+      }
+    },
+    {
+      "id": "STM32H743VIT6",
+      "name": "STM32H743VIT6 Microcontroller",
+      "category": "mcu",
+      "manufacturer": "STMicroelectronics",
+      "mfr_part_number": "STM32H743VIT6",
+      "description": "ARM Cortex-M7 MCU, 2MB Flash, 1MB RAM, 480MHz, high-performance",
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/stm32h743vi.pdf",
+      "supply_voltage_range": {
+        "min": 1.62,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.25,
+        "max": 0.4,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI", "UART", "USB", "Ethernet", "CAN", "ADC", "GPIO", "SDIO"],
+      "package": "LQFP100",
+      "footprint": "LQFP100",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 8.50,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 4
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Bulk decoupling",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C", "SPI", "UART", "USB", "Ethernet"]
+      }
+    },
+    {
+      "id": "ATmega328P-PU",
+      "name": "ATmega328P-PU Microcontroller",
+      "category": "mcu",
+      "manufacturer": "Microchip",
+      "mfr_part_number": "ATmega328P-PU",
+      "description": "8-bit AVR MCU, 32KB Flash, 2KB RAM, 20MHz, Arduino-compatible",
+      "datasheet_url": "https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf",
+      "supply_voltage_range": {
+        "min": 1.8,
+        "max": 5.5,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.6,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.02,
+        "max": 0.04,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI", "UART", "ADC", "GPIO"],
+      "package": "DIP28",
+      "footprint": "DIP28",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.50,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VCC",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Bulk decoupling",
+          "quantity": 1
+        },
+        {
+          "type": "crystal",
+          "value": "16MHz",
+          "package": "HC49",
+          "purpose": "System clock",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22pF",
+          "voltage_rating": "50V",
+          "package": "0603",
+          "purpose": "Crystal load capacitors",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["5V"],
+        "required_interfaces": ["I2C", "SPI", "UART"],
+        "note": "Classic Arduino Uno MCU"
+      }
+    },
+    {
+      "id": "ESP8266-12F",
+      "name": "ESP8266-12F WiFi Module",
+      "category": "mcu_wifi",
+      "manufacturer": "Espressif",
+      "mfr_part_number": "ESP8266-12F",
+      "description": "WiFi module with integrated MCU, 4MB Flash, 80MHz, low-cost IoT solution",
+      "datasheet_url": "https://www.espressif.com/sites/default/files/documentation/0a-esp8266ex_datasheet_en.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.75,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.25,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.08,
+        "max": 0.17,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["WiFi", "I2C", "SPI", "UART", "ADC", "GPIO"],
+      "package": "SMD",
+      "footprint": "ESP8266-12F",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.20,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 2
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Bulk decoupling",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "CH_PD pull-up",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C", "SPI", "UART", "WiFi"]
+      }
+    },
+    {
+      "id": "Raspberry-Pi-Pico",
+      "name": "Raspberry Pi Pico",
+      "category": "mcu",
+      "manufacturer": "Raspberry Pi",
+      "mfr_part_number": "Raspberry Pi Pico",
+      "description": "RP2040-based development board, 2MB Flash, USB-C, 40-pin GPIO",
+      "datasheet_url": "https://datasheets.raspberrypi.com/pico/pico-datasheet.pdf",
+      "supply_voltage_range": {
+        "min": 1.8,
+        "max": 5.5,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 3.6,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.15,
+        "max": 0.25,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C", "SPI", "UART", "USB", "ADC", "GPIO", "PIO"],
+      "package": "Module",
+      "footprint": "Raspberry-Pi-Pico",
+      "operating_temp_range": {
+        "min": -20,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 4.00,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "power_rails": ["5V", "3.3V"],
+        "required_interfaces": ["I2C", "SPI", "UART", "USB"],
+        "note": "Complete development board with USB-C and 40-pin header"
+      }
     }
   ]
 }

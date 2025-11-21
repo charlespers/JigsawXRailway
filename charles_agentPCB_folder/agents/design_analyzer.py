@@ -67,13 +67,21 @@ class DesignAnalyzer:
             supply_range = part_data.get("supply_voltage_range", {})
             if isinstance(supply_range, dict):
                 voltage = supply_range.get("nominal") or supply_range.get("value")
+                # Ensure voltage is a float, not a dict
+                if isinstance(voltage, dict):
+                    voltage = voltage.get("value") or voltage.get("nominal") or 0.0
+                voltage = float(voltage) if voltage else 0.0
             else:
-                voltage = supply_range
+                voltage = float(supply_range) if supply_range else 0.0
             
             # Get current consumption
             current_max = part_data.get("current_max", {})
             if isinstance(current_max, dict):
                 current = current_max.get("max") or current_max.get("typical", 0.0)
+                # Ensure current is a float, not a dict
+                if isinstance(current, dict):
+                    current = current.get("value") or current.get("max") or 0.0
+                current = float(current) if current else 0.0
             else:
                 current = float(current_max) if current_max else 0.0
             
