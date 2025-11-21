@@ -57,11 +57,12 @@ Railway will host both:
    - This tells Railway to look in the `charles_agentPCB_folder` directory for the Python project
    - Railway will then detect `requirements.txt` and recognize it as a Python project
 4. Go to **"Deploy"** tab
-5. Set **Start Command**:
+5. Set **Start Command** (IMPORTANT: Since Root Directory is `charles_agentPCB_folder`, use relative path):
    ```
    cd api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT
    ```
-   - Or Railway may auto-detect this from the `nixpacks.toml` file
+   - **DO NOT** use `cd charles_agentPCB_folder/api` - the Root Directory is already `charles_agentPCB_folder`
+   - Railway may auto-detect this from the `nixpacks.toml` file
 6. Click **"Redeploy"** or Railway will auto-deploy after you save settings
 
 ### 2.3 Set Backend Environment Variables
@@ -199,6 +200,11 @@ curl https://your-backend-production.up.railway.app/health
 
 1. **Check Logs**: Railway dashboard → Service → **"Deployments"** → Click latest deployment → **"View Logs"**
 2. **Common Issues**:
+   - **"No such file or directory" error for `cd charles_agentPCB_folder/api`**:
+     - Go to **"Settings"** → **"Deploy"** tab
+     - Check **"Start Command"** - it should be: `cd api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT`
+     - **NOT**: `cd charles_agentPCB_folder/api && ...` (since Root Directory is already set to `charles_agentPCB_folder`)
+     - After fixing, click **"Redeploy"**
    - Missing environment variables → Check **"Variables"** tab
    - Python version mismatch → Railway auto-detects, but you can specify in `runtime.txt`:
      ```
@@ -209,13 +215,17 @@ curl https://your-backend-production.up.railway.app/health
 ### Frontend Build Fails
 
 1. **Root Directory not set** → Go to Settings → Set Root Directory to `frontend`
-2. **Yarn lockfile error** → If you see "The lockfile would have been modified", this is fixed by using npm instead of yarn. The `package.json` has been updated to remove the `packageManager` field, forcing Railway to use npm.
+2. **Yarn lockfile error** → If you see "The lockfile would have been modified":
+   - Railway is detecting `yarn.lock` and trying to use Yarn
+   - The `nixpacks.toml` is configured to remove `yarn.lock` and use npm instead
+   - After pushing the updated `nixpacks.toml`, Railway should use npm
+   - If it still fails, you can manually delete `yarn.lock` from your repository (since you have `package-lock.json`)
 3. **Check Logs**: Railway dashboard → Service → Deployments → View Logs
 4. **Common Issues**:
    - Node version mismatch → Railway auto-detects Node 18+
    - Build command wrong → Should be: `npm install && npm run build`
    - Missing dependencies → Check `package.json` is in `frontend/` directory
-   - Yarn vs npm conflict → Railway will use npm if `packageManager` field is removed from `package.json`
+   - Yarn vs npm conflict → The `nixpacks.toml` explicitly removes `yarn.lock` and uses npm
 
 ### Frontend Can't Connect to Backend
 
