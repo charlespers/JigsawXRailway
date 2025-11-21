@@ -29,6 +29,9 @@ def load_part_database() -> Dict[str, List[Dict[str, Any]]]:
         "sensors": "parts_sensors.json",
         "power": "parts_power.json",
         "passives": "parts_passives.json",
+        "connectors": "parts_connectors.json",
+        "ics": "parts_ics.json",
+        "mechanical": "parts_mechanical.json",
         "misc": "parts_misc.json",
     }
     

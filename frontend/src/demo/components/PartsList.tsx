@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, X } from "lucide-react";
+import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, X, Search, Filter, ArrowUpDown } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
@@ -25,11 +25,68 @@ export default function PartsList({
   const [editingNotes, setEditingNotes] = useState<Map<string, boolean>>(new Map());
   const [notes, setNotes] = useState<Map<string, string>>(new Map());
   const [localParts, setLocalParts] = useState<PartObject[]>(parts);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "price" | "quantity" | "category">("name");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [filterCategory, setFilterCategory] = useState<string>("all");
 
   // Sync local parts when props change
   useEffect(() => {
     setLocalParts(parts);
   }, [parts]);
+
+  // Get unique categories
+  const categories = useMemo(() => {
+    const cats = new Set<string>();
+    parts.forEach(part => {
+      if (part.category) cats.add(part.category);
+    });
+    return Array.from(cats).sort();
+  }, [parts]);
+
+  // Filtered and sorted parts
+  const filteredAndSortedParts = useMemo(() => {
+    let filtered = localParts;
+
+    // Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(part =>
+        part.mpn.toLowerCase().includes(query) ||
+        part.description.toLowerCase().includes(query) ||
+        part.manufacturer.toLowerCase().includes(query)
+      );
+    }
+
+    // Category filter
+    if (filterCategory !== "all") {
+      filtered = filtered.filter(part => part.category === filterCategory);
+    }
+
+    // Sort
+    filtered = [...filtered].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case "name":
+          comparison = (a.mpn || "").localeCompare(b.mpn || "");
+          break;
+        case "price":
+          comparison = (a.price || 0) - (b.price || 0);
+          break;
+        case "quantity":
+          comparison = (a.quantity || 1) - (b.quantity || 1);
+          break;
+        case "category":
+          comparison = (a.category || "").localeCompare(b.category || "");
+          break;
+      }
+      
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [localParts, searchQuery, filterCategory, sortBy, sortOrder]);
 
   const handleQuantityChange = (mpn: string, delta: number) => {
     const updatedParts = localParts.map(part => {
@@ -85,16 +142,64 @@ export default function PartsList({
         </p>
       </div>
 
+      {/* Filters and Search */}
+      <div className="p-4 border-b border-zinc-800 space-y-3 flex-shrink-0">
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-zinc-400" />
+          <Input
+            type="text"
+            placeholder="Search parts..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-zinc-900 border-zinc-700 text-white"
+          />
+        </div>
+
+        {/* Category Filter and Sort */}
+        <div className="flex gap-2">
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
+          >
+            <option value="all">All Categories</option>
+            {categories.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          
+          <select
+            value={`${sortBy}-${sortOrder}`}
+            onChange={(e) => {
+              const [by, order] = e.target.value.split("-");
+              setSortBy(by as typeof sortBy);
+              setSortOrder(order as typeof sortOrder);
+            }}
+            className="px-3 py-2 bg-zinc-900 border border-zinc-700 rounded text-sm text-white"
+          >
+            <option value="name-asc">Name ↑</option>
+            <option value="name-desc">Name ↓</option>
+            <option value="price-asc">Price ↑</option>
+            <option value="price-desc">Price ↓</option>
+            <option value="quantity-asc">Quantity ↑</option>
+            <option value="quantity-desc">Quantity ↓</option>
+            <option value="category-asc">Category ↑</option>
+            <option value="category-desc">Category ↓</option>
+          </select>
+        </div>
+      </div>
+
       {/* Parts List */}
       <div className="flex-1 overflow-y-auto p-6 space-y-4">
         <AnimatePresence mode="popLayout">
-          {localParts.length === 0 ? (
+          {filteredAndSortedParts.length === 0 ? (
             <div className="text-center py-12 text-zinc-500">
               <Package className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No parts added yet</p>
+              <p>{searchQuery || filterCategory !== "all" ? "No parts match filters" : "No parts added yet"}</p>
             </div>
           ) : (
-            localParts.map((part, index) => (
+            filteredAndSortedParts.map((part, index) => (
               <motion.div
                 key={`${part.mpn}-${index}`}
                 initial={{ opacity: 0, y: 20 }}

@@ -337,23 +337,42 @@ export default function PCBViewer({ selectedComponents = new Map() }: PCBViewerP
     setIsDragging(false);
   };
 
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.5, Math.min(3, zoom * delta));
-    
-    // Zoom towards mouse position
-    const rect = e.currentTarget.getBoundingClientRect();
-    const mouseX = e.clientX - rect.left;
-    const mouseY = e.clientY - rect.top;
-    
-    const zoomFactor = newZoom / zoom;
-    setPan({
-      x: mouseX - (mouseX - pan.x) * zoomFactor,
-      y: mouseY - (mouseY - pan.y) * zoomFactor,
-    });
-    setZoom(newZoom);
-  };
+  // Add native wheel event listener with passive: false to prevent default
+  // This fixes the "Unable to preventDefault inside passive event listener" warning
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheelNative = (e: WheelEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      setZoom((currentZoom) => {
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        const newZoom = Math.max(0.5, Math.min(3, currentZoom * delta));
+        
+        // Zoom towards mouse position
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        
+        const zoomFactor = newZoom / currentZoom;
+        setPan((prevPan) => ({
+          x: mouseX - (mouseX - prevPan.x) * zoomFactor,
+          y: mouseY - (mouseY - prevPan.y) * zoomFactor,
+        }));
+        
+        return newZoom;
+      });
+    };
+
+    // Add native listener with passive: false to allow preventDefault
+    canvas.addEventListener('wheel', handleWheelNative, { passive: false });
+
+    return () => {
+      canvas.removeEventListener('wheel', handleWheelNative);
+    };
+  }, []); // Empty deps - only add listener once
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -662,7 +681,7 @@ export default function PCBViewer({ selectedComponents = new Map() }: PCBViewerP
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
-        onWheel={handleWheel}
+        // Wheel handled by native event listener above
       />
 
       {/* Legend */}

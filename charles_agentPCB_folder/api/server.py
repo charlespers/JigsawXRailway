@@ -200,6 +200,15 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         child_blocks = architecture.get("child_blocks", [])
         hierarchy_level = 1
         
+        if not child_blocks:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "architecture",
+                "componentName": "Architecture",
+                "reasoning": "No child blocks found in architecture. Design may be complete with anchor component only.",
+                "hierarchyLevel": 0
+            })
+        
         for block in child_blocks:
             block_type = block.get("type", "")
             block_name = block.get("description", block_type)
@@ -216,7 +225,33 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "hierarchyLevel": hierarchy_level
             })
             
-            part = orchestrator._select_supporting_part(block, expanded_requirements, requirements)
+            try:
+                part = orchestrator._select_supporting_part(block, expanded_requirements, requirements)
+                if not part:
+                    # Part search returned None - emit detailed reasoning
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": block_type,
+                        "componentName": block_name,
+                        "reasoning": f"No suitable part found for {block_name} in database. This may be due to strict constraints. Continuing with other components...",
+                        "hierarchyLevel": hierarchy_level
+                    })
+            except Exception as e:
+                import traceback
+                error_details = traceback.format_exc()
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": block_type,
+                    "componentName": block_name,
+                    "reasoning": f"Error selecting part for {block_name}: {str(e)}",
+                    "hierarchyLevel": hierarchy_level
+                })
+                await queue.put({
+                    "type": "error",
+                    "message": f"Failed to select part for {block_name}: {str(e)}"
+                })
+                part = None
+            
             if part:
                 part_mpn = part.get("mpn", part.get("id", ""))
                 part_manufacturer = part.get("manufacturer", "")
@@ -264,6 +299,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 # Check compatibility
                 if anchor_part:
                     provides_power = block_type == "power" or block.get("depends_on", []) == ["power"]
+                    power_compat = None  # Initialize to avoid UnboundLocalError
                     
                     if provides_power:
                         power_compat = orchestrator.compatibility_agent.check_compatibility(
@@ -301,12 +337,12 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                     )
                     
                     compat_result = {"interface": interface_compat}
-                    if provides_power:
+                    if power_compat:
                         compat_result["power"] = power_compat
                     orchestrator.design_state["compatibility_results"][block_name] = compat_result
                     
                     # Add compatibility reasoning from agent outputs
-                    if interface_compat.get("compatible", True) and power_compat.get("compatible", True):
+                    if interface_compat.get("compatible", True) and (not power_compat or power_compat.get("compatible", True)):
                         # Use agent's reasoning if available, otherwise generate simple message
                         compat_reasoning = interface_compat.get("reasoning") or power_compat.get("reasoning")
                         if compat_reasoning:
@@ -325,7 +361,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                                 "reasoning": f"Compatibility check passed. {part_mpn} is compatible with anchor component.",
                                 "hierarchyLevel": hierarchy_level
                             })
-                    elif not power_compat.get("compatible", True):
+                    elif power_compat and not power_compat.get("compatible", True):
                         # Use agent's reasoning for incompatibility
                         compat_reasoning = power_compat.get("reasoning", "Voltage mismatch detected")
                         await queue.put({
@@ -360,6 +396,15 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 from utils.part_database import get_recommended_external_components
                 ext_comps = get_recommended_external_components(part.get("id", ""))
                 orchestrator.design_state["external_components"].extend(ext_comps)
+            else:
+                # Part selection failed - emit warning but continue
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": block_type,
+                    "componentName": block_name,
+                    "reasoning": f"Could not find suitable part for {block_name}. Continuing with other components...",
+                    "hierarchyLevel": hierarchy_level
+                })
             
             hierarchy_level += 1
         
@@ -505,6 +550,152 @@ async def component_analysis(request: Request):
     )
 
 
+# Import analysis agents
+from utils.part_comparison import compare_parts
+from agents.alternative_finder_agent import AlternativeFinderAgent
+from agents.cost_optimizer_agent import CostOptimizerAgent
+from agents.supply_chain_agent import SupplyChainAgent
+from agents.design_validator_agent import DesignValidatorAgent
+from agents.power_calculator_agent import PowerCalculatorAgent
+from agents.auto_fix_agent import AutoFixAgent
+
+
+@app.get("/api/health")
+async def health_check():
+    """Health check endpoint."""
+    return {"status": "ok"}
+
+
+@app.post("/api/parts/compare")
+async def compare_parts_endpoint(request: Request):
+    """Compare multiple parts side-by-side."""
+    try:
+        data = await request.json()
+        part_ids = data.get("part_ids", [])
+        
+        if len(part_ids) < 2:
+            return {"error": "Need at least 2 parts to compare"}
+        
+        comparison = compare_parts(part_ids)
+        return comparison
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.get("/api/parts/alternatives/{part_id}")
+async def get_alternatives(part_id: str, same_footprint: bool = False, lower_cost: bool = False):
+    """Find alternative parts for a given part."""
+    try:
+        finder = AlternativeFinderAgent()
+        criteria = {
+            "same_footprint": same_footprint,
+            "lower_cost": lower_cost
+        }
+        alternatives = finder.find_alternatives(part_id, criteria)
+        return {"alternatives": alternatives}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/cost")
+async def analyze_cost(request: Request):
+    """Analyze BOM cost and suggest optimizations."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        
+        optimizer = CostOptimizerAgent()
+        analysis = optimizer.analyze_bom_cost(bom_items)
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/supply-chain")
+async def analyze_supply_chain(request: Request):
+    """Analyze supply chain risks."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        
+        agent = SupplyChainAgent()
+        analysis = agent.analyze_supply_chain(bom_items)
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/power")
+async def analyze_power(request: Request):
+    """Calculate power consumption."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        operating_modes = data.get("operating_modes", {})
+        
+        calculator = PowerCalculatorAgent()
+        analysis = calculator.calculate_power_consumption(bom_items, operating_modes)
+        
+        # If battery capacity provided, estimate battery life
+        battery_capacity = data.get("battery_capacity_mah")
+        battery_voltage = data.get("battery_voltage", 3.7)
+        if battery_capacity:
+            battery_life = calculator.estimate_battery_life(
+                analysis["total_power"],
+                battery_capacity,
+                battery_voltage
+            )
+            analysis["battery_life"] = battery_life
+        
+        return analysis
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/validation/design")
+async def validate_design(request: Request):
+    """Validate design against industry standards."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        connections = data.get("connections", [])
+        
+        validator = DesignValidatorAgent()
+        validation = validator.validate_design(bom_items, connections)
+        
+        # Get auto-fix suggestions
+        auto_fix = AutoFixAgent()
+        fix_suggestions = auto_fix.suggest_fixes(validation.get("issues", []), bom_items)
+        fix_suggestions.extend(auto_fix.suggest_missing_footprints(bom_items))
+        fix_suggestions.extend(auto_fix.suggest_missing_msl(bom_items))
+        
+        validation["fix_suggestions"] = fix_suggestions
+        
+        return validation
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/auto-fix/suggest")
+async def suggest_fixes(request: Request):
+    """Get suggestions to fix validation issues."""
+    try:
+        data = await request.json()
+        validation_issues = data.get("issues", [])
+        bom_items = data.get("bom_items", [])
+        
+        auto_fix = AutoFixAgent()
+        suggestions = auto_fix.suggest_fixes(validation_issues, bom_items)
+        suggestions.extend(auto_fix.suggest_missing_footprints(bom_items))
+        suggestions.extend(auto_fix.suggest_missing_msl(bom_items))
+        
+        return {"suggestions": suggestions}
+    except Exception as e:
+        return {"error": str(e)}
+
+
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=3001)
+    # Read PORT from environment (Railway sets this automatically)
+    port = int(os.environ.get("PORT", 3001))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 

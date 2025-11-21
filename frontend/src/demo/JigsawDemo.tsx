@@ -21,6 +21,7 @@ import PCBViewer from "./components/PCBViewer";
 import PartsList from "./components/PartsList";
 import DesignChat from "./components/DesignChat";
 import SettingsPanel from "./components/SettingsPanel";
+import BOMInsights from "./components/BOMInsights";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";
 
@@ -52,6 +53,8 @@ export default function JigsawDemo({
   const [analysisQuery, setAnalysisQuery] = useState<string>(initialQuery);
   const [provider, setProvider] = useState<"openai" | "xai">("openai");
   const [parts, setParts] = useState<PartObject[]>([]);
+  const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis">("design");
+  const [connections, setConnections] = useState<any[]>([]);
   const [selectedComponents, setSelectedComponents] = useState<
     Map<
       string,
@@ -336,36 +339,99 @@ export default function JigsawDemo({
           </div>
         </motion.div>
 
-        {/* Right Panel - Parts List */}
+        {/* Right Panel - Tabs with Parts List / Analysis */}
         <motion.div
           initial={{ x: 20, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.4 }}
           className="w-[24vw] min-w-[320px] max-w-[480px] border-l border-zinc-800 bg-zinc-900/30 flex flex-col overflow-hidden h-full"
         >
+          {/* Tab Navigation */}
+          <div className="flex border-b border-zinc-800 bg-zinc-900/50">
+            <button
+              onClick={() => setActiveTab("design")}
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "design"
+                  ? "text-neon-teal border-b-2 border-neon-teal bg-zinc-900/70"
+                  : "text-neutral-blue hover:text-white"
+              }`}
+            >
+              Design
+            </button>
+            <button
+              onClick={() => setActiveTab("bom")}
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "bom"
+                  ? "text-neon-teal border-b-2 border-neon-teal bg-zinc-900/70"
+                  : "text-neutral-blue hover:text-white"
+              }`}
+            >
+              BOM
+            </button>
+            <button
+              onClick={() => setActiveTab("analysis")}
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "analysis"
+                  ? "text-neon-teal border-b-2 border-neon-teal bg-zinc-900/70"
+                  : "text-neutral-blue hover:text-white"
+              }`}
+            >
+              Analysis
+            </button>
+          </div>
+
+          {/* Tab Content */}
           <div className="flex-1 overflow-y-auto min-h-0">
-            <PartsList 
-              parts={parts}
-              onQuantityChange={(mpn, quantity) => {
-                setParts(prev => prev.map(p => p.mpn === mpn ? { ...p, quantity } : p));
-              }}
-              onPartRemove={(mpn) => {
-                setParts(prev => prev.filter(p => p.mpn !== mpn));
-                setSelectedComponents(prev => {
-                  const newMap = new Map(prev);
-                  for (const [key, value] of prev.entries()) {
-                    if (value.partData?.mpn === mpn) {
-                      newMap.delete(key);
+            {activeTab === "design" && (
+              <div className="p-4">
+                <h3 className="text-lg font-semibold text-white mb-4">Design View</h3>
+                <p className="text-sm text-neutral-blue">
+                  Use the left panel to see component selection reasoning, and the center panel to visualize the PCB layout.
+                </p>
+              </div>
+            )}
+            {activeTab === "bom" && (
+              <PartsList 
+                parts={parts}
+                onQuantityChange={(mpn, quantity) => {
+                  setParts(prev => prev.map(p => p.mpn === mpn ? { ...p, quantity } : p));
+                }}
+                onPartRemove={(mpn) => {
+                  setParts(prev => prev.filter(p => p.mpn !== mpn));
+                  setSelectedComponents(prev => {
+                    const newMap = new Map(prev);
+                    for (const [key, value] of prev.entries()) {
+                      if (value.partData?.mpn === mpn) {
+                        newMap.delete(key);
+                      }
                     }
-                  }
-                  return newMap;
-                });
-              }}
-              onNoteChange={(mpn, note) => {
-                // Notes are stored locally in PartsList component
-                // Could be extended to store in parent state if needed
-              }}
-            />
+                    return newMap;
+                  });
+                }}
+                onNoteChange={(mpn, note) => {
+                  // Notes are stored locally in PartsList component
+                  // Could be extended to store in parent state if needed
+                }}
+              />
+            )}
+            {activeTab === "analysis" && (
+              <BOMInsights 
+                parts={parts} 
+                connections={connections}
+                onPartAdd={(part) => {
+                  // Add part to the BOM
+                  setParts(prev => {
+                    const existingIndex = prev.findIndex(p => p.mpn === part.mpn);
+                    if (existingIndex >= 0) {
+                      return prev.map((p, idx) => 
+                        idx === existingIndex ? { ...p, quantity: (p.quantity || 1) + 1 } : p
+                      );
+                    }
+                    return [...prev, { ...part, quantity: part.quantity || 1 }];
+                  });
+                }}
+              />
+            )}
           </div>
         </motion.div>
       </div>

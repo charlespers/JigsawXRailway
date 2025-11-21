@@ -195,15 +195,18 @@ export default function ComponentGraph({
 
           newMap.set(update.componentId!, updated);
 
-          // Notify parent of selection with hierarchy offset
+          // Notify parent of selection with hierarchy offset (defer to avoid render warning)
           if (onComponentSelected && update.partData) {
             const baseOffset = localHighestHierarchyRef.current >= 0 ? localHighestHierarchyRef.current + 1 : 0;
-            onComponentSelected(
-              update.componentId!,
-              update.partData,
-              update.position,
-              baseOffset
-            );
+            // Use setTimeout to defer the callback and avoid React render warning
+            setTimeout(() => {
+              onComponentSelected(
+                update.componentId!,
+                update.partData,
+                update.position,
+                baseOffset
+              );
+            }, 0);
           }
 
           return newMap;
