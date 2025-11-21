@@ -114,10 +114,11 @@ Railway will host both:
 5. Go to **"Deploy"** tab
 6. Railway should auto-detect:
    - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npx serve -s dist -l $PORT`
+   - **Start Command**: `npx serve -s dist -l 0.0.0.0:$PORT`
 7. If not auto-detected, set manually:
    - **Build Command**: `npm install && npm run build`
-   - **Start Command**: `npx serve -s dist -l $PORT`
+   - **Start Command**: `npx serve -s dist -l 0.0.0.0:$PORT`
+   - **Important**: Use `0.0.0.0:$PORT` (not just `$PORT`) so Railway can route traffic correctly
 8. Click **"Redeploy"** button
 9. Railway should now detect Node.js and start building!
 
