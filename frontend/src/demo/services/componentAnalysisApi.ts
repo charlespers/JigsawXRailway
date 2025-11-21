@@ -272,7 +272,7 @@ async function mockStartAnalysis(
   _query: string,
   _config: ComponentAnalysisConfig,
   onUpdate: (update: ComponentAnalysisResponse) => void,
-  _signal?: AbortSignal,
+  signal?: AbortSignal,
   contextQueryId?: string,
   _context?: string
 ): Promise<void> {

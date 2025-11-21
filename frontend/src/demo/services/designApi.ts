@@ -76,7 +76,7 @@ async function mockQuery(
 
 async function mockContinue(
   request: DesignContinueRequest,
-  _config: DesignApiConfig
+  config: DesignApiConfig
 ): Promise<DesignContinueResponse> {
   await new Promise((resolve) =>
     setTimeout(resolve, 9000 + Math.random() * 11000)
@@ -106,7 +106,7 @@ async function mockContinue(
 
 async function realQuery(
   request: DesignQueryRequest,
-  _config: DesignApiConfig,
+  config: DesignApiConfig,
   signal?: AbortSignal
 ): Promise<DesignQueryResponse> {
   const controller = signal ? undefined : new AbortController();
@@ -165,7 +165,7 @@ async function realQuery(
 
 async function realContinue(
   request: DesignContinueRequest,
-  _config: DesignApiConfig,
+  config: DesignApiConfig,
   signal?: AbortSignal
 ): Promise<DesignContinueResponse> {
   const controller = signal ? undefined : new AbortController();

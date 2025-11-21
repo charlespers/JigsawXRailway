@@ -54,7 +54,7 @@ export default function JigsawDemo({
   const [provider, setProvider] = useState<"openai" | "xai">("openai");
   const [parts, setParts] = useState<PartObject[]>([]);
   const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis">("design");
-  const [_connections, _setConnections] = useState<any[]>([]);
+  const [connections] = useState<any[]>([]);
   const [selectedComponents, setSelectedComponents] = useState<
     Map<
       string,
