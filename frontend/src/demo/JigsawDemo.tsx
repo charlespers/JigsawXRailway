@@ -66,6 +66,7 @@ export default function JigsawDemo({
   const [previousDesign, setPreviousDesign] = useState<PartObject[] | null>(null);
   const [connections] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const [designHealth, setDesignHealth] = useState<{
     healthScore: number;
     healthLevel: string;
@@ -283,12 +284,35 @@ export default function JigsawDemo({
 
   // Handle query sent from chat - start analysis
   const handleQuerySent = (query: string, selectedProvider: "openai" | "xai" = "openai") => {
-    // Reset if this is a new query (different from previous)
-    if (previousQueryRef.current !== query && previousQueryRef.current !== "") {
+    // Get or create session ID
+    let currentSessionId = sessionId;
+    if (!currentSessionId) {
+      const storedSessionId = localStorage.getItem("jigsaw_session_id");
+      if (storedSessionId) {
+        currentSessionId = storedSessionId;
+        setSessionId(storedSessionId);
+      }
+    }
+    
+    // Only reset if this is clearly a new design request (not a follow-up question)
+    // Check if query looks like a new design vs. a question/refinement
+    const isNewDesign = !query.toLowerCase().includes("?") && 
+                        !query.toLowerCase().includes("what") &&
+                        !query.toLowerCase().includes("how") &&
+                        !query.toLowerCase().includes("change") &&
+                        !query.toLowerCase().includes("replace") &&
+                        (previousQueryRef.current === "" || 
+                         (previousQueryRef.current !== query && parts.length === 0));
+    
+    if (isNewDesign) {
       setParts([]);
       setSelectedComponents(new Map());
       highestHierarchyRef.current = -1;
+      // Clear session for new design
+      localStorage.removeItem("jigsaw_session_id");
+      setSessionId(null);
     }
+    
     previousQueryRef.current = query;
     setProvider(selectedProvider);
     setAnalysisQuery(query);

@@ -19,7 +19,15 @@ import {
 } from "../services/analysisApi";
 // Helper function to convert backend part data to PartObject
 function convertPartDataToPartObject(partData: any): PartObject {
+  // Generate a unique componentId for suggested parts (auto-fix suggestions)
+  // Use the part ID or MPN as the componentId, prefixed with "suggested_" to distinguish
+  const componentId = partData.componentId || 
+                      partData.id || 
+                      partData.mfr_part_number || 
+                      `suggested_${partData.mfr_part_number || partData.id || Date.now()}`;
+  
   return {
+    componentId, // CRITICAL: Required field for PartObject
     mpn: partData.mfr_part_number || partData.id || "",
     manufacturer: partData.manufacturer || "",
     description: partData.description || "",

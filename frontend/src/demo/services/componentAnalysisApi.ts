@@ -68,6 +68,7 @@ async function realStartAnalysis(
       provider: "openai" | "xai";
       contextQueryId?: string;
       context?: string;
+      sessionId?: string;
     } = { 
       query,
       provider: provider || "openai"
@@ -76,6 +77,13 @@ async function realStartAnalysis(
     if (contextQueryId && context) {
       requestBody.contextQueryId = contextQueryId;
       requestBody.context = context;
+    }
+    
+    // Extract sessionId from response headers if available (will be set after first request)
+    // For now, we'll get it from localStorage or generate new one
+    const storedSessionId = localStorage.getItem("jigsaw_session_id");
+    if (storedSessionId) {
+      requestBody.sessionId = storedSessionId;
     }
 
     const url = `${config.baseUrl}${config.analysisEndpoint}`;
@@ -89,6 +97,12 @@ async function realStartAnalysis(
     });
 
     if (timeoutId) clearTimeout(timeoutId);
+
+    // Extract sessionId from response headers and store it
+    const responseSessionId = response.headers.get("X-Session-Id");
+    if (responseSessionId) {
+      localStorage.setItem("jigsaw_session_id", responseSessionId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text().catch(() => "Unknown error");

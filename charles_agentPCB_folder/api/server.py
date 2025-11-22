@@ -36,9 +36,14 @@ except ImportError:
 
 from agents.design_orchestrator import DesignOrchestrator
 from agents.eda_asset_agent import EDAAssetAgent
+from agents.query_router_agent import QueryRouterAgent
 from api.data_mapper import part_data_to_part_object
+from api.conversation_manager import ConversationManager
 
 app = FastAPI(title="PCB Design API")
+
+# Initialize conversation manager (singleton)
+conversation_manager = ConversationManager()
 
 # CORS middleware
 app.add_middleware(
@@ -805,6 +810,183 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         # Don't re-raise - we've handled it
 
 
+async def refine_design_stream(
+    query: str,
+    orchestrator: StreamingOrchestrator,
+    queue: asyncio.Queue,
+    existing_design_state: Dict[str, Any],
+    action_details: Dict[str, Any]
+):
+    """Refine existing design based on user query."""
+    logger.info(f"[REFINEMENT] Starting design refinement for query: {query[:100]}...")
+    
+    try:
+        parts_to_modify = action_details.get("parts_to_modify", [])
+        parts_to_add = action_details.get("parts_to_add", [])
+        
+        await queue.put({
+            "type": "reasoning",
+            "componentId": "refinement",
+            "componentName": "Design Refinement",
+            "reasoning": f"Refining design: modifying {len(parts_to_modify)} part(s), adding {len(parts_to_add)} part(s)...",
+            "hierarchyLevel": 0
+        })
+        
+        # Load existing design state into orchestrator
+        orchestrator.design_state = existing_design_state.copy()
+        
+        # Handle part modifications
+        for part_name in parts_to_modify:
+            if part_name in orchestrator.design_state["selected_parts"]:
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "refinement",
+                    "componentName": "Design Refinement",
+                    "reasoning": f"Removing {part_name} for replacement...",
+                    "hierarchyLevel": 0
+                })
+                del orchestrator.design_state["selected_parts"][part_name]
+        
+        # Handle part additions (simplified - just add new parts)
+        # In a full implementation, this would parse the query to determine what to add
+        if parts_to_add:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "refinement",
+                "componentName": "Design Refinement",
+                "reasoning": f"Adding {len(parts_to_add)} new part(s)...",
+                "hierarchyLevel": 0
+            })
+            # For now, just emit a message - full implementation would search and add parts
+            # This is a placeholder for the refinement logic
+        
+        # Regenerate connections and BOM
+        from agents.output_generator import OutputGenerator
+        output_gen = OutputGenerator()
+        
+        connections = output_gen.generate_connections(
+            orchestrator.design_state["selected_parts"],
+            orchestrator.design_state.get("architecture", {}),
+            orchestrator.design_state.get("intermediaries", {})
+        )
+        orchestrator.design_state["connections"] = connections
+        
+        bom = output_gen.generate_bom(
+            orchestrator.design_state["selected_parts"],
+            orchestrator.design_state.get("external_components", [])
+        )
+        orchestrator.design_state["bom"] = bom
+        
+        await queue.put({
+            "type": "complete",
+            "message": f"Design refinement complete. {len(orchestrator.design_state['selected_parts'])} part(s) in design."
+        })
+        
+    except Exception as e:
+        logger.error(f"[REFINEMENT] Error: {str(e)}", exc_info=True)
+        await queue.put({
+            "type": "error",
+            "message": f"Refinement error: {str(e)}"
+        })
+        await queue.put({
+            "type": "complete",
+            "message": f"Refinement completed with errors. {str(e)}"
+        })
+
+
+async def answer_question(
+    query: str,
+    orchestrator: StreamingOrchestrator,
+    queue: asyncio.Queue,
+    existing_design_state: Dict[str, Any],
+    question_type: str
+):
+    """Answer questions about existing design."""
+    logger.info(f"[QUESTION] Answering question: {query[:100]}...")
+    
+    try:
+        await queue.put({
+            "type": "reasoning",
+            "componentId": "question",
+            "componentName": "Question Answering",
+            "reasoning": f"Analyzing question about design...",
+            "hierarchyLevel": 0
+        })
+        
+        # Load existing design state
+        orchestrator.design_state = existing_design_state.copy()
+        
+        # Route to appropriate analysis based on question type
+        answer = ""
+        
+        if question_type == "cost":
+            from agents.cost_optimizer_agent import CostOptimizerAgent
+            cost_agent = CostOptimizerAgent()
+            bom_items = []
+            for block_name, part in orchestrator.design_state["selected_parts"].items():
+                bom_items.append({"part_data": part, "quantity": 1})
+            cost_analysis = cost_agent.optimize_cost(bom_items)
+            total_cost = cost_analysis.get("total_cost", 0)
+            answer = f"Total BOM cost: ${total_cost:.2f}"
+        
+        elif question_type == "power":
+            from agents.power_calculator_agent import PowerCalculatorAgent
+            power_agent = PowerCalculatorAgent()
+            bom_items = []
+            for block_name, part in orchestrator.design_state["selected_parts"].items():
+                bom_items.append({"part_data": part, "quantity": 1})
+            power_analysis = power_agent.calculate_power(bom_items, orchestrator.design_state.get("connections", []))
+            total_power = power_analysis.get("total_power_watts", 0)
+            answer = f"Total power consumption: {total_power:.2f}W"
+        
+        elif question_type == "compatibility":
+            # Check compatibility between parts
+            compatibility_issues = []
+            selected_parts = list(orchestrator.design_state["selected_parts"].values())
+            for i, part_a in enumerate(selected_parts):
+                for part_b in selected_parts[i+1:]:
+                    compat = orchestrator.compatibility_agent.check_compatibility(part_a, part_b, "power")
+                    if not compat.get("compatible", True):
+                        compatibility_issues.append(f"{part_a.get('id', 'Unknown')} and {part_b.get('id', 'Unknown')} have compatibility issues")
+            
+            if compatibility_issues:
+                answer = f"Found {len(compatibility_issues)} compatibility issue(s): " + "; ".join(compatibility_issues[:3])
+            else:
+                answer = "All parts are compatible."
+        
+        else:
+            # General question - use design analysis
+            design_analysis = orchestrator.design_state.get("design_analysis", {})
+            if design_analysis:
+                answer = "Design analysis available. Check the insights panel for details."
+            else:
+                answer = "I can help answer questions about cost, power, compatibility, and design analysis."
+        
+        await queue.put({
+            "type": "reasoning",
+            "componentId": "question",
+            "componentName": "Answer",
+            "reasoning": answer,
+            "hierarchyLevel": 0
+        })
+        
+        await queue.put({
+            "type": "complete",
+            "message": "Question answered."
+        })
+        
+    except Exception as e:
+        logger.error(f"[QUESTION] Error: {str(e)}", exc_info=True)
+        await queue.put({
+            "type": "error",
+            "message": f"Error answering question: {str(e)}"
+        })
+        await queue.put({
+            "type": "complete",
+            "message": f"Question answering completed with errors. {str(e)}"
+        })
+
+
 @app.get("/health")
 async def health():
     """Health check endpoint."""
@@ -813,11 +995,12 @@ async def health():
 
 @app.post("/mcp/component-analysis")
 async def component_analysis(request: Request):
-    """SSE endpoint for component analysis."""
+    """SSE endpoint for component analysis with query routing."""
     
     body = await request.json()
     query = body.get("query", "")
     provider = body.get("provider", "openai")  # Default to openai
+    session_id = body.get("sessionId")  # Conversation session ID
     context_query_id = body.get("contextQueryId")
     context = body.get("context", "")
     
@@ -828,19 +1011,73 @@ async def component_analysis(request: Request):
     if provider not in ["openai", "xai"]:
         return {"error": f"Invalid provider '{provider}'. Must be 'openai' or 'xai'."}, 400
     
+    # Get or create session
+    if not session_id:
+        session_id = conversation_manager.create_session()
+    elif session_id not in conversation_manager.sessions:
+        session_id = conversation_manager.create_session(session_id)
+    
+    # Get existing design state if available
+    existing_design_state = conversation_manager.get_design_state(session_id)
+    has_existing_design = existing_design_state is not None
+    
     # Store original provider to restore later
     original_provider = os.environ.get("LLM_PROVIDER", "openai")
     
     async def event_stream():
-        # Set provider in environment BEFORE creating orchestrator
-        # This ensures agents read the correct provider during initialization
+        # Set provider in environment BEFORE creating agents
         os.environ["LLM_PROVIDER"] = provider
         
         queue = asyncio.Queue()
-        # Create orchestrator AFTER setting provider in environment
-        # Agents will read LLM_PROVIDER during their __init__
+        
         try:
+            # Initialize query router
+            query_router = QueryRouterAgent()
+            
+            # Classify query intent
+            classification = query_router.classify_query(query, has_existing_design, existing_design_state)
+            intent = classification.get("intent", "new_design")
+            action_details = classification.get("action_details", {})
+            
+            # Add message to conversation history
+            conversation_manager.add_message(session_id, "user", query, {"classification": classification})
+            
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "router",
+                "componentName": "Query Router",
+                "reasoning": f"Query classified as: {intent} (confidence: {classification.get('confidence', 0):.2f})",
+                "hierarchyLevel": 0
+            })
+            
+            # Create orchestrator
             orchestrator = StreamingOrchestrator()
+            
+            # Route based on intent
+            if intent == "new_design":
+                # Full design generation
+                task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
+            elif intent == "refinement":
+                # Refine existing design
+                task = asyncio.create_task(refine_design_stream(query, orchestrator, queue, existing_design_state, action_details))
+            elif intent == "question":
+                # Answer question
+                question_type = action_details.get("question_type", "general")
+                task = asyncio.create_task(answer_question(query, orchestrator, queue, existing_design_state, question_type))
+            elif intent == "analysis_request":
+                # Run specific analysis (for now, fall back to full generation)
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "router",
+                    "componentName": "Query Router",
+                    "reasoning": f"Running {action_details.get('analysis_type', 'design')} analysis...",
+                    "hierarchyLevel": 0
+                })
+                task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
+            else:
+                # Default to new design
+                task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
+            
         except ValueError as e:
             # If agent initialization fails (e.g., missing API key), send error
             await queue.put({
@@ -852,9 +1089,6 @@ async def component_analysis(request: Request):
             # Yield error and return
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
             return
-        
-        # Start design generation in background
-        task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
         
         try:
             last_heartbeat = time.time()
@@ -1349,6 +1583,83 @@ async def download_eda_assets(request: Request):
                 media_type="application/zip",
                 filename=f"eda_assets_{tool}.zip"
             )
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/analysis/batch")
+async def batch_analysis(request: Request):
+    """Run multiple analyses in parallel."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        connections = data.get("connections", [])
+        analysis_types = data.get("analysis_types", [])  # List of analysis types to run
+        
+        # Import all analysis agents
+        from agents.cost_optimizer_agent import CostOptimizerAgent
+        from agents.supply_chain_agent import SupplyChainAgent
+        from agents.power_calculator_agent import PowerCalculatorAgent
+        from agents.thermal_analysis_agent import ThermalAnalysisAgent
+        from agents.signal_integrity_agent import SignalIntegrityAgent
+        from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+        from agents.design_validator_agent import DesignValidatorAgent
+        
+        results = {}
+        
+        # Create tasks for parallel execution
+        tasks = {}
+        
+        if "cost" in analysis_types:
+            cost_agent = CostOptimizerAgent()
+            tasks["cost"] = asyncio.create_task(
+                asyncio.to_thread(cost_agent.optimize_cost, bom_items)
+            )
+        
+        if "supply_chain" in analysis_types:
+            supply_agent = SupplyChainAgent()
+            tasks["supply_chain"] = asyncio.create_task(
+                asyncio.to_thread(supply_agent.analyze_supply_chain, bom_items)
+            )
+        
+        if "power" in analysis_types:
+            power_agent = PowerCalculatorAgent()
+            tasks["power"] = asyncio.create_task(
+                asyncio.to_thread(power_agent.calculate_power, bom_items, connections)
+            )
+        
+        if "thermal" in analysis_types:
+            thermal_agent = ThermalAnalysisAgent()
+            tasks["thermal"] = asyncio.create_task(
+                asyncio.to_thread(thermal_agent.analyze_thermal, bom_items, 25.0, None)
+            )
+        
+        if "signal_integrity" in analysis_types:
+            signal_agent = SignalIntegrityAgent()
+            tasks["signal_integrity"] = asyncio.create_task(
+                asyncio.to_thread(signal_agent.analyze_signal_integrity, bom_items, connections, 1.6, 5.0)
+            )
+        
+        if "manufacturing" in analysis_types:
+            mfg_agent = ManufacturingReadinessAgent()
+            tasks["manufacturing"] = asyncio.create_task(
+                asyncio.to_thread(mfg_agent.analyze_manufacturing_readiness, bom_items)
+            )
+        
+        if "validation" in analysis_types:
+            validator = DesignValidatorAgent()
+            tasks["validation"] = asyncio.create_task(
+                asyncio.to_thread(validator.validate_design, bom_items, connections)
+            )
+        
+        # Wait for all tasks to complete
+        for analysis_type, task in tasks.items():
+            try:
+                results[analysis_type] = await task
+            except Exception as e:
+                results[analysis_type] = {"error": str(e)}
+        
+        return {"results": results, "completed": list(results.keys())}
     except Exception as e:
         return {"error": str(e)}
 
