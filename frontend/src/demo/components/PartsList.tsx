@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, Search } from "lucide-react";
+import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, Search, Upload } from "lucide-react";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Separator } from "../ui/separator";
@@ -14,13 +14,15 @@ interface PartsListProps {
   onQuantityChange?: (mpn: string, quantity: number) => void;
   onPartRemove?: (mpn: string) => void;
   onNoteChange?: (mpn: string, note: string) => void;
+  onLoadDesign?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export default function PartsList({ 
   parts = [], 
   onQuantityChange,
   onPartRemove,
-  onNoteChange 
+  onNoteChange,
+  onLoadDesign
 }: PartsListProps) {
   const [editingNotes, setEditingNotes] = useState<Map<string, boolean>>(new Map());
   const [notes, setNotes] = useState<Map<string, string>>(new Map());
@@ -527,7 +529,26 @@ export default function PartsList({
             <div className="text-xs text-zinc-500 text-center">
               Unit price • Bulk discounts available
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
+              {onLoadDesign && (
+                <label className="flex-1 min-w-[120px]">
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={onLoadDesign}
+                    className="hidden"
+                  />
+                  <Button 
+                    className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+                    asChild
+                  >
+                    <span>
+                      <Upload className="w-4 h-4 mr-2" />
+                      Import Design
+                    </span>
+                  </Button>
+                </label>
+              )}
               <Button 
                 className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white"
                 onClick={() => {

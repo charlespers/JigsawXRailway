@@ -493,9 +493,19 @@ export default function JigsawDemo({
     });
   };
 
-  const handleAnalysisComplete = () => {
+  const handleAnalysisComplete = useCallback(() => {
     setIsAnalyzing(false);
-  };
+    // Show success message with part count - use current parts state
+    // Use setTimeout to ensure parts state is updated after all selection events
+    setTimeout(() => {
+      const partCount = parts.length;
+      if (partCount > 0) {
+        showToast(`✓ Design complete! ${partCount} part(s) selected.`, "success", 4000);
+      } else {
+        showToast("Analysis complete. No parts were selected.", "info", 3000);
+      }
+    }, 500); // Delay to ensure all selection events have been processed
+  }, [parts.length, showToast]);
 
   // Load settings from localStorage
   useEffect(() => {
@@ -677,6 +687,7 @@ export default function JigsawDemo({
                   // Notes are stored locally in PartsList component
                   // Could be extended to store in parent state if needed
                 }}
+                onLoadDesign={handleLoadDesign}
               />
             )}
             {activeTab === "analysis" && (
@@ -692,17 +703,54 @@ export default function JigsawDemo({
                   parts={parts} 
                   connections={connections}
                   onPartAdd={(part) => {
-                    // Add part to the BOM
+                    // CRITICAL: Ensure part has componentId
+                    const partWithComponentId = {
+                      ...part,
+                      componentId: part.componentId || `added_${Date.now()}`,
+                      quantity: part.quantity || 1
+                    };
+                    
+                    // Add part to the BOM (parts array)
                     setParts(prev => {
-                      const existingIndex = prev.findIndex(p => p.mpn === part.mpn);
+                      const existingIndex = prev.findIndex(p => p.mpn === part.mpn && p.componentId === partWithComponentId.componentId);
                       if (existingIndex >= 0) {
-                        return prev.map((p, idx) => 
+                        const updated = prev.map((p, idx) => 
                           idx === existingIndex ? { ...p, quantity: (p.quantity || 1) + 1 } : p
                         );
+                        // Save history with updated parts
+                        saveToHistory(updated);
+                        return updated;
                       }
-                      return [...prev, { ...part, quantity: part.quantity || 1 }];
+                      const updated = [...prev, partWithComponentId];
+                      // Save history with updated parts
+                      saveToHistory(updated);
+                      return updated;
                     });
-                    saveToHistory(parts);
+                    
+                    // CRITICAL: Also add to selectedComponents Map for PCBViewer visualization
+                    setSelectedComponents(prev => {
+                      const newMap = new Map(prev);
+                      const existingComponents = Array.from(prev.values()).map((c) => ({
+                        id: c.id,
+                        position: c.position,
+                        size: c.size,
+                      }));
+                      
+                      const organizedPosition = calculateComponentPosition(
+                        partWithComponentId.componentId,
+                        existingComponents,
+                        prev.size
+                      );
+                      
+                      newMap.set(partWithComponentId.componentId, {
+                        id: partWithComponentId.componentId,
+                        label: part.mpn.split("-")[0] || partWithComponentId.componentId,
+                        position: organizedPosition,
+                        partData: partWithComponentId,
+                      });
+                      return newMap;
+                    });
+                    
                     showToast(`Added ${part.mpn} to BOM`, "success", 2000);
                   }}
                 />
