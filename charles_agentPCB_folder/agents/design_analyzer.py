@@ -94,8 +94,13 @@ class DesignAnalyzer:
                     "power": power
                 }
         
-        # Calculate total power
-        total_power = sum(rail_current * voltage for voltage, rail_current in power_rails.items())
+        # Calculate total power - ensure all values are floats
+        total_power = 0.0
+        for voltage, rail_current in power_rails.items():
+            # Ensure both are floats
+            voltage_float = float(voltage) if not isinstance(voltage, dict) else 0.0
+            current_float = float(rail_current) if not isinstance(rail_current, dict) else 0.0
+            total_power += voltage_float * current_float
         
         # Find power-hungry components
         power_hungry = []
@@ -111,15 +116,19 @@ class DesignAnalyzer:
         # Sort by power consumption
         power_hungry.sort(key=lambda x: x["power_watts"], reverse=True)
         
+        # Build power rails dict - ensure all values are floats
+        power_rails_dict = {}
+        for voltage, current in power_rails.items():
+            voltage_float = float(voltage) if not isinstance(voltage, dict) else 0.0
+            current_float = float(current) if not isinstance(current, dict) else 0.0
+            power_rails_dict[f"{voltage_float}V"] = {
+                "voltage": voltage_float,
+                "current_amps": round(current_float, 3),
+                "power_watts": round(voltage_float * current_float, 3)
+            }
+        
         return {
-            "power_rails": {
-                f"{voltage}V": {
-                    "voltage": voltage,
-                    "current_amps": round(current, 3),
-                    "power_watts": round(voltage * current, 3)
-                }
-                for voltage, current in power_rails.items()
-            },
+            "power_rails": power_rails_dict,
             "total_power_watts": round(total_power, 3),
             "component_power": component_power,
             "power_hungry_components": power_hungry

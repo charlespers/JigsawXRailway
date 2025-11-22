@@ -96,12 +96,12 @@ async def _process_block_async(
         "type": "reasoning",
         "componentId": block_type,
         "componentName": block_name,
-        "reasoning": f"Processing {block_name}...",
+        "reasoning": f"Processing {block_name} with engineering analysis...",
         "hierarchyLevel": hierarchy_level
     })
     
     try:
-        # Part selection with timeout
+        # Part selection with timeout and engineering analysis
         try:
             part = await asyncio.wait_for(
                 asyncio.to_thread(orchestrator._select_supporting_part, block, expanded_requirements, requirements),
@@ -134,6 +134,45 @@ async def _process_block_async(
                 "hierarchyLevel": hierarchy_level
             })
             return
+        
+        # Engineering analysis: Check lifecycle status before proceeding
+        lifecycle = part.get("lifecycle_status", "active")
+        if lifecycle != "active":
+            await queue.put({
+                "type": "reasoning",
+                "componentId": block_type,
+                "componentName": block_name,
+                "reasoning": f"⚠️ Warning: {part.get('id', block_name)} has lifecycle status '{lifecycle}'. Consider alternatives for production.",
+                "hierarchyLevel": hierarchy_level
+            })
+        
+        # Engineering analysis: Check availability
+        availability = part.get("availability_status", "unknown")
+        if availability != "in_stock":
+            await queue.put({
+                "type": "reasoning",
+                "componentId": block_type,
+                "componentName": block_name,
+                "reasoning": f"⚠️ Availability: {part.get('id', block_name)} status is '{availability}'. Check lead times.",
+                "hierarchyLevel": hierarchy_level
+            })
+        
+        # Engineering analysis: Quick power check
+        voltage_range = part.get("supply_voltage_range", {})
+        current_max = part.get("current_max", {})
+        if isinstance(voltage_range, dict) and isinstance(current_max, dict):
+            voltage = voltage_range.get("nominal") or voltage_range.get("max", 0)
+            current = current_max.get("max") or current_max.get("typical", 0)
+            if isinstance(voltage, (int, float)) and isinstance(current, (int, float)):
+                power_estimate = float(voltage) * float(current)
+                if power_estimate > 1.0:  # > 1W
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": block_type,
+                        "componentName": block_name,
+                        "reasoning": f"Power analysis: {part.get('id', block_name)} consumes ~{power_estimate:.2f}W - ensure adequate power supply and thermal management.",
+                        "hierarchyLevel": hierarchy_level
+                    })
         
         # Part found - process it (compatibility checks, etc.)
         part_mpn = part.get("mpn", part.get("id", ""))
@@ -722,9 +761,24 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             hierarchy_level += 1
         
         # Step 6: Enrich with datasheets
+        await queue.put({
+            "type": "reasoning",
+            "componentId": "enrichment",
+            "componentName": "Design Enrichment",
+            "reasoning": "Enriching parts with datasheet data and engineering metadata...",
+            "hierarchyLevel": 0
+        })
         orchestrator._enrich_parts_with_datasheets()
         
         # Step 7: Generate outputs
+        await queue.put({
+            "type": "reasoning",
+            "componentId": "output",
+            "componentName": "Output Generation",
+            "reasoning": "Generating connections and BOM with engineering analysis...",
+            "hierarchyLevel": 0
+        })
+        
         connections = orchestrator.output_generator.generate_connections(
             orchestrator.design_state["selected_parts"],
             architecture,
@@ -738,21 +792,88 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         )
         orchestrator.design_state["bom"] = bom
         
-        # Design analysis
+        # Step 8: Comprehensive Engineering Analysis (in parallel where possible)
         await queue.put({
             "type": "reasoning",
             "componentId": "analysis",
-            "componentName": "Design Analysis",
-            "reasoning": "Performing power consumption analysis, thermal analysis, and design rule checks...",
+            "componentName": "Engineering Analysis",
+            "reasoning": "Performing comprehensive engineering analysis: power, thermal, design validation, and recommendations...",
             "hierarchyLevel": 0
         })
         
-        design_analysis = orchestrator.design_analyzer.analyze_design(
-            orchestrator.design_state["selected_parts"],
-            connections,
-            orchestrator.design_state["compatibility_results"]
-        )
-        orchestrator.design_state["design_analysis"] = design_analysis
+        # Run design analysis (includes power, thermal, DRC)
+        try:
+            design_analysis = await asyncio.wait_for(
+                asyncio.to_thread(
+                    orchestrator.design_analyzer.analyze_design,
+                    orchestrator.design_state["selected_parts"],
+                    connections,
+                    orchestrator.design_state["compatibility_results"]
+                ),
+                timeout=15.0
+            )
+            orchestrator.design_state["design_analysis"] = design_analysis
+            
+            # Emit key findings
+            power_analysis = design_analysis.get("power_analysis", {})
+            total_power = power_analysis.get("total_power_watts", 0)
+            if total_power > 0:
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "analysis",
+                    "componentName": "Power Analysis",
+                    "reasoning": f"✓ Power analysis complete: Total consumption {total_power:.2f}W across {len(power_analysis.get('power_rails', {}))} voltage rail(s).",
+                    "hierarchyLevel": 0
+                })
+            
+            thermal_analysis = design_analysis.get("thermal_analysis", {})
+            thermal_issues = thermal_analysis.get("thermal_issues", [])
+            if thermal_issues:
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "analysis",
+                    "componentName": "Thermal Analysis",
+                    "reasoning": f"⚠️ Thermal analysis: {len(thermal_issues)} thermal issue(s) identified. Review component placement and thermal management.",
+                    "hierarchyLevel": 0
+                })
+            
+            drc_results = design_analysis.get("design_rule_checks", {})
+            error_count = drc_results.get("error_count", 0)
+            warning_count = drc_results.get("warning_count", 0)
+            if error_count > 0 or warning_count > 0:
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "analysis",
+                    "componentName": "Design Validation",
+                    "reasoning": f"✓ Design validation: {error_count} error(s), {warning_count} warning(s). Review recommendations.",
+                    "hierarchyLevel": 0
+                })
+            
+            recommendations = design_analysis.get("recommendations", [])
+            if recommendations:
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "analysis",
+                    "componentName": "Design Recommendations",
+                    "reasoning": f"✓ Generated {len(recommendations)} engineering recommendation(s) for design optimization.",
+                    "hierarchyLevel": 0
+                })
+        except asyncio.TimeoutError:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "analysis",
+                "componentName": "Engineering Analysis",
+                "reasoning": "Engineering analysis timeout. Basic design complete, but detailed analysis skipped.",
+                "hierarchyLevel": 0
+            })
+        except Exception as e:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "analysis",
+                "componentName": "Engineering Analysis",
+                "reasoning": f"Engineering analysis error: {str(e)}. Design complete with basic validation.",
+                "hierarchyLevel": 0
+            })
         
         # Mark completion at the end
         await queue.put({

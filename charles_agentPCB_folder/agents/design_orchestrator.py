@@ -350,9 +350,90 @@ class DesignOrchestrator:
             preferences=preferences
         )
         
-        if ranked:
-            return ranked[0]["part"]
-        return None
+        if not ranked:
+            return None
+        
+        # Engineering analysis: Evaluate top candidates with engineering criteria
+        # Score candidates based on multiple engineering factors
+        scored_candidates = []
+        for candidate in ranked[:5]:  # Evaluate top 5 candidates
+            part = candidate["part"]
+            score = candidate.get("score", 0.0)
+            
+            # Engineering scoring factors
+            # 1. Lifecycle status (prefer active)
+            lifecycle = part.get("lifecycle_status", "unknown")
+            if lifecycle == "active":
+                score += 20
+            elif lifecycle in ["eol", "obsolete", "nrnd"]:
+                score -= 50
+            
+            # 2. Availability (prefer in stock)
+            availability = part.get("availability_status", "unknown")
+            if availability == "in_stock":
+                score += 15
+            elif availability in ["limited", "backorder"]:
+                score -= 10
+            
+            # 3. Power efficiency (lower power is better for battery applications)
+            voltage_range = part.get("supply_voltage_range", {})
+            current_max = part.get("current_max", {})
+            if isinstance(voltage_range, dict) and isinstance(current_max, dict):
+                voltage = voltage_range.get("nominal") or voltage_range.get("max", 0)
+                current = current_max.get("typical") or current_max.get("max", 0)
+                if isinstance(voltage, (int, float)) and isinstance(current, (int, float)):
+                    power = float(voltage) * float(current)
+                    # Lower power gets bonus (for battery-powered designs)
+                    if power < 0.1:  # < 100mW
+                        score += 10
+                    elif power > 1.0:  # > 1W
+                        score -= 5
+            
+            # 4. Package preference (SMT preferred for modern designs)
+            package = part.get("package", "").upper()
+            if any(pkg in package for pkg in ["QFN", "QFP", "SOT", "0603", "0805", "1206"]):
+                score += 5
+            elif "DIP" in package or "THROUGH" in package:
+                score -= 5  # Through-hole is less preferred
+            
+            # 5. Thermal characteristics (lower thermal resistance is better)
+            thermal_resistance = part.get("thermal_resistance", {})
+            if isinstance(thermal_resistance, dict):
+                theta_ja = thermal_resistance.get("theta_ja") or thermal_resistance.get("junction_to_ambient")
+                if theta_ja and isinstance(theta_ja, (int, float)):
+                    if theta_ja < 50:  # Good thermal performance
+                        score += 5
+                    elif theta_ja > 100:  # Poor thermal performance
+                        score -= 5
+            
+            # 6. Cost consideration (prefer lower cost if available)
+            cost_estimate = part.get("cost_estimate", {})
+            if isinstance(cost_estimate, dict):
+                cost = cost_estimate.get("value") or cost_estimate.get("unit", 0)
+                if isinstance(cost, (int, float)):
+                    if cost < 1.0:  # Low cost
+                        score += 5
+                    elif cost > 10.0:  # High cost
+                        score -= 5
+            
+            # 7. Documentation quality (parts with recommended external components are better)
+            if part.get("recommended_external_components"):
+                score += 10
+            
+            scored_candidates.append({
+                "part": part,
+                "score": score
+            })
+        
+        # Sort by engineering score (highest first)
+        scored_candidates.sort(key=lambda x: x["score"], reverse=True)
+        
+        # Return best engineering candidate
+        if scored_candidates:
+            return scored_candidates[0]["part"]
+        
+        # Fallback to original ranking
+        return ranked[0]["part"]
     
     def _enrich_parts_with_datasheets(self):
         """Enrich all selected parts with datasheet data."""
