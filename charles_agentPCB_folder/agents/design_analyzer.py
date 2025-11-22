@@ -3,8 +3,38 @@ Design Analyzer Agent
 Performs power consumption analysis, thermal analysis, and design rule checks
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, Any, List, Optional, Union
 from collections import defaultdict
+
+
+def safe_float_extract(value: Any, default: float = 0.0) -> float:
+    """
+    Safely extract a float value from nested dicts or direct values.
+    Recursively extracts until a number is found.
+    """
+    if value is None:
+        return default
+    
+    # If already a number, return it
+    if isinstance(value, (int, float)):
+        return float(value)
+    
+    # If it's a dict, recursively extract
+    if isinstance(value, dict):
+        # Try common keys
+        for key in ["value", "nominal", "max", "typical", "min"]:
+            if key in value:
+                return safe_float_extract(value[key], default)
+        # If no common keys, try first value
+        if value:
+            return safe_float_extract(next(iter(value.values())), default)
+        return default
+    
+    # Try to convert to float
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
 
 
 class DesignAnalyzer:
@@ -59,35 +89,49 @@ class DesignAnalyzer:
         power_rails = defaultdict(float)  # voltage -> current
         component_power = {}  # component_id -> power consumption
         
+        # Ensure selected_parts is a dict, not a list
+        if not isinstance(selected_parts, dict):
+            # If it's a list, convert to dict
+            if isinstance(selected_parts, list):
+                selected_parts = {f"part_{i}": part for i, part in enumerate(selected_parts) if isinstance(part, dict)}
+            else:
+                return {
+                    "power_rails": {},
+                    "total_power_watts": 0.0,
+                    "component_power": {},
+                    "power_hungry_components": []
+                }
+        
         # Analyze each component
         for block_name, part_data in selected_parts.items():
+            # Ensure part_data is a dict
+            if not isinstance(part_data, dict):
+                continue  # Skip invalid entries
+            
             part_id = part_data.get("id", block_name)
             
-            # Get supply voltage
+            # Get supply voltage - use safe extraction
             supply_range = part_data.get("supply_voltage_range", {})
             if isinstance(supply_range, dict):
-                voltage = supply_range.get("nominal") or supply_range.get("value")
-                # Ensure voltage is a float, not a dict
-                if isinstance(voltage, dict):
-                    voltage = voltage.get("value") or voltage.get("nominal") or 0.0
-                voltage = float(voltage) if voltage else 0.0
+                voltage = safe_float_extract(supply_range.get("nominal") or supply_range.get("value") or supply_range.get("max"))
             else:
-                voltage = float(supply_range) if supply_range else 0.0
+                voltage = safe_float_extract(supply_range)
             
-            # Get current consumption
+            # Get current consumption - use safe extraction
             current_max = part_data.get("current_max", {})
             if isinstance(current_max, dict):
-                current = current_max.get("max") or current_max.get("typical", 0.0)
-                # Ensure current is a float, not a dict
-                if isinstance(current, dict):
-                    current = current.get("value") or current.get("max") or 0.0
-                current = float(current) if current else 0.0
+                current = safe_float_extract(current_max.get("max") or current_max.get("typical") or current_max.get("value"))
             else:
-                current = float(current_max) if current_max else 0.0
+                current = safe_float_extract(current_max)
             
-            if voltage and current > 0:
-                power = voltage * current
-                power_rails[voltage] += current
+            # Ensure voltage is a valid float for use as dict key
+            if not isinstance(voltage, (int, float)) or voltage <= 0:
+                continue  # Skip this part if voltage is invalid
+            
+            if voltage > 0 and current > 0:
+                power = float(voltage) * float(current)
+                # Use float voltage as key to ensure it's hashable
+                power_rails[float(voltage)] += float(current)
                 component_power[part_id] = {
                     "voltage": voltage,
                     "current": current,
@@ -96,21 +140,26 @@ class DesignAnalyzer:
         
         # Calculate total power - ensure all values are floats
         total_power = 0.0
-        for voltage, rail_current in power_rails.items():
-            # Ensure both are floats
-            voltage_float = float(voltage) if not isinstance(voltage, dict) else 0.0
-            current_float = float(rail_current) if not isinstance(rail_current, dict) else 0.0
-            total_power += voltage_float * current_float
+        for voltage_key, rail_current in power_rails.items():
+            # Use safe extraction for both key and value
+            voltage_float = safe_float_extract(voltage_key)
+            current_float = safe_float_extract(rail_current)
+            
+            # Final check before multiplication
+            if voltage_float > 0 and current_float > 0:
+                total_power += voltage_float * current_float
         
         # Find power-hungry components
         power_hungry = []
         for part_id, power_info in component_power.items():
-            if power_info["power"] > 0.5:  # > 500mW
+            # Use safe extraction for power values
+            power_watts = safe_float_extract(power_info.get("power", 0.0))
+            if power_watts > 0.5:  # > 500mW
                 power_hungry.append({
                     "part_id": part_id,
-                    "power_watts": round(power_info["power"], 3),
-                    "voltage": power_info["voltage"],
-                    "current_amps": power_info["current"]
+                    "power_watts": round(power_watts, 3),
+                    "voltage": safe_float_extract(power_info.get("voltage", 0.0)),
+                    "current_amps": safe_float_extract(power_info.get("current", 0.0))
                 })
         
         # Sort by power consumption
@@ -118,14 +167,17 @@ class DesignAnalyzer:
         
         # Build power rails dict - ensure all values are floats
         power_rails_dict = {}
-        for voltage, current in power_rails.items():
-            voltage_float = float(voltage) if not isinstance(voltage, dict) else 0.0
-            current_float = float(current) if not isinstance(current, dict) else 0.0
-            power_rails_dict[f"{voltage_float}V"] = {
-                "voltage": voltage_float,
-                "current_amps": round(current_float, 3),
-                "power_watts": round(voltage_float * current_float, 3)
-            }
+        for voltage_key, current_value in power_rails.items():
+            # Use safe extraction
+            voltage_float = safe_float_extract(voltage_key)
+            current_float = safe_float_extract(current_value)
+            
+            if voltage_float > 0:  # Only add valid rails
+                power_rails_dict[f"{voltage_float}V"] = {
+                    "voltage": voltage_float,
+                    "current_amps": round(current_float, 3),
+                    "power_watts": round(voltage_float * current_float, 3)
+                }
         
         return {
             "power_rails": power_rails_dict,
@@ -162,18 +214,30 @@ class DesignAnalyzer:
                     theta_ja = thermal_resistance
                 
                 max_temp = part_data.get("max_junction_temp") or part_data.get("max_operating_temp")
+                max_temp_value = None
                 if isinstance(max_temp, dict):
                     max_temp_value = max_temp.get("max") or max_temp.get("value")
+                    # Recursively extract if still a dict
+                    while isinstance(max_temp_value, dict):
+                        max_temp_value = max_temp_value.get("value") or max_temp_value.get("max") or None
                 else:
                     max_temp_value = max_temp
                 
+                # Ensure max_temp_value is a float
+                if max_temp_value is not None:
+                    try:
+                        max_temp_value = float(max_temp_value)
+                    except (ValueError, TypeError):
+                        max_temp_value = None
+                
                 # Calculate junction temperature (assuming 25°C ambient)
                 ambient_temp = 25.0
-                if theta_ja and power_dissipation > 0:
-                    junction_temp = ambient_temp + (power_dissipation * theta_ja)
+                theta_ja_float = safe_float_extract(theta_ja) if theta_ja is not None else None
+                if theta_ja_float and theta_ja_float > 0 and power_dissipation > 0:
+                    junction_temp = ambient_temp + (power_dissipation * theta_ja_float)
                     
                     thermal_ok = True
-                    if max_temp_value and junction_temp > max_temp_value:
+                    if max_temp_value is not None and max_temp_value > 0 and junction_temp > max_temp_value:
                         thermal_ok = False
                         thermal_issues.append({
                             "part_id": part_id,
@@ -186,7 +250,7 @@ class DesignAnalyzer:
                     component_thermal[part_id] = {
                         "power_dissipation_w": round(power_dissipation, 3),
                         "junction_temp_c": round(junction_temp, 1),
-                        "max_temp_c": max_temp_value,
+                        "max_temp_c": max_temp_value if max_temp_value is not None else 0.0,
                         "thermal_ok": thermal_ok
                     }
                 
@@ -210,6 +274,18 @@ class DesignAnalyzer:
         compatibility_results: Dict[str, Any],
         power_analysis: Dict[str, Any]
     ) -> Dict[str, Any]:
+        # Ensure selected_parts is a dict
+        if not isinstance(selected_parts, dict):
+            if isinstance(selected_parts, list):
+                selected_parts = {f"part_{i}": part for i, part in enumerate(selected_parts) if isinstance(part, dict)}
+            else:
+                return {
+                    "errors": [],
+                    "warnings": [],
+                    "error_count": 0,
+                    "warning_count": 0,
+                    "passed": True
+                }
         """Perform design rule checks."""
         drc_errors = []
         drc_warnings = []
@@ -239,9 +315,25 @@ class DesignAnalyzer:
         
         # Check power supply adequacy
         power_rails = power_analysis.get("power_rails", {})
+        # Ensure selected_parts is a dict
+        if not isinstance(selected_parts, dict):
+            if isinstance(selected_parts, list):
+                selected_parts = {f"part_{i}": part for i, part in enumerate(selected_parts) if isinstance(part, dict)}
+            else:
+                return {
+                    "errors": drc_errors,
+                    "warnings": drc_warnings,
+                    "error_count": len(drc_errors),
+                    "warning_count": len(drc_warnings),
+                    "passed": len(drc_errors) == 0
+                }
+        
         for rail_name, rail_info in power_rails.items():
             # Find power supply for this rail
             for block_name, part_data in selected_parts.items():
+                # Ensure part_data is a dict
+                if not isinstance(part_data, dict):
+                    continue
                 category = part_data.get("category", "")
                 if "regulator" in category:
                     output_voltage = part_data.get("output_voltage")
@@ -250,15 +342,50 @@ class DesignAnalyzer:
                     else:
                         reg_voltage = output_voltage
                     
-                    if reg_voltage and abs(reg_voltage - rail_info["voltage"]) < 0.1:
+                    # Ensure reg_voltage is a float
+                    if isinstance(reg_voltage, dict):
+                        reg_voltage = reg_voltage.get("value") or reg_voltage.get("nominal") or reg_voltage.get("max") or 0.0
+                    try:
+                        reg_voltage = float(reg_voltage) if reg_voltage else 0.0
+                    except (ValueError, TypeError):
+                        reg_voltage = 0.0
+                    
+                    # Ensure rail_info["voltage"] is a float
+                    rail_voltage = rail_info.get("voltage", 0.0)
+                    if isinstance(rail_voltage, dict):
+                        rail_voltage = rail_voltage.get("value") or rail_voltage.get("nominal") or rail_voltage.get("max") or 0.0
+                    try:
+                        rail_voltage = float(rail_voltage) if rail_voltage else 0.0
+                    except (ValueError, TypeError):
+                        rail_voltage = 0.0
+                    
+                    if reg_voltage > 0 and rail_voltage > 0 and abs(reg_voltage - rail_voltage) < 0.1:
                         # Check current capacity
                         reg_current = part_data.get("current_max", {})
+                        reg_current_max = 0.0
                         if isinstance(reg_current, dict):
-                            reg_current_max = reg_current.get("max") or reg_current.get("typical", 0)
+                            reg_current_max = reg_current.get("max") or reg_current.get("typical") or 0.0
+                            # Recursively extract if still a dict
+                            while isinstance(reg_current_max, dict):
+                                reg_current_max = reg_current_max.get("value") or reg_current_max.get("max") or reg_current_max.get("typical") or 0.0
                         else:
-                            reg_current_max = float(reg_current) if reg_current else 0
+                            reg_current_max = reg_current or 0.0
                         
-                        if reg_current_max > 0 and rail_info["current_amps"] > reg_current_max * 0.9:
+                        try:
+                            reg_current_max = float(reg_current_max) if reg_current_max else 0.0
+                        except (ValueError, TypeError):
+                            reg_current_max = 0.0
+                        
+                        # Ensure rail_info["current_amps"] is a float
+                        rail_current_amps = rail_info.get("current_amps", 0.0)
+                        if isinstance(rail_current_amps, dict):
+                            rail_current_amps = rail_current_amps.get("value") or rail_current_amps.get("max") or 0.0
+                        try:
+                            rail_current_amps = float(rail_current_amps) if rail_current_amps else 0.0
+                        except (ValueError, TypeError):
+                            rail_current_amps = 0.0
+                        
+                        if reg_current_max > 0 and rail_current_amps > 0 and rail_current_amps > reg_current_max * 0.9:
                             drc_warnings.append({
                                 "type": "power_supply_margin",
                                 "block": block_name,

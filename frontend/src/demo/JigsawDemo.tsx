@@ -533,6 +533,16 @@ export default function JigsawDemo({
             >
               Analysis
             </button>
+            <button
+              onClick={() => setActiveTab("templates")}
+              className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                activeTab === "templates"
+                  ? "text-neon-teal border-b-2 border-neon-teal bg-zinc-900/70"
+                  : "text-neutral-blue hover:text-white"
+              }`}
+            >
+              Templates
+            </button>
           </div>
 
           {/* Tab Content */}
@@ -625,6 +635,7 @@ export default function JigsawDemo({
             )}
           </div>
         </motion.div>
+      </div>
       </div>
     </ErrorBoundary>
   );
