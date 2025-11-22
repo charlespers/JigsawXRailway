@@ -60,6 +60,7 @@ export default function JigsawDemo({
   const [parts, setParts] = useState<PartObject[]>([]);
   const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis">("design");
   const [connections] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [selectedComponents, setSelectedComponents] = useState<
     Map<
       string,
@@ -302,7 +303,7 @@ export default function JigsawDemo({
           </div>
         )}
         <SettingsPanel
-        backendUrl={backendUrl}
+        backendUrl={backendUrl || configService.getBackendUrl()}
         defaultProvider={provider}
         onBackendUrlChange={(url) => {
           componentAnalysisApi.updateConfig({ baseUrl: url });
