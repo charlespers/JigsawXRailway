@@ -7,6 +7,8 @@ import {
   ArrowRight,
   AlertCircle,
   Brain,
+  AlertTriangle,
+  RefreshCw,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
 import {
@@ -36,6 +38,8 @@ interface ComponentNode {
   reasoning: string[]; // Array of reasoning snippets
   hierarchyLevel: number;
   partData?: any;
+  compatibilityWarnings?: string[];
+  compatibleAlternatives?: any[];
 }
 
 export default function ComponentGraph({

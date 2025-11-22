@@ -101,6 +101,40 @@ export interface DesignValidation {
   };
 }
 
+export interface DesignHealthScore {
+  design_health_score: number;
+  health_level: string;
+  health_breakdown: {
+    validation: {
+      score: number;
+      status: string;
+      errors: number;
+      warnings: number;
+    };
+    supply_chain: {
+      score: number;
+      status: string;
+      risk_score: number;
+    };
+    manufacturing: {
+      score: number;
+      status: string;
+      readiness: string;
+    };
+    thermal: {
+      score: number;
+      status: string;
+      critical_issues: number;
+      warnings: number;
+    };
+    cost: {
+      score: number;
+      status: string;
+      optimization_opportunities: number;
+    };
+  };
+}
+
 /**
  * Compare multiple parts
  */

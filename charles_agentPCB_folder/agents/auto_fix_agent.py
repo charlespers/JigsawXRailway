@@ -1,14 +1,73 @@
 """
 Auto-Fix Agent
-Suggests parts to fix design validation issues
+Suggests parts to fix design validation issues with intelligent matching
 """
 
+import json
+import os
+import sys
+from pathlib import Path
 from typing import List, Dict, Any, Optional
+import requests
+from requests.exceptions import Timeout as RequestsTimeout
+
 from utils.part_database import search_parts, get_all_parts
+
+# Add development_demo/utils to path for config access
+sys.path.insert(0, str(Path(__file__).parent.parent))
+try:
+    from utils.config import load_config
+except ImportError:
+    load_config = None
 
 
 class AutoFixAgent:
-    """Suggests parts to fix design validation issues."""
+    """Suggests parts to fix design validation issues with intelligent matching."""
+    
+    def __init__(self):
+        """Initialize with LLM configuration for intelligent fixes."""
+        if load_config:
+            try:
+                config = load_config()
+                self.api_key = config.get("api_key")
+                self.endpoint = config.get("endpoint")
+                self.model = config.get("model")
+                self.temperature = config.get("temperature", 0.2)
+                self.provider = config.get("provider", "openai")
+            except Exception:
+                provider = os.getenv("LLM_PROVIDER", "openai").lower()
+                if provider == "xai":
+                    self.api_key = os.getenv("XAI_API_KEY")
+                    self.endpoint = "https://api.x.ai/v1/chat/completions"
+                    self.model = os.getenv("XAI_MODEL", "grok-3")
+                    self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
+                else:
+                    self.api_key = os.getenv("OPENAI_API_KEY")
+                    self.endpoint = "https://api.openai.com/v1/chat/completions"
+                    self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+                    self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
+                self.provider = provider
+        else:
+            provider = os.getenv("LLM_PROVIDER", "openai").lower()
+            if provider == "xai":
+                self.api_key = os.getenv("XAI_API_KEY")
+                self.endpoint = "https://api.x.ai/v1/chat/completions"
+                self.model = os.getenv("XAI_MODEL", "grok-3")
+                self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
+            else:
+                self.api_key = os.getenv("OPENAI_API_KEY")
+                self.endpoint = "https://api.openai.com/v1/chat/completions"
+                self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+                self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
+            self.provider = provider
+        
+        if self.api_key:
+            self.headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+        else:
+            self.headers = None
     
     def suggest_fixes(
         self,

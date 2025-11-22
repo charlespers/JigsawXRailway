@@ -94,9 +94,21 @@ class DesignReviewAgent:
             manufacturing_readiness
         )
         
+        # Calculate design health score (more user-friendly than maturity)
+        health_score = self._calculate_health_score(
+            maturity_score, validation, supply_chain_analysis,
+            cost_analysis, thermal_analysis, manufacturing_readiness
+        )
+        
         return {
             "design_maturity_score": round(maturity_score, 1),
+            "design_health_score": round(health_score, 1),
             "maturity_level": self._get_maturity_level(maturity_score),
+            "health_level": self._get_health_level(health_score),
+            "health_breakdown": self._get_health_breakdown(
+                validation, supply_chain_analysis, cost_analysis,
+                thermal_analysis, manufacturing_readiness
+            ),
             "risk_assessment": risk_assessment,
             "approval_status": approval_status,
             "approval_required": approval_status in ["requires_review", "not_approved"],
@@ -307,4 +319,123 @@ class DesignReviewAgent:
             recommendations.append("Design is close to production-ready but needs refinement")
         
         return recommendations
+    
+    def _calculate_health_score(
+        self,
+        maturity_score: float,
+        validation: Dict[str, Any],
+        supply_chain: Dict[str, Any],
+        cost: Dict[str, Any],
+        thermal: Dict[str, Any],
+        manufacturing: Dict[str, Any]
+    ) -> float:
+        """Calculate design health score (0-100) with category breakdown."""
+        # Start with maturity score as base
+        health = maturity_score
+        
+        # Adjust based on critical issues
+        validation_errors = len([i for i in validation.get("issues", []) if i.get("severity") == "error"])
+        health -= validation_errors * 5  # -5 points per error
+        
+        # Adjust for supply chain risks
+        supply_risk = supply_chain.get("overall_risk_score", 0)
+        if supply_risk > 70:
+            health -= 10
+        elif supply_risk > 50:
+            health -= 5
+        
+        # Adjust for manufacturing readiness
+        mfg_readiness = manufacturing.get("overall_readiness", "unknown")
+        if mfg_readiness == "not_ready":
+            health -= 15
+        elif mfg_readiness == "needs_improvement":
+            health -= 8
+        
+        # Adjust for thermal issues
+        thermal_critical = sum(1 for h in thermal.get("thermal_hotspots", []) if h.get("severity") == "critical")
+        if thermal_critical > 0:
+            health -= thermal_critical * 3
+        
+        return max(0.0, min(100.0, health))
+    
+    def _get_health_level(self, score: float) -> str:
+        """Get health level description."""
+        if score >= 90:
+            return "Excellent"
+        elif score >= 75:
+            return "Good"
+        elif score >= 60:
+            return "Fair"
+        elif score >= 40:
+            return "Needs Improvement"
+        else:
+            return "Critical"
+    
+    def _get_health_breakdown(
+        self,
+        validation: Dict[str, Any],
+        supply_chain: Dict[str, Any],
+        cost: Dict[str, Any],
+        thermal: Dict[str, Any],
+        manufacturing: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Get health score breakdown by category."""
+        breakdown = {}
+        
+        # Validation health (0-100)
+        validation_errors = len([i for i in validation.get("issues", []) if i.get("severity") == "error"])
+        validation_warnings = len([i for i in validation.get("issues", []) if i.get("severity") == "warning"])
+        validation_score = max(0, 100 - (validation_errors * 20) - (validation_warnings * 5))
+        breakdown["validation"] = {
+            "score": round(validation_score, 1),
+            "status": "excellent" if validation_score >= 90 else "good" if validation_score >= 70 else "needs_improvement",
+            "errors": validation_errors,
+            "warnings": validation_warnings
+        }
+        
+        # Supply chain health (0-100)
+        supply_risk = supply_chain.get("overall_risk_score", 0)
+        supply_score = max(0, 100 - supply_risk)
+        breakdown["supply_chain"] = {
+            "score": round(supply_score, 1),
+            "status": "excellent" if supply_score >= 80 else "good" if supply_score >= 60 else "needs_improvement",
+            "risk_score": supply_risk
+        }
+        
+        # Manufacturing health (0-100)
+        mfg_readiness = manufacturing.get("overall_readiness", "unknown")
+        mfg_score = {
+            "ready": 100,
+            "needs_improvement": 70,
+            "not_ready": 30,
+            "unknown": 50
+        }.get(mfg_readiness, 50)
+        breakdown["manufacturing"] = {
+            "score": round(mfg_score, 1),
+            "status": mfg_readiness,
+            "readiness": mfg_readiness
+        }
+        
+        # Thermal health (0-100)
+        thermal_issues = thermal.get("thermal_hotspots", [])
+        thermal_critical = sum(1 for h in thermal_issues if h.get("severity") == "critical")
+        thermal_warning = sum(1 for h in thermal_issues if h.get("severity") == "warning")
+        thermal_score = max(0, 100 - (thermal_critical * 15) - (thermal_warning * 5))
+        breakdown["thermal"] = {
+            "score": round(thermal_score, 1),
+            "status": "excellent" if thermal_score >= 90 else "good" if thermal_score >= 70 else "needs_improvement",
+            "critical_issues": thermal_critical,
+            "warnings": thermal_warning
+        }
+        
+        # Cost health (0-100) - based on optimization opportunities
+        cost_opps = len(cost.get("optimization_opportunities", []))
+        cost_score = max(0, 100 - (cost_opps * 5))
+        breakdown["cost"] = {
+            "score": round(cost_score, 1),
+            "status": "excellent" if cost_score >= 90 else "good" if cost_score >= 70 else "needs_improvement",
+            "optimization_opportunities": cost_opps
+        }
+        
+        return breakdown
 

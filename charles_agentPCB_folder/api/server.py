@@ -968,6 +968,51 @@ async def analyze_power(request: Request):
         return {"error": str(e)}
 
 
+@app.post("/api/design-review/review")
+async def review_design(request: Request):
+    """Get comprehensive design review with health score."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        connections = data.get("connections", [])
+        design_metadata = data.get("design_metadata")
+        
+        agent = DesignReviewAgent()
+        review = agent.review_design(bom_items, connections, design_metadata)
+        return review
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/compatibility/check")
+async def check_compatibility(request: Request):
+    """Check compatibility between two parts."""
+    try:
+        data = await request.json()
+        part1 = data.get("part1", {})
+        part2 = data.get("part2", {})
+        
+        if not part1 or not part2:
+            return {"error": "Both part1 and part2 must be provided"}
+        
+        agent = CompatibilityAgent()
+        result = agent.check_compatibility(part1, part2)
+        
+        # Get alternatives if incompatible
+        alternatives = []
+        if not result.get("compatible", True):
+            alt_agent = AlternativeFinderAgent()
+            alternatives = alt_agent.find_alternatives(part1.get("id", ""), limit=3)
+        
+        return {
+            "compatible": result.get("compatible", True),
+            "warnings": result.get("warnings", []),
+            "alternatives": alternatives
+        }
+    except Exception as e:
+        return {"error": str(e)}
+
+
 @app.post("/api/validation/design")
 async def validate_design(request: Request):
     """Validate design against industry standards."""

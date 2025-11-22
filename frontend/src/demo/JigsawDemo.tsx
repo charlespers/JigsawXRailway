@@ -14,7 +14,7 @@
  * ```
  */
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion } from "motion/react";
 import ComponentGraph from "./components/ComponentGraph";
 import PCBViewer from "./components/PCBViewer";
@@ -24,6 +24,10 @@ import SettingsPanel from "./components/SettingsPanel";
 import BOMInsights from "./components/BOMInsights";
 import ErrorBoundary from "./components/ErrorBoundary";
 import ErrorDisplay from "./components/ErrorDisplay";
+import DesignHealthScore from "./components/DesignHealthScore";
+import DesignComparison from "./components/DesignComparison";
+import DesignTemplates from "./components/DesignTemplates";
+import { useToast } from "./components/Toast";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";
 import configService from "./services/config";
@@ -58,9 +62,18 @@ export default function JigsawDemo({
   const [analysisQuery, setAnalysisQuery] = useState<string>(initialQuery);
   const [provider, setProvider] = useState<"openai" | "xai">("openai");
   const [parts, setParts] = useState<PartObject[]>([]);
-  const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis">("design");
+  const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis" | "templates">("design");
+  const [previousDesign, setPreviousDesign] = useState<PartObject[] | null>(null);
   const [connections] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [designHealth, setDesignHealth] = useState<{
+    healthScore: number;
+    healthLevel: string;
+    healthBreakdown?: any;
+  } | null>(null);
+  const { showToast, ToastComponent } = useToast();
+  const [designHistory, setDesignHistory] = useState<PartObject[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   const [selectedComponents, setSelectedComponents] = useState<
     Map<
       string,
@@ -78,6 +91,126 @@ export default function JigsawDemo({
   // Track previous query to detect new queries
   const previousQueryRef = useRef<string>("");
   const highestHierarchyRef = useRef<number>(-1);
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toUpperCase().indexOf("MAC") >= 0;
+      const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+      
+      // Ctrl/Cmd + S: Save design
+      if (ctrlKey && e.key === "s") {
+        e.preventDefault();
+        handleSaveDesign();
+      }
+      
+      // Ctrl/Cmd + Z: Undo
+      if (ctrlKey && e.key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        handleUndo();
+      }
+      
+      // Ctrl/Cmd + Shift + Z: Redo
+      if (ctrlKey && e.key === "z" && e.shiftKey) {
+        e.preventDefault();
+        handleRedo();
+      }
+      
+      // Ctrl/Cmd + F: Focus search (if chat input exists)
+      if (ctrlKey && e.key === "f") {
+        e.preventDefault();
+        // Focus chat input if available
+        const chatInput = document.querySelector('textarea[placeholder*="query"], input[placeholder*="query"]') as HTMLElement;
+        if (chatInput) {
+          chatInput.focus();
+        }
+      }
+      
+      // Esc: Dismiss modals/panels
+      if (e.key === "Escape") {
+        setError(null);
+      }
+    };
+    
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [parts]);
+  
+  // Save design to history for undo/redo
+  const saveToHistory = useCallback((currentParts: PartObject[]) => {
+    setDesignHistory((prev) => {
+      const newHistory = prev.slice(0, historyIndex + 1);
+      newHistory.push([...currentParts]);
+      return newHistory.slice(-50); // Keep last 50 states
+    });
+    setHistoryIndex((prev) => Math.min(prev + 1, 49));
+  }, [historyIndex]);
+  
+  // Undo handler
+  const handleUndo = useCallback(() => {
+    if (historyIndex > 0) {
+      const previousParts = designHistory[historyIndex - 1];
+      setParts(previousParts);
+      setHistoryIndex((prev) => prev - 1);
+      showToast("Design undone", "info", 2000);
+    }
+  }, [historyIndex, designHistory, showToast]);
+  
+  // Redo handler
+  const handleRedo = useCallback(() => {
+    if (historyIndex < designHistory.length - 1) {
+      const nextParts = designHistory[historyIndex + 1];
+      setParts(nextParts);
+      setHistoryIndex((prev) => prev + 1);
+      showToast("Design redone", "info", 2000);
+    }
+  }, [historyIndex, designHistory, showToast]);
+  
+  // Save design handler
+  const handleSaveDesign = useCallback(() => {
+    const designData = {
+      parts,
+      connections,
+      query: analysisQuery,
+      timestamp: new Date().toISOString(),
+    };
+    
+    const blob = new Blob([JSON.stringify(designData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `design-${Date.now()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    showToast("Design saved successfully", "success", 3000);
+  }, [parts, connections, analysisQuery, showToast]);
+  
+  // Load design handler
+  const handleLoadDesign = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const designData = JSON.parse(e.target?.result as string);
+        if (designData.parts) {
+          setParts(designData.parts);
+          if (designData.query) {
+            setAnalysisQuery(designData.query);
+          }
+          saveToHistory(designData.parts);
+          showToast("Design loaded successfully", "success", 3000);
+        }
+      } catch (error) {
+        showToast("Failed to load design file", "error", 3000);
+      }
+    };
+    reader.readAsText(file);
+  }, [showToast, saveToHistory]);
 
   // Update query when initialQuery changes and auto-start analysis
   useEffect(() => {
@@ -437,27 +570,62 @@ export default function JigsawDemo({
               />
             )}
             {activeTab === "analysis" && (
-              <BOMInsights 
-                parts={parts} 
-                connections={connections}
-                onPartAdd={(part) => {
-                  // Add part to the BOM
-                  setParts(prev => {
-                    const existingIndex = prev.findIndex(p => p.mpn === part.mpn);
-                    if (existingIndex >= 0) {
-                      return prev.map((p, idx) => 
-                        idx === existingIndex ? { ...p, quantity: (p.quantity || 1) + 1 } : p
-                      );
-                    }
-                    return [...prev, { ...part, quantity: part.quantity || 1 }];
-                  });
-                }}
-              />
+              <div className="space-y-4 p-4 overflow-y-auto">
+                {designHealth && (
+                  <DesignHealthScore
+                    healthScore={designHealth.healthScore}
+                    healthLevel={designHealth.healthLevel}
+                    healthBreakdown={designHealth.healthBreakdown}
+                  />
+                )}
+                <BOMInsights 
+                  parts={parts} 
+                  connections={connections}
+                  onPartAdd={(part) => {
+                    // Add part to the BOM
+                    setParts(prev => {
+                      const existingIndex = prev.findIndex(p => p.mpn === part.mpn);
+                      if (existingIndex >= 0) {
+                        return prev.map((p, idx) => 
+                          idx === existingIndex ? { ...p, quantity: (p.quantity || 1) + 1 } : p
+                        );
+                      }
+                      return [...prev, { ...part, quantity: part.quantity || 1 }];
+                    });
+                    saveToHistory(parts);
+                    showToast(`Added ${part.mpn} to BOM`, "success", 2000);
+                  }}
+                />
+              </div>
+            )}
+            {activeTab === "templates" && (
+              <div className="space-y-4 p-4 overflow-y-auto">
+                <DesignTemplates
+                  onTemplateSelect={(query) => {
+                    // Save current design as previous
+                    setPreviousDesign([...parts]);
+                    // Start new design with template
+                    setAnalysisQuery(query);
+                    setIsAnalyzing(true);
+                    setActiveTab("design");
+                  }}
+                />
+                {previousDesign && (
+                  <DesignComparison
+                    currentDesign={{ parts, connections, query: analysisQuery }}
+                    previousDesign={{ parts: previousDesign, connections: [], query: "" }}
+                    onRevert={() => {
+                      setParts(previousDesign);
+                      setPreviousDesign(null);
+                      showToast("Reverted to previous design", "info", 2000);
+                    }}
+                  />
+                )}
+              </div>
             )}
           </div>
         </motion.div>
       </div>
-    </div>
     </ErrorBoundary>
   );
 }

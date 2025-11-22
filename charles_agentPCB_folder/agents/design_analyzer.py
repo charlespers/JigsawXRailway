@@ -321,7 +321,122 @@ class DesignAnalyzer:
         # Test point recommendations
         power_rails = power_analysis.get("power_rails", {})
         if len(power_rails) > 0:
-            recommendations.append("Add test points for all power rails (3V3, 5V, GND) for debugging")
+            recommendations.append("Consider adding test points for power rails for debugging")
+        
+        return recommendations
+    
+    def generate_actionable_recommendations(
+        self,
+        selected_parts: Dict[str, Dict[str, Any]],
+        analysis_results: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Generate specific, actionable recommendations with part suggestions.
+        
+        Args:
+            selected_parts: Dictionary of selected parts
+            analysis_results: Results from analyze_design
+        
+        Returns:
+            List of actionable recommendations, each with:
+            - issue_description: str
+            - suggested_parts: List[Dict] (optional)
+            - expected_improvement: str
+            - cost_impact: Dict (optional)
+            - priority: str ("high", "medium", "low")
+            - category: str ("power", "thermal", "compliance", etc.)
+        """
+        recommendations = []
+        
+        power_analysis = analysis_results.get("power_analysis", {})
+        thermal_analysis = analysis_results.get("thermal_analysis", {})
+        drc_results = analysis_results.get("design_rule_checks", {})
+        
+        # Power-related recommendations
+        total_power = power_analysis.get("total_power_watts", 0)
+        if total_power > 5.0:
+            recommendations.append({
+                "issue_description": f"High power consumption ({total_power:.2f}W) - ensure adequate power supply and thermal management",
+                "suggested_parts": [],  # Could suggest higher capacity regulators
+                "expected_improvement": "Prevent thermal issues and ensure stable operation",
+                "cost_impact": None,
+                "priority": "high",
+                "category": "power"
+            })
+        
+        power_hungry = power_analysis.get("power_hungry_components", [])
+        if power_hungry:
+            top_consumer = power_hungry[0]
+            recommendations.append({
+                "issue_description": f"High power consumer: {top_consumer['part_id']} ({top_consumer['power_watts']}W)",
+                "suggested_parts": [],  # Could suggest lower power alternatives
+                "expected_improvement": "Reduce overall power consumption and thermal load",
+                "cost_impact": None,
+                "priority": "medium",
+                "category": "power"
+            })
+        
+        # Thermal recommendations
+        thermal_issues = thermal_analysis.get("thermal_issues", [])
+        if thermal_issues:
+            critical_thermal = [t for t in thermal_issues if t.get("severity") == "critical"]
+            if critical_thermal:
+                recommendations.append({
+                    "issue_description": f"{len(critical_thermal)} critical thermal issue(s) identified",
+                    "suggested_parts": [],  # Could suggest heatsinks, thermal pads
+                    "expected_improvement": "Prevent component failure and improve reliability",
+                    "cost_impact": None,
+                    "priority": "high",
+                    "category": "thermal"
+                })
+        
+        # DRC recommendations
+        drc_errors = drc_results.get("errors", [])
+        if drc_errors:
+            recommendations.append({
+                "issue_description": f"{len(drc_errors)} design rule check error(s) must be resolved",
+                "suggested_parts": [],
+                "expected_improvement": "Ensure design meets manufacturing requirements",
+                "cost_impact": None,
+                "priority": "high",
+                "category": "compliance"
+            })
+        
+        drc_warnings = drc_results.get("warnings", [])
+        if drc_warnings:
+            recommendations.append({
+                "issue_description": f"{len(drc_warnings)} design rule check warning(s) - review recommended",
+                "suggested_parts": [],
+                "expected_improvement": "Improve design quality and manufacturability",
+                "cost_impact": None,
+                "priority": "medium",
+                "category": "compliance"
+            })
+        
+        # Missing components recommendations
+        missing_components = []
+        has_regulator = any("regulator" in p.get("category", "").lower() for p in selected_parts.values())
+        has_decoupling = any("capacitor" in p.get("category", "").lower() for p in selected_parts.values())
+        has_protection = any("protection" in p.get("category", "").lower() or "tvs" in p.get("category", "").lower() for p in selected_parts.values())
+        
+        if not has_regulator:
+            missing_components.append("power regulator")
+        if not has_decoupling:
+            missing_components.append("decoupling capacitors")
+        if not has_protection:
+            missing_components.append("ESD/TVS protection")
+        
+        if missing_components:
+            recommendations.append({
+                "issue_description": f"Missing recommended components: {', '.join(missing_components)}",
+                "suggested_parts": [],  # AutoFixAgent will populate these
+                "expected_improvement": "Improve design reliability and compliance",
+                "cost_impact": None,
+                "priority": "medium",
+                "category": "compliance"
+            })
+        
+        return recommendations("Add test points for all power rails (3V3, 5V, GND) for debugging")
         
         # General recommendations
         recommendations.append("Add decoupling capacitors close to all IC power pins")
