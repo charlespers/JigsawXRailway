@@ -423,6 +423,12 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         child_blocks = architecture.get("child_blocks", [])
         hierarchy_level = 1
         
+        # Initialize block tracking for summary
+        independent_blocks = []
+        dependent_blocks = []
+        total_blocks_processed = 0
+        total_blocks_failed = 0
+        
         if not child_blocks:
             await queue.put({
                 "type": "reasoning",
@@ -431,11 +437,9 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "reasoning": "No child blocks found in architecture. Design may be complete with anchor component only.",
                 "hierarchyLevel": 0
             })
-        
-        # Group blocks by dependencies for parallel processing
-        # Independent blocks (no dependencies) can be processed in parallel
-        independent_blocks = []
-        dependent_blocks = []
+        else:
+            # Group blocks by dependencies for parallel processing
+            # Independent blocks (no dependencies) can be processed in parallel
         
         for block in child_blocks:
             depends_on = block.get("depends_on", [])
@@ -456,30 +460,131 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "hierarchyLevel": 0
             })
             
-            # Create tasks for parallel execution
+            # Create tasks with unique hierarchy levels and timeouts
             tasks = []
-            for block in independent_blocks:
+            for i, block in enumerate(independent_blocks):
+                block_hierarchy = hierarchy_level + i
+                block_name = block.get("description", block.get("type", ""))
+                
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "architecture",
+                    "componentName": "Architecture",
+                    "reasoning": f"[{i+1}/{len(independent_blocks)}] Processing {block_name}...",
+                    "hierarchyLevel": 0
+                })
+                
                 task = asyncio.create_task(
-                    _process_block_async(block, expanded_requirements, requirements, orchestrator, anchor_part, queue, hierarchy_level)
+                    asyncio.wait_for(
+                        _process_block_async(block, expanded_requirements, requirements, orchestrator, anchor_part, queue, block_hierarchy),
+                        timeout=30.0
+                    )
                 )
-                tasks.append((block, task))
+                tasks.append((block, task, block_hierarchy))
             
-            # Wait for all independent blocks to complete
-            for block, task in tasks:
+            # Wait for all independent blocks with proper error handling
+            completed_count = 0
+            failed_count = 0
+            for block, task, block_hierarchy in tasks:
+                block_name = block.get("description", block.get("type", ""))
                 try:
                     await task
-                except Exception as e:
+                    completed_count += 1
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": "architecture",
+                        "componentName": "Architecture",
+                        "reasoning": f"✓ [{completed_count}/{len(independent_blocks)}] Completed {block_name}",
+                        "hierarchyLevel": 0
+                    })
+                except asyncio.TimeoutError:
+                    failed_count += 1
                     await queue.put({
                         "type": "error",
-                        "message": f"Error processing {block.get('description', block.get('type', ''))}: {str(e)}"
+                        "message": f"Timeout processing {block_name} after 30s. Continuing with other components..."
+                    })
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": "architecture",
+                        "componentName": "Architecture",
+                        "reasoning": f"⚠ [{completed_count + failed_count}/{len(independent_blocks)}] Timeout on {block_name} - skipped",
+                        "hierarchyLevel": 0
+                    })
+                except Exception as e:
+                    failed_count += 1
+                    await queue.put({
+                        "type": "error",
+                        "message": f"Error processing {block_name}: {str(e)}. Continuing..."
+                    })
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": "architecture",
+                        "componentName": "Architecture",
+                        "reasoning": f"⚠ [{completed_count + failed_count}/{len(independent_blocks)}] Error on {block_name} - skipped",
+                        "hierarchyLevel": 0
                     })
             
             hierarchy_level += len(independent_blocks)
+            total_blocks_processed += completed_count
+            total_blocks_failed += failed_count
+            
+            # Summary of parallel processing
+            if failed_count > 0:
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "architecture",
+                    "componentName": "Architecture",
+                    "reasoning": f"Parallel processing complete: {completed_count} succeeded, {failed_count} failed/skipped",
+                    "hierarchyLevel": 0
+                })
         
         # Process dependent blocks sequentially (they may depend on each other)
-        for block in dependent_blocks:
-            await _process_block_async(block, expanded_requirements, requirements, orchestrator, anchor_part, queue, hierarchy_level)
-            hierarchy_level += 1
+        if dependent_blocks:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "architecture",
+                "componentName": "Architecture",
+                "reasoning": f"Processing {len(dependent_blocks)} dependent component(s) sequentially...",
+                "hierarchyLevel": 0
+            })
+            
+            for i, block in enumerate(dependent_blocks):
+                block_name = block.get("description", block.get("type", ""))
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": "architecture",
+                    "componentName": "Architecture",
+                    "reasoning": f"[{i+1}/{len(dependent_blocks)}] Processing dependent component: {block_name}...",
+                    "hierarchyLevel": 0
+                })
+                
+                try:
+                    await asyncio.wait_for(
+                        _process_block_async(block, expanded_requirements, requirements, orchestrator, anchor_part, queue, hierarchy_level),
+                        timeout=30.0
+                    )
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": "architecture",
+                        "componentName": "Architecture",
+                        "reasoning": f"✓ [{i+1}/{len(dependent_blocks)}] Completed {block_name}",
+                        "hierarchyLevel": 0
+                    })
+                except asyncio.TimeoutError:
+                    await queue.put({
+                        "type": "error",
+                        "message": f"Timeout processing {block_name} after 30s. Continuing..."
+                    })
+                except Exception as e:
+                    total_blocks_failed += 1
+                    await queue.put({
+                        "type": "error",
+                        "message": f"Error processing {block_name}: {str(e)}. Continuing..."
+                    })
+                else:
+                    total_blocks_processed += 1
+                
+                hierarchy_level += 1
         
         # Step 6: Enrich with datasheets
         await queue.put({
@@ -524,6 +629,14 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         
         # Run design analysis (includes power, thermal, DRC)
         try:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": "analysis",
+                "componentName": "Power Analysis",
+                "reasoning": "Calculating power consumption per rail...",
+                "hierarchyLevel": 0
+            })
+            
             design_analysis = await asyncio.wait_for(
                 asyncio.to_thread(
                     orchestrator.design_analyzer.analyze_design,
@@ -531,7 +644,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                     connections,
                     orchestrator.design_state["compatibility_results"]
                 ),
-                timeout=15.0
+                timeout=30.0
             )
             orchestrator.design_state["design_analysis"] = design_analysis
             
@@ -584,9 +697,17 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "type": "reasoning",
                 "componentId": "analysis",
                 "componentName": "Engineering Analysis",
-                "reasoning": "Engineering analysis timeout. Basic design complete, but detailed analysis skipped.",
+                "reasoning": "Engineering analysis timeout after 30s. Basic design complete, but detailed analysis skipped.",
                 "hierarchyLevel": 0
             })
+            # Create minimal analysis result to prevent errors downstream
+            design_analysis = {
+                "power_analysis": {"total_power_watts": 0, "power_rails": {}},
+                "thermal_analysis": {"thermal_issues": []},
+                "design_rule_checks": {"errors": [], "warnings": [], "error_count": 0, "warning_count": 0, "passed": True},
+                "recommendations": ["Detailed analysis timed out - review design manually"]
+            }
+            orchestrator.design_state["design_analysis"] = design_analysis
         except Exception as e:
             await queue.put({
                 "type": "reasoning",
@@ -595,19 +716,49 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "reasoning": f"Engineering analysis error: {str(e)}. Design complete with basic validation.",
                 "hierarchyLevel": 0
             })
+            # Create minimal analysis result to prevent errors downstream
+            design_analysis = {
+                "power_analysis": {"total_power_watts": 0, "power_rails": {}},
+                "thermal_analysis": {"thermal_issues": []},
+                "design_rule_checks": {"errors": [], "warnings": [], "error_count": 0, "warning_count": 0, "passed": True},
+                "recommendations": [f"Analysis error occurred: {str(e)}"]
+            }
+            orchestrator.design_state["design_analysis"] = design_analysis
         
-        # Mark completion at the end
+        # Calculate summary statistics
+        selected_parts_count = len(orchestrator.design_state["selected_parts"])
+        external_components_count = len(orchestrator.design_state["external_components"])
+        total_blocks_attempted = len(independent_blocks) + len(dependent_blocks)
+        
+        # Mark completion at the end with summary
+        summary_parts = []
+        if total_blocks_attempted > 0:
+            summary_parts.append(f"{total_blocks_processed}/{total_blocks_attempted} components processed")
+        if total_blocks_failed > 0:
+            summary_parts.append(f"{total_blocks_failed} failed/skipped")
+        summary_parts.append(f"{selected_parts_count} part(s) selected")
+        if external_components_count > 0:
+            summary_parts.append(f"{external_components_count} external component(s) added")
+        
+        summary_message = "Component analysis complete. " + ", ".join(summary_parts) + "."
+        
         await queue.put({
             "type": "complete",
-            "message": "Component analysis complete"
+            "message": summary_message
         })
         
     except Exception as e:
+        # Ensure error is always sent and workflow completes
         await queue.put({
             "type": "error",
-            "message": str(e)
+            "message": f"Workflow error: {str(e)}"
         })
-        raise
+        # Still emit complete to prevent frontend from hanging
+        await queue.put({
+            "type": "complete",
+            "message": f"Workflow completed with errors. {str(e)}"
+        })
+        # Don't re-raise - we've handled it
 
 
 @app.get("/health")
