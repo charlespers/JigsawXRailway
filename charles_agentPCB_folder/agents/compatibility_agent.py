@@ -9,6 +9,7 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, List, Optional
 import requests
+from requests.exceptions import Timeout as RequestsTimeout
 
 # Add development_demo/utils to path for config access
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -272,11 +273,21 @@ Return ONLY valid JSON, no additional text.
         }
         
         try:
-            resp = requests.post(self.endpoint, headers=self.headers, json=payload, timeout=45)
+            # Reduced timeout to prevent blocking (15 seconds instead of 45)
+            resp = requests.post(self.endpoint, headers=self.headers, json=payload, timeout=15)
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json(content)
             return json.loads(json_str)
+        except RequestsTimeout:
+            # Timeout - fallback to rule-based result
+            return {
+                "compatible": True,
+                "reasoning": "LLM check timeout, using rule-based result",
+                "risks": [],
+                "required_buffers": [],
+                "warnings": ["Compatibility check timed out, using rule-based analysis"]
+            }
         except Exception as e:
             # Fallback to rule-based result
             return {

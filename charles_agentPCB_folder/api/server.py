@@ -26,6 +26,7 @@ except ImportError:
     pass
 
 from agents.design_orchestrator import DesignOrchestrator
+from agents.eda_asset_agent import EDAAssetAgent
 from api.data_mapper import part_data_to_part_object
 
 app = FastAPI(title="PCB Design API")
@@ -76,6 +77,189 @@ class StreamingOrchestrator(DesignOrchestrator):
                 "partData": part_object,
                 "hierarchyLevel": hierarchy_level
             })
+
+
+async def _process_block_async(
+    block: Dict[str, Any],
+    expanded_requirements: Dict[str, Any],
+    requirements: Dict[str, Any],
+    orchestrator: StreamingOrchestrator,
+    anchor_part: Optional[Dict[str, Any]],
+    queue: asyncio.Queue,
+    hierarchy_level: int
+):
+    """Process a single block (part selection, compatibility, etc.) - can be called in parallel."""
+    block_type = block.get("type", "")
+    block_name = block.get("description", block_type)
+    
+    await queue.put({
+        "type": "reasoning",
+        "componentId": block_type,
+        "componentName": block_name,
+        "reasoning": f"Processing {block_name}...",
+        "hierarchyLevel": hierarchy_level
+    })
+    
+    try:
+        # Part selection with timeout
+        try:
+            part = await asyncio.wait_for(
+                asyncio.to_thread(orchestrator._select_supporting_part, block, expanded_requirements, requirements),
+                timeout=10.0
+            )
+        except asyncio.TimeoutError:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": block_type,
+                "componentName": block_name,
+                "reasoning": f"Part selection timeout for {block_name}. Trying with relaxed constraints...",
+                "hierarchyLevel": hierarchy_level
+            })
+            relaxed_constraints = block.copy()
+            relaxed_constraints.pop("required_interfaces", None)
+            try:
+                part = await asyncio.wait_for(
+                    asyncio.to_thread(orchestrator._select_supporting_part, relaxed_constraints, expanded_requirements, requirements),
+                    timeout=5.0
+                )
+            except asyncio.TimeoutError:
+                part = None
+        
+        if not part:
+            await queue.put({
+                "type": "reasoning",
+                "componentId": block_type,
+                "componentName": block_name,
+                "reasoning": f"No suitable part found for {block_name}. Continuing...",
+                "hierarchyLevel": hierarchy_level
+            })
+            return
+        
+        # Part found - process it (compatibility checks, etc.)
+        part_mpn = part.get("mpn", part.get("id", ""))
+        part_manufacturer = part.get("manufacturer", "")
+        
+        await queue.put({
+            "type": "reasoning",
+            "componentId": block_type,
+            "componentName": block_name,
+            "reasoning": f"Found candidate: {part_mpn} from {part_manufacturer}. Verifying compatibility...",
+            "hierarchyLevel": hierarchy_level
+        })
+        
+        # Run power and interface compatibility checks in parallel
+        power_compat = None
+        interface_compat = None
+        
+        if anchor_part:
+            provides_power = block_type == "power" or block.get("depends_on", []) == ["power"]
+            
+            # Create tasks for parallel compatibility checks
+            compat_tasks = []
+            
+            if provides_power:
+                compat_tasks.append(("power", asyncio.create_task(
+                    asyncio.wait_for(
+                        asyncio.to_thread(
+                            orchestrator.compatibility_agent.check_compatibility,
+                            anchor_part, part, "power"
+                        ),
+                        timeout=15.0
+                    )
+                )))
+            
+            compat_tasks.append(("interface", asyncio.create_task(
+                asyncio.wait_for(
+                    asyncio.to_thread(
+                        orchestrator.compatibility_agent.check_compatibility,
+                        anchor_part, part, "interface"
+                    ),
+                    timeout=15.0
+                )
+            )))
+            
+            # Wait for all compatibility checks to complete
+            for check_type, task in compat_tasks:
+                try:
+                    result = await task
+                    if check_type == "power":
+                        power_compat = result
+                    else:
+                        interface_compat = result
+                except asyncio.TimeoutError:
+                    # Fallback to rule-based check
+                    if check_type == "power":
+                        power_compat = orchestrator.compatibility_agent._rule_based_check(anchor_part, part, "power")
+                    else:
+                        interface_compat = orchestrator.compatibility_agent._rule_based_check(anchor_part, part, "interface")
+                except Exception as e:
+                    # Error fallback
+                    if check_type == "power":
+                        power_compat = {"compatible": True, "reasoning": "Error during check, assuming compatible"}
+                    else:
+                        interface_compat = {"compatible": True, "reasoning": "Error during check, assuming compatible"}
+            
+            # Handle voltage mismatch if needed
+            if power_compat and not power_compat.get("compatible", False):
+                if orchestrator.compatibility_agent.can_be_resolved_with_intermediary(power_compat):
+                    try:
+                        intermediary = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                orchestrator._resolve_voltage_mismatch,
+                                anchor_part, part, "power", power_compat
+                            ),
+                            timeout=20.0
+                        )
+                        if intermediary:
+                            intermediary_name = f"intermediary_{anchor_part.get('id', 'anchor')}_{part.get('id', block_name)}"
+                            orchestrator.design_state["selected_parts"][intermediary_name] = intermediary
+                            orchestrator.design_state["intermediaries"][block_name] = intermediary_name
+                            part_object = part_data_to_part_object(intermediary)
+                            await queue.put({
+                                "type": "selection",
+                                "componentId": f"intermediary_{block_type}",
+                                "componentName": "Voltage Converter",
+                                "partData": part_object,
+                                "hierarchyLevel": hierarchy_level
+                            })
+                    except Exception:
+                        pass  # Continue without intermediary
+            
+            # Store compatibility results
+            compat_result = {"interface": interface_compat or {"compatible": True}}
+            if power_compat:
+                compat_result["power"] = power_compat
+            orchestrator.design_state["compatibility_results"][block_name] = compat_result
+        
+        # Add part to design state
+        orchestrator.design_state["selected_parts"][block_name] = part
+        part_object = part_data_to_part_object(part)
+        await queue.put({
+            "type": "selection",
+            "componentId": block_type,
+            "componentName": block_name,
+            "partData": part_object,
+            "hierarchyLevel": hierarchy_level
+        })
+        
+        # Add external components
+        from utils.part_database import get_recommended_external_components
+        ext_comps = get_recommended_external_components(part.get("id", ""))
+        orchestrator.design_state["external_components"].extend(ext_comps)
+        
+        await queue.put({
+            "type": "reasoning",
+            "componentId": block_type,
+            "componentName": block_name,
+            "reasoning": f"✓ {block_name} complete" + (f" ({len(ext_comps)} external components added)" if ext_comps else ""),
+            "hierarchyLevel": hierarchy_level
+        })
+        
+    except Exception as e:
+        await queue.put({
+            "type": "error",
+            "message": f"Error processing {block_name}: {str(e)}"
+        })
 
 
 async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator, queue: asyncio.Queue):
@@ -209,48 +393,59 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "hierarchyLevel": 0
             })
         
+        # Group blocks by dependencies for parallel processing
+        # Independent blocks (no dependencies) can be processed in parallel
+        independent_blocks = []
+        dependent_blocks = []
+        
         for block in child_blocks:
-            block_type = block.get("type", "")
-            block_name = block.get("description", block_type)
-            
-            # Get constraints for this block
-            constraints = architecture.get("constraints_per_block", {}).get(block_type, {})
-            required_interfaces = block.get("required_interfaces", [])
-            
+            depends_on = block.get("depends_on", [])
+            # Filter out "power" dependency as it's handled via anchor
+            depends_on = [d for d in depends_on if d != "power"]
+            if not depends_on:
+                independent_blocks.append(block)
+            else:
+                dependent_blocks.append(block)
+        
+        # Process independent blocks in parallel
+        if independent_blocks:
             await queue.put({
                 "type": "reasoning",
-                "componentId": block_type,
-                "componentName": block_name,
-                "reasoning": f"Searching part database for {block_name}. Requirements: {', '.join(required_interfaces[:2])}" + (f" and {len(required_interfaces)-2} more" if len(required_interfaces) > 2 else ""),
-                "hierarchyLevel": hierarchy_level
+                "componentId": "architecture",
+                "componentName": "Architecture",
+                "reasoning": f"Processing {len(independent_blocks)} independent component(s) in parallel...",
+                "hierarchyLevel": 0
             })
             
-            try:
-            part = orchestrator._select_supporting_part(block, expanded_requirements, requirements)
-                if not part:
-                    # Part search returned None - emit detailed reasoning
+            # Create tasks for parallel execution
+            tasks = []
+            for block in independent_blocks:
+                task = asyncio.create_task(
+                    _process_block_async(block, expanded_requirements, requirements, orchestrator, anchor_part, queue, hierarchy_level)
+                )
+                tasks.append((block, task))
+            
+            # Wait for all independent blocks to complete
+            for block, task in tasks:
+                try:
+                    await task
+                except Exception as e:
                     await queue.put({
-                        "type": "reasoning",
-                        "componentId": block_type,
-                        "componentName": block_name,
-                        "reasoning": f"No suitable part found for {block_name} in database. This may be due to strict constraints. Continuing with other components...",
-                        "hierarchyLevel": hierarchy_level
+                        "type": "error",
+                        "message": f"Error processing {block.get('description', block.get('type', ''))}: {str(e)}"
                     })
-            except Exception as e:
-                import traceback
-                error_details = traceback.format_exc()
-                await queue.put({
-                    "type": "reasoning",
-                    "componentId": block_type,
-                    "componentName": block_name,
-                    "reasoning": f"Error selecting part for {block_name}: {str(e)}",
-                    "hierarchyLevel": hierarchy_level
-                })
-                await queue.put({
-                    "type": "error",
-                    "message": f"Failed to select part for {block_name}: {str(e)}"
-                })
-                part = None
+            
+            hierarchy_level += len(independent_blocks)
+        
+        # Process dependent blocks sequentially (they may depend on each other)
+        for block in dependent_blocks:
+            await _process_block_async(block, expanded_requirements, requirements, orchestrator, anchor_part, queue, hierarchy_level)
+            hierarchy_level += 1
+        
+        # Step 6: Enrich with datasheets
+            block_type = block.get("type", "")
+            block_name = block.get("description", block_type)
+            part = None
             
             if part:
                 part_mpn = part.get("mpn", part.get("id", ""))
@@ -302,9 +497,44 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                     power_compat = None  # Initialize to avoid UnboundLocalError
                     
                     if provides_power:
-                        power_compat = orchestrator.compatibility_agent.check_compatibility(
-                            anchor_part, part, connection_type="power"
-                        )
+                        await queue.put({
+                            "type": "reasoning",
+                            "componentId": block_type,
+                            "componentName": block_name,
+                            "reasoning": "Checking power compatibility...",
+                            "hierarchyLevel": hierarchy_level
+                        })
+                        
+                        try:
+                            # Wrap compatibility check with timeout
+                            power_compat = await asyncio.wait_for(
+                                asyncio.to_thread(
+                                    orchestrator.compatibility_agent.check_compatibility,
+                                    anchor_part, part, "power"
+                                ),
+                                timeout=15.0
+                            )
+                        except asyncio.TimeoutError:
+                            await queue.put({
+                                "type": "reasoning",
+                                "componentId": block_type,
+                                "componentName": block_name,
+                                "reasoning": "Compatibility check timeout, using rule-based result...",
+                                "hierarchyLevel": hierarchy_level
+                            })
+                            # Fallback to rule-based check
+                            power_compat = orchestrator.compatibility_agent._rule_based_check(
+                                anchor_part, part, "power"
+                            )
+                        except Exception as e:
+                            await queue.put({
+                                "type": "reasoning",
+                                "componentId": block_type,
+                                "componentName": block_name,
+                                "reasoning": f"Compatibility check error: {str(e)}. Assuming compatible...",
+                                "hierarchyLevel": hierarchy_level
+                            })
+                            power_compat = {"compatible": True, "reasoning": "Error during check, assuming compatible"}
                         
                         if not power_compat.get("compatible", False):
                             if orchestrator.compatibility_agent.can_be_resolved_with_intermediary(power_compat):
@@ -316,9 +546,33 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                                     "hierarchyLevel": hierarchy_level
                                 })
                                 
-                                intermediary = orchestrator._resolve_voltage_mismatch(
-                                    anchor_part, part, "power", power_compat
-                                )
+                                try:
+                                    # Add timeout for intermediary resolution
+                                    intermediary = await asyncio.wait_for(
+                                        asyncio.to_thread(
+                                            orchestrator._resolve_voltage_mismatch,
+                                            anchor_part, part, "power", power_compat
+                                        ),
+                                        timeout=20.0
+                                    )
+                                except asyncio.TimeoutError:
+                                    await queue.put({
+                                        "type": "reasoning",
+                                        "componentId": block_type,
+                                        "componentName": block_name,
+                                        "reasoning": "Intermediary search timeout. Continuing without intermediary...",
+                                        "hierarchyLevel": hierarchy_level
+                                    })
+                                    intermediary = None
+                                except Exception as e:
+                                    await queue.put({
+                                        "type": "reasoning",
+                                        "componentId": block_type,
+                                        "componentName": block_name,
+                                        "reasoning": f"Intermediary search error: {str(e)}. Continuing...",
+                                        "hierarchyLevel": hierarchy_level
+                                    })
+                                    intermediary = None
                                 if intermediary:
                                     intermediary_name = f"intermediary_{anchor_part.get('id', 'anchor')}_{part.get('id', block_name)}"
                                     orchestrator.design_state["selected_parts"][intermediary_name] = intermediary
@@ -332,9 +586,44 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                                         "hierarchyLevel": hierarchy_level
                                     })
                     
-                    interface_compat = orchestrator.compatibility_agent.check_compatibility(
-                        anchor_part, part, connection_type="interface"
-                    )
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": block_type,
+                        "componentName": block_name,
+                        "reasoning": "Checking interface compatibility...",
+                        "hierarchyLevel": hierarchy_level
+                    })
+                    
+                    try:
+                        # Wrap interface compatibility check with timeout
+                        interface_compat = await asyncio.wait_for(
+                            asyncio.to_thread(
+                                orchestrator.compatibility_agent.check_compatibility,
+                                anchor_part, part, "interface"
+                            ),
+                            timeout=15.0
+                        )
+                    except asyncio.TimeoutError:
+                        await queue.put({
+                            "type": "reasoning",
+                            "componentId": block_type,
+                            "componentName": block_name,
+                            "reasoning": "Interface compatibility check timeout, using rule-based result...",
+                            "hierarchyLevel": hierarchy_level
+                        })
+                        # Fallback to rule-based check
+                        interface_compat = orchestrator.compatibility_agent._rule_based_check(
+                            anchor_part, part, "interface"
+                        )
+                    except Exception as e:
+                        await queue.put({
+                            "type": "reasoning",
+                            "componentId": block_type,
+                            "componentName": block_name,
+                            "reasoning": f"Interface compatibility check error: {str(e)}. Assuming compatible...",
+                            "hierarchyLevel": hierarchy_level
+                        })
+                        interface_compat = {"compatible": True, "reasoning": "Error during check, assuming compatible"}
                     
                     compat_result = {"interface": interface_compat}
                     if power_compat:
@@ -393,9 +682,33 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 })
                 
                 # Add external components
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": block_type,
+                    "componentName": block_name,
+                    "reasoning": "Adding recommended external components...",
+                    "hierarchyLevel": hierarchy_level
+                })
                 from utils.part_database import get_recommended_external_components
                 ext_comps = get_recommended_external_components(part.get("id", ""))
                 orchestrator.design_state["external_components"].extend(ext_comps)
+                if ext_comps:
+                    await queue.put({
+                        "type": "reasoning",
+                        "componentId": block_type,
+                        "componentName": block_name,
+                        "reasoning": f"Added {len(ext_comps)} external component(s) (decoupling caps, pull-ups, etc.)",
+                        "hierarchyLevel": hierarchy_level
+                    })
+                
+                # Emit completion message for this component
+                await queue.put({
+                    "type": "reasoning",
+                    "componentId": block_type,
+                    "componentName": block_name,
+                    "reasoning": f"✓ {block_name} selection complete. Moving to next component...",
+                    "hierarchyLevel": hierarchy_level
+                })
             else:
                 # Part selection failed - emit warning but continue
                 await queue.put({
@@ -856,6 +1169,118 @@ async def forecast_costs(request: Request):
         agent = CostForecastAgent()
         forecast = agent.forecast_costs(bom_items, forecast_months, production_volume)
         return forecast
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/eda/assets")
+async def get_eda_assets(request: Request):
+    """Get EDA assets (footprints, symbols, 3D models) for a part."""
+    try:
+        data = await request.json()
+        part = data.get("part", {})
+        tool = data.get("tool", "kicad")  # kicad, altium, eagle
+        asset_types = data.get("asset_types", ["footprint", "symbol", "3d_model"])
+        
+        if not part:
+            return {"error": "Part data is required"}
+        
+        agent = EDAAssetAgent()
+        assets = agent.get_eda_assets(part, tool, asset_types)
+        return {"assets": assets, "tool": tool}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/eda/download")
+async def download_eda_assets(request: Request):
+    """Download EDA assets for a part or BOM as files."""
+    try:
+        from fastapi.responses import FileResponse
+        import zipfile
+        import tempfile
+        
+        data = await request.json()
+        part = data.get("part")
+        bom_items = data.get("bom_items", [])
+        tool = data.get("tool", "kicad")
+        asset_types = data.get("asset_types", ["footprint", "symbol"])
+        
+        agent = EDAAssetAgent()
+        
+        # Create temporary directory for assets
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmp_path = Path(tmpdir)
+            output_dir = tmp_path / tool
+            output_dir.mkdir(parents=True, exist_ok=True)
+            
+            if part:
+                # Single part
+                saved_files = agent.download_eda_assets(part, tool, output_dir)
+            elif bom_items:
+                # Multiple parts from BOM
+                from utils.part_database import get_part_by_id
+                saved_files = {}
+                
+                for item in bom_items:
+                    part_id = item.get("mpn") or item.get("id")
+                    if part_id:
+                        part_data = get_part_by_id(part_id)
+                        if part_data:
+                            part_files = agent.download_eda_assets(part_data, tool, output_dir)
+                            saved_files.update(part_files)
+            else:
+                return {"error": "Either 'part' or 'bom_items' must be provided"}
+            
+            if not saved_files:
+                return {"error": "No EDA assets generated"}
+            
+            # Create zip file
+            zip_path = tmp_path / f"eda_assets_{tool}.zip"
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for asset_type, file_path in saved_files.items():
+                    zipf.write(file_path, file_path.name)
+            
+            # Return zip file
+            return FileResponse(
+                zip_path,
+                media_type="application/zip",
+                filename=f"eda_assets_{tool}.zip"
+            )
+    except Exception as e:
+        return {"error": str(e)}
+
+
+@app.post("/api/eda/bom-assets")
+async def get_bom_eda_assets(request: Request):
+    """Get EDA assets for all parts in a BOM."""
+    try:
+        data = await request.json()
+        bom_items = data.get("bom_items", [])
+        tool = data.get("tool", "kicad")
+        asset_types = data.get("asset_types", ["footprint", "symbol"])
+        
+        if not bom_items:
+            return {"error": "BOM items are required"}
+        
+        agent = EDAAssetAgent()
+        from utils.part_database import get_part_by_id
+        
+        all_assets = {}
+        
+        for item in bom_items:
+            part_id = item.get("mpn") or item.get("id")
+            if part_id:
+                part_data = get_part_by_id(part_id)
+                if part_data:
+                    assets = agent.get_eda_assets(part_data, tool, asset_types)
+                    all_assets[part_id] = assets
+        
+        return {
+            "assets": all_assets,
+            "tool": tool,
+            "part_count": len(all_assets)
+        }
     except Exception as e:
         return {"error": str(e)}
 

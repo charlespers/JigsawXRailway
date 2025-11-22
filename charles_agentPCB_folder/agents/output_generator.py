@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from agents.testpoint_fiducial_agent import TestPointFiducialAgent
+from agents.eda_asset_agent import EDAAssetAgent
 
 
 class OutputGenerator:
@@ -17,6 +18,7 @@ class OutputGenerator:
     
     def __init__(self):
         self.testpoint_agent = TestPointFiducialAgent()
+        self.eda_asset_agent = EDAAssetAgent()
     
     def generate_connections(
         self,
@@ -428,6 +430,13 @@ class OutputGenerator:
             # Generate assembly notes based on MSL and special handling
             assembly_notes = self._generate_assembly_notes(part_data, msl_level)
             
+            # Get EDA assets (footprint, symbol, 3D model) for KiCad
+            eda_assets = {}
+            try:
+                eda_assets = self.eda_asset_agent.get_eda_assets(part_data, tool="kicad", asset_types=["footprint", "symbol"])
+            except Exception:
+                pass  # If EDA asset generation fails, continue without it
+            
             bom_items.append({
                 "designator": designator,
                 "qty": 1,
@@ -455,6 +464,7 @@ class OutputGenerator:
                 "fiducial": False,  # Flag for fiducial marks
                 "unit_cost": round(unit_cost, 4),
                 "extended_cost": round(extended_cost, 4),
+                "eda_assets": eda_assets,  # EDA assets (footprint, symbol, 3D model)
                 "notes": ""
             })
         

@@ -259,7 +259,8 @@ Return ONLY valid JSON, no additional text.
         }
         
         try:
-            resp = requests.post(self.endpoint, headers=self.headers, json=payload, timeout=45)
+            # Reduced timeout to prevent blocking (15 seconds instead of 45)
+            resp = requests.post(self.endpoint, headers=self.headers, json=payload, timeout=15)
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json(content)
@@ -278,6 +279,9 @@ Return ONLY valid JSON, no additional text.
                 )
             
             return result
+        except RequestsTimeout:
+            # Timeout - fallback to rule-based result
+            return self._rule_based_evaluation(source_part, intermediary_part, target_part)
         except Exception as e:
             # Fallback to rule-based result
             return self._rule_based_evaluation(source_part, intermediary_part, target_part)
