@@ -457,6 +457,7 @@ export default function JigsawDemo({
         </motion.div>
       </div>
     </div>
+    </ErrorBoundary>
   );
 }
 
