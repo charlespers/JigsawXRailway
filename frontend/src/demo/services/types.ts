@@ -1,4 +1,7 @@
 export interface PartObject {
+  // CRITICAL: Component identification - maps to backend block_name
+  componentId: string;  // Must be preserved for frontend-backend compatibility
+  
   // Core fields (from data_mapper.py)
   mpn: string;
   manufacturer: string;

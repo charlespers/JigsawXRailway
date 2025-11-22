@@ -7,12 +7,21 @@ import asyncio
 import json
 import os
 import sys
+import time
+import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
 from fastapi import FastAPI, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
+
+# Configure logging for production-grade error tracking
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Add development_demo to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -68,7 +77,8 @@ class StreamingOrchestrator(DesignOrchestrator):
     
     def emit_selection(self, component_id: str, component_name: str, part_data: Dict[str, Any], hierarchy_level: int = 0):
         """Emit a selection event."""
-        part_object = part_data_to_part_object(part_data)
+        # CRITICAL: Pass component_id to preserve mapping
+        part_object = part_data_to_part_object(part_data, quantity=1, component_id=component_id)
         if self.on_selection:
             self.on_selection({
                 "type": "selection",
@@ -91,6 +101,8 @@ async def _process_block_async(
     """Process a single block (part selection, compatibility, etc.) - can be called in parallel."""
     block_type = block.get("type", "")
     block_name = block.get("description", block_type)
+    
+    logger.info(f"[WORKFLOW] Starting processing of block: {block_name} (type: {block_type}, hierarchy: {hierarchy_level})")
     
     await queue.put({
         "type": "reasoning",
@@ -253,10 +265,10 @@ async def _process_block_async(
                             intermediary_name = f"intermediary_{anchor_part.get('id', 'anchor')}_{part.get('id', block_name)}"
                             orchestrator.design_state["selected_parts"][intermediary_name] = intermediary
                             orchestrator.design_state["intermediaries"][block_name] = intermediary_name
-                            part_object = part_data_to_part_object(intermediary)
+                            part_object = part_data_to_part_object(intermediary, quantity=1, component_id=intermediary_name)
                             await queue.put({
                                 "type": "selection",
-                                "componentId": f"intermediary_{block_type}",
+                                "componentId": intermediary_name,
                                 "componentName": "Voltage Converter",
                                 "partData": part_object,
                                 "hierarchyLevel": hierarchy_level
@@ -272,14 +284,21 @@ async def _process_block_async(
         
         # Add part to design state
         orchestrator.design_state["selected_parts"][block_name] = part
-        part_object = part_data_to_part_object(part)
+        # CRITICAL: Pass block_name as component_id to preserve mapping
+        part_object = part_data_to_part_object(part, quantity=1, component_id=block_name)
+        
+        logger.info(f"[WORKFLOW] Part selected for {block_name}: {part.get('id', 'unknown')} (MPN: {part_object.get('mpn', 'unknown')})")
+        
+        # Emit selection event - CRITICAL: This must be sent for frontend to display the part
         await queue.put({
             "type": "selection",
-            "componentId": block_type,
+            "componentId": block_name,  # Use block_name, not block_type, for consistency
             "componentName": block_name,
             "partData": part_object,
             "hierarchyLevel": hierarchy_level
         })
+        
+        logger.info(f"[WORKFLOW] Selection event emitted for {block_name} at hierarchy {hierarchy_level}")
         
         # Add external components
         from utils.part_database import get_recommended_external_components
@@ -294,15 +313,23 @@ async def _process_block_async(
             "hierarchyLevel": hierarchy_level
         })
         
+        logger.info(f"[WORKFLOW] Block {block_name} processing completed successfully")
+        
     except Exception as e:
+        logger.error(f"[WORKFLOW] Error processing block {block_name}: {str(e)}", exc_info=True)
         await queue.put({
             "type": "error",
             "message": f"Error processing {block_name}: {str(e)}"
         })
+        # Re-raise to be caught by caller
+        raise
 
 
 async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator, queue: asyncio.Queue):
     """Generate design and stream events via queue."""
+    logger.info(f"[WORKFLOW] Starting design generation for query: {query[:100]}...")
+    workflow_start_time = time.time()
+    
     try:
         # Step 1: Requirements
         await queue.put({
@@ -407,7 +434,8 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 "hierarchyLevel": 0
             })
             
-            part_object = part_data_to_part_object(anchor_part)
+            # CRITICAL: Pass "anchor" as component_id to preserve mapping
+            part_object = part_data_to_part_object(anchor_part, quantity=1, component_id="anchor")
             await queue.put({
                 "type": "selection",
                 "componentId": "anchor",
@@ -485,11 +513,14 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             # Wait for all independent blocks with proper error handling
             completed_count = 0
             failed_count = 0
+            successful_hierarchies = []  # Track which hierarchy levels were actually used
+            
             for block, task, block_hierarchy in tasks:
                 block_name = block.get("description", block.get("type", ""))
                 try:
                     await task
                     completed_count += 1
+                    successful_hierarchies.append(block_hierarchy)
                     await queue.put({
                         "type": "reasoning",
                         "componentId": "architecture",
@@ -524,7 +555,14 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                         "hierarchyLevel": 0
                     })
             
-            hierarchy_level += len(independent_blocks)
+            # Only increment hierarchy_level by the number of successfully completed blocks
+            # This ensures dependent blocks start at the correct level
+            if successful_hierarchies:
+                hierarchy_level = max(successful_hierarchies) + 1
+            else:
+                # If all failed, keep current hierarchy_level
+                pass
+            
             total_blocks_processed += completed_count
             total_blocks_failed += failed_count
             
@@ -742,12 +780,18 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         
         summary_message = "Component analysis complete. " + ", ".join(summary_parts) + "."
         
+        workflow_duration = time.time() - workflow_start_time
+        logger.info(f"[WORKFLOW] Design generation completed in {workflow_duration:.2f}s. Summary: {summary_message}")
+        
         await queue.put({
             "type": "complete",
             "message": summary_message
         })
         
     except Exception as e:
+        workflow_duration = time.time() - workflow_start_time
+        logger.error(f"[WORKFLOW] Workflow error after {workflow_duration:.2f}s: {str(e)}", exc_info=True)
+        
         # Ensure error is always sent and workflow completes
         await queue.put({
             "type": "error",
@@ -796,7 +840,7 @@ async def component_analysis(request: Request):
         # Create orchestrator AFTER setting provider in environment
         # Agents will read LLM_PROVIDER during their __init__
         try:
-        orchestrator = StreamingOrchestrator()
+            orchestrator = StreamingOrchestrator()
         except ValueError as e:
             # If agent initialization fails (e.g., missing API key), send error
             await queue.put({
@@ -813,23 +857,43 @@ async def component_analysis(request: Request):
         task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
         
         try:
+            last_heartbeat = time.time()
+            heartbeat_interval = 15.0  # Send heartbeat every 15 seconds
+            
             while True:
                 try:
-                    # Wait for event with timeout
-                    event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    # Wait for event with timeout (increased for long operations)
+                    timeout = 60.0  # Increased timeout for complex designs
+                    event = await asyncio.wait_for(queue.get(), timeout=timeout)
                     
                     if event.get("type") == "error":
                         yield f"data: {json.dumps(event)}\n\n"
-                        break
+                        # Don't break on error - let workflow complete
+                        if event.get("message", "").startswith("Fatal"):
+                            break
                     
                     yield f"data: {json.dumps(event)}\n\n"
                     
                     if event.get("type") == "complete":
                         break
+                    
+                    # Reset heartbeat timer on any event
+                    last_heartbeat = time.time()
                         
                 except asyncio.TimeoutError:
+                    # Send heartbeat to keep connection alive
+                    current_time = time.time()
+                    if current_time - last_heartbeat >= heartbeat_interval:
+                        yield f"data: {json.dumps({'type': 'heartbeat', 'message': 'Processing...'})}\n\n"
+                        last_heartbeat = current_time
+                    
                     # Check if task is done
                     if task.done():
+                        # Task completed but no complete event? Send one
+                        try:
+                            result = task.result()
+                        except Exception:
+                            pass
                         break
                     continue
                     

@@ -91,16 +91,17 @@ def bom_item_to_part_object(bom_item: Dict[str, Any]) -> Dict[str, Any]:
     return part_object
 
 
-def part_data_to_part_object(part_data: Dict[str, Any], quantity: int = 1) -> Dict[str, Any]:
+def part_data_to_part_object(part_data: Dict[str, Any], quantity: int = 1, component_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Convert full part data to React PartObject format.
     
     Args:
         part_data: Full part data from our database
         quantity: Quantity for this part
+        component_id: CRITICAL - The component/block identifier (maps to backend block_name)
     
     Returns:
-        PartObject compatible dictionary
+        PartObject compatible dictionary with componentId preserved
     """
     # Extract interfaces
     interfaces = []
@@ -121,7 +122,24 @@ def part_data_to_part_object(part_data: Dict[str, Any], quantity: int = 1) -> Di
     elif isinstance(cost_estimate, (int, float)):
         unit_cost = float(cost_estimate)
     
+    # Extract footprint (IPC-7351 compliant)
+    footprint = part_data.get("footprint", "")
+    if not footprint and part_data.get("package"):
+        # Generate basic footprint name from package
+        package = str(part_data.get("package", "")).upper()
+        if "QFN" in package:
+            footprint = f"{package}_IPC7351"
+        elif "SOIC" in package:
+            footprint = f"{package}_IPC7351"
+        else:
+            footprint = package
+    
+    # Extract MSL level
+    msl_level = part_data.get("msl_level") or part_data.get("moisture_sensitivity_level")
+    
     part_object = {
+        # CRITICAL: Preserve componentId for frontend-backend mapping
+        "componentId": component_id or part_data.get("componentId") or part_data.get("id", ""),
         "mpn": part_data.get("mfr_part_number", part_data.get("id", "")),
         "manufacturer": part_data.get("manufacturer", ""),
         "description": part_data.get("description", ""),
@@ -139,6 +157,17 @@ def part_data_to_part_object(part_data: Dict[str, Any], quantity: int = 1) -> Di
         "lead_time_days": part_data.get("lead_time_days"),
         "mounting_type": "SMT" if "SMT" in str(part_data.get("package", "")).upper() else "through_hole",
         "category": part_data.get("category", ""),
+        # BOM fields
+        "footprint": footprint,
+        "msl_level": msl_level,
+        "assembly_side": part_data.get("assembly_side", "top"),
+        "alternate_part_numbers": part_data.get("alternate_part_numbers", []),
+        "distributor_part_numbers": part_data.get("distributor_part_numbers", {}),
+        "temperature_rating": part_data.get("operating_temp_range", {}).get("max") if isinstance(part_data.get("operating_temp_range"), dict) else None,
+        "availability_status": part_data.get("availability_status", "unknown"),
+        "test_point": part_data.get("test_point", False),
+        "fiducial": part_data.get("fiducial", False),
+        "assembly_notes": part_data.get("assembly_notes", ""),
     }
     
     return part_object

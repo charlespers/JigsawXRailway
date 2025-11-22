@@ -122,9 +122,20 @@ async function realStartAnalysis(
           try {
             const jsonText = dataLine.slice(6);
             const data: ComponentAnalysisResponse = JSON.parse(jsonText);
+            
+            // Log selection events for debugging
+            if (data.type === "selection") {
+              console.log(`[SSE] Selection event received:`, {
+                componentId: data.componentId,
+                componentName: data.componentName,
+                partMpn: data.partData?.mpn
+              });
+            }
+            
             onUpdate(data);
 
             if (data.type === "complete" || data.type === "error") {
+              console.log(`[SSE] Stream ending with type: ${data.type}`);
               return;
             }
           } catch (e) {

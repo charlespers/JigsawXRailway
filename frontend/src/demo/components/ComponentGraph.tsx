@@ -169,6 +169,15 @@ export default function ComponentGraph({
           return newMap;
         });
       } else if (update.type === "selection" && update.componentId) {
+        // CRITICAL: Log selection events for debugging
+        console.log(`[ComponentGraph] Selection event received:`, {
+          componentId: update.componentId,
+          componentName: update.componentName,
+          hierarchyLevel: update.hierarchyLevel,
+          hasPartData: !!update.partData,
+          partMpn: update.partData?.mpn
+        });
+        
         setComponents((prev: Map<string, ComponentNode>) => {
           const newMap = new Map(prev);
           
@@ -203,18 +212,29 @@ export default function ComponentGraph({
 
           newMap.set(update.componentId!, updated);
 
-          // Notify parent of selection with hierarchy offset (defer to avoid render warning)
+          // CRITICAL: Notify parent of selection - this adds part to the parts list
+          // Use requestAnimationFrame for better React batching
           if (onComponentSelected && update.partData) {
             const baseOffset = localHighestHierarchyRef.current >= 0 ? localHighestHierarchyRef.current + 1 : 0;
-            // Use setTimeout to defer the callback and avoid React render warning
-            setTimeout(() => {
-              onComponentSelected(
-                update.componentId!,
-                update.partData,
-                update.position,
-                baseOffset
-              );
-            }, 0);
+            // Use requestAnimationFrame for better React batching and to avoid render warnings
+            requestAnimationFrame(() => {
+              try {
+                onComponentSelected(
+                  update.componentId!,
+                  update.partData,
+                  update.position,
+                  baseOffset
+                );
+                console.log(`[ComponentGraph] onComponentSelected called for ${update.componentId}`);
+              } catch (error) {
+                console.error(`[ComponentGraph] Error in onComponentSelected:`, error);
+              }
+            });
+          } else {
+            console.warn(`[ComponentGraph] Selection event missing required data:`, {
+              hasCallback: !!onComponentSelected,
+              hasPartData: !!update.partData
+            });
           }
 
           return newMap;

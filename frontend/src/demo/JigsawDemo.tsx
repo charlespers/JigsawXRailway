@@ -168,24 +168,31 @@ export default function JigsawDemo({
   
   // Save design handler
   const handleSaveDesign = useCallback(() => {
+    // CRITICAL: Ensure all parts have componentId before export
+    const validatedParts = parts.map((part, index) => ({
+      ...part,
+      componentId: part.componentId || `exported_${index}`,  // Ensure componentId exists
+    }));
+    
     const designData = {
-      parts,
+      parts: validatedParts,  // Export with componentId preserved
       connections,
       query: analysisQuery,
       timestamp: new Date().toISOString(),
+      version: "1.0",  // Version for future compatibility
     };
     
     const blob = new Blob([JSON.stringify(designData, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `design-${Date.now()}.json`;
+    a.download = `design_${new Date().toISOString().split('T')[0]}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     
-    showToast("Design saved successfully", "success", 3000);
+    showToast(`Design exported successfully: ${validatedParts.length} part(s)`, "success", 2000);
   }, [parts, connections, analysisQuery, showToast]);
   
   // Load design handler
@@ -197,16 +204,63 @@ export default function JigsawDemo({
     reader.onload = (e) => {
       try {
         const designData = JSON.parse(e.target?.result as string);
-        if (designData.parts) {
-          setParts(designData.parts);
+        if (designData.parts && Array.isArray(designData.parts)) {
+          // CRITICAL: Ensure all parts have componentId
+          const validatedParts = designData.parts.map((part: any, index: number) => ({
+            ...part,
+            componentId: part.componentId || `imported_${index}`,  // Ensure componentId exists
+            quantity: part.quantity || 1
+          }));
+          
+          // CRITICAL: Update both parts array AND selectedComponents Map
+          // This ensures parts are displayed in both PartsList and PCBViewer
+          setParts(validatedParts);
+          
+          // Reconstruct selectedComponents Map from loaded parts
+          const newSelectedComponents = new Map();
+          validatedParts.forEach((part: PartObject, index: number) => {
+            // componentId should be preserved from export
+            const componentId = part.componentId || `imported_${index}`;
+            const partMpn = part.mpn || `part_${index}`;
+            
+            // Calculate position for visualization
+            const existingComponents = Array.from(newSelectedComponents.values()).map((c) => ({
+              id: c.id,
+              position: c.position,
+              size: c.size,
+            }));
+            
+            const organizedPosition = calculateComponentPosition(
+              componentId,
+              existingComponents,
+              index
+            );
+            
+            newSelectedComponents.set(componentId, {
+              id: componentId,
+              label: partMpn.split("-")[0] || componentId,
+              position: organizedPosition,
+              partData: part,
+            });
+          });
+          
+          setSelectedComponents(newSelectedComponents);
+          
           if (designData.query) {
             setAnalysisQuery(designData.query);
           }
-          saveToHistory(designData.parts);
-          showToast("Design loaded successfully", "success", 3000);
+          
+          // Reset hierarchy tracking for loaded design
+          highestHierarchyRef.current = validatedParts.length - 1;
+          
+          saveToHistory(validatedParts);
+          showToast(`Design loaded successfully: ${validatedParts.length} part(s)`, "success", 3000);
+        } else {
+          showToast("Invalid design file format: missing parts array", "error", 3000);
         }
       } catch (error) {
-        showToast("Failed to load design file", "error", 3000);
+        console.error("Failed to load design:", error);
+        showToast(`Failed to load design file: ${error instanceof Error ? error.message : 'Unknown error'}`, "error", 3000);
       }
     };
     reader.readAsText(file);
@@ -361,12 +415,34 @@ export default function JigsawDemo({
     _position?: { x: number; y: number },
     hierarchyOffset?: number
   ) => {
+    // CRITICAL: Ensure componentId is preserved in partData
+    // Backend sends componentId in partData, but we ensure it's set
+    const partWithComponentId = {
+      ...partData,
+      componentId: partData.componentId || componentId,  // Use partData.componentId if present, fallback to parameter
+      quantity: partData.quantity || 1
+    };
+    
+    // CRITICAL: Track parts by componentId to handle cases where same part is used in different components
+    // This ensures all parts are displayed even if they share the same MPN
     setParts((prev) => {
-      const existingIndex = prev.findIndex((p) => p.mpn === partData.mpn);
+      // Check if this exact component-part combination already exists
+      const existingIndex = prev.findIndex((p) => {
+        return p.componentId === partWithComponentId.componentId && p.mpn === partWithComponentId.mpn;
+      });
+      
       if (existingIndex >= 0) {
-        return prev;
+        // Same component selecting same part - increment quantity
+        return prev.map((p, idx) => {
+          if (idx === existingIndex) {
+            return { ...p, quantity: (p.quantity || 1) + 1 };
+          }
+          return p;
+        });
       }
-      return [...prev, { ...partData, quantity: partData.quantity || 1 }];
+      
+      // New part selection - add with componentId preserved
+      return [...prev, partWithComponentId];
     });
 
     setSelectedComponents((prev) => {
