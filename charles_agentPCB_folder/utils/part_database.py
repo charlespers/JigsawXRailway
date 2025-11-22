@@ -375,8 +375,13 @@ def get_intermediary_candidates(
         score = 0.0
         
         # Prefer higher efficiency
-        efficiency = part.get("efficiency", 0)
-        if efficiency:
+        efficiency_val = part.get("efficiency", 0)
+        # Handle efficiency as dict or float
+        if isinstance(efficiency_val, dict):
+            efficiency = efficiency_val.get("value") or efficiency_val.get("typical") or efficiency_val.get("max") or 0
+        else:
+            efficiency = float(efficiency_val) if efficiency_val else 0
+        if efficiency > 0:
             score += efficiency * 0.4
         
         # Prefer higher current capacity

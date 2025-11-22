@@ -3,7 +3,9 @@
  * Handles calls to analysis endpoints (cost, supply chain, power, validation, etc.)
  */
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
+import configService from "./config";
+
+const API_BASE = configService.getBackendUrl();
 
 export interface PartComparisonResult {
   parts: any[];

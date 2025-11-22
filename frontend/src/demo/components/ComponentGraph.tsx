@@ -13,6 +13,7 @@ import {
   componentAnalysisApi,
   type ComponentAnalysisResponse,
 } from "../services";
+import ErrorDisplay from "./ErrorDisplay";
 
 interface ComponentGraphProps {
   onComponentSelected?: (componentId: string, partData: any, position?: { x: number; y: number }, hierarchyOffset?: number) => void;
@@ -54,6 +55,7 @@ export default function ComponentGraph({
     new Map()
   );
   const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const analysisStartedRef = useRef<string>(""); // Track which query we're analyzing
   const abortControllerRef = useRef<AbortController | null>(null);
   const isAnalysisRunningRef = useRef<boolean>(false); // Track if analysis is currently running
@@ -222,6 +224,7 @@ export default function ComponentGraph({
       } else if (update.type === "error") {
         setIsProcessing(false);
         isAnalysisRunningRef.current = false;
+        setError(update.message || "An error occurred during analysis");
         console.error("Component analysis error:", update.message);
       }
     };
@@ -250,6 +253,7 @@ export default function ComponentGraph({
         // Only log if it's not a cancellation
         if (!error.message?.includes("cancelled") && !error.message?.includes("AbortError")) {
           console.error("Analysis failed:", error);
+          setError(error.message || "Analysis failed. Please try again.");
         }
         setIsProcessing(false);
         isAnalysisRunningRef.current = false;
@@ -280,6 +284,14 @@ export default function ComponentGraph({
     }
   };
 
+  const handleRetry = () => {
+    setError(null);
+    if (analysisQuery && !isAnalyzing) {
+      // Trigger re-analysis by setting isAnalyzing
+      // This will be handled by the parent component
+    }
+  };
+
   return (
     <div className="p-6">
       <div className="mb-6">
@@ -290,6 +302,17 @@ export default function ComponentGraph({
             : "Ready to analyze components"}
         </p>
       </div>
+
+      {error && (
+        <div className="mb-4">
+          <ErrorDisplay
+            error={error}
+            onRetry={handleRetry}
+            onDismiss={() => setError(null)}
+            variant="error"
+          />
+        </div>
+      )}
 
       <div className="space-y-3">
         <AnimatePresence mode="popLayout">

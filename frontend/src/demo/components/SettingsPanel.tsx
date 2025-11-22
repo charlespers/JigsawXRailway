@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { Settings, X, Save } from "lucide-react";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
+import configService from "../services/config";
 
 interface SettingsPanelProps {
   backendUrl: string;
@@ -85,7 +86,7 @@ export default function SettingsPanel({
                   <Input
                     value={localBackendUrl}
                     onChange={(e) => setLocalBackendUrl(e.target.value)}
-                    placeholder="http://localhost:3001"
+                    placeholder={configService.getBackendUrl()}
                     className="bg-zinc-800 border-zinc-700 text-zinc-100"
                   />
                   <p className="text-xs text-zinc-500 mt-1">

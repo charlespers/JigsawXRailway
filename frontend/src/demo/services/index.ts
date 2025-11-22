@@ -13,7 +13,6 @@ export type {
 export {
   componentAnalysisApi,
   ComponentAnalysisService,
-  MOCK_CONFIG,
 } from "./componentAnalysisApi";
 export type {
   ComponentReasoning,

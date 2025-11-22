@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import JigsawDemo from '@/demo/JigsawDemo'
+import configService from '@/demo/services/config'
 
 export default function DemoPage() {
   const navigate = useNavigate()
@@ -13,8 +14,8 @@ export default function DemoPage() {
     }
   }, [navigate])
 
-  // Get backend URL from environment or use default
-  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
+  // Get backend URL from config service
+  const backendUrl = configService.getBackendUrl()
 
   return (
     <div className="h-screen w-screen overflow-hidden">

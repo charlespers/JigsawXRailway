@@ -18,7 +18,7 @@ interface Message {
 }
 
 interface DesignChatProps {
-  /** Backend API URL (for display purposes) */
+  /** Backend API URL (optional, for display purposes) */
   backendUrl?: string;
   /** Whether analysis is currently running */
   isAnalyzing?: boolean;
@@ -29,7 +29,7 @@ interface DesignChatProps {
 }
 
 export default function DesignChat({
-  backendUrl: _backendUrl = "http://localhost:3001",
+  backendUrl: _backendUrl,
   isAnalyzing = false,
   onQuerySent,
   onQueryKilled,

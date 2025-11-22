@@ -22,11 +22,14 @@ import PartsList from "./components/PartsList";
 import DesignChat from "./components/DesignChat";
 import SettingsPanel from "./components/SettingsPanel";
 import BOMInsights from "./components/BOMInsights";
+import ErrorBoundary from "./components/ErrorBoundary";
+import ErrorDisplay from "./components/ErrorDisplay";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";
+import configService from "./services/config";
 
 export interface JigsawDemoProps {
-  /** Backend API URL (e.g., "http://localhost:3001") */
+  /** Backend API URL (optional, defaults to config service) */
   backendUrl?: string;
   /** Initial query to start analysis with */
   initialQuery?: string;
@@ -37,15 +40,17 @@ export interface JigsawDemoProps {
 }
 
 export default function JigsawDemo({
-  backendUrl = "http://localhost:3001",
+  backendUrl,
   initialQuery = "",
   className = "",
   height = "100vh",
 }: JigsawDemoProps) {
   // Configure API services
   useEffect(() => {
+    const url = backendUrl || configService.getBackendUrl();
+    componentAnalysisApi.updateConfig({ baseUrl: url });
     if (backendUrl) {
-      componentAnalysisApi.updateConfig({ baseUrl: backendUrl });
+      configService.updateConfig({ backendUrl: url });
     }
   }, [backendUrl]);
 
@@ -276,11 +281,27 @@ export default function JigsawDemo({
   }, []);
 
   return (
-    <div
-      className={`h-screen bg-zinc-950 text-white flex flex-col overflow-hidden ${className}`}
-      style={{ height }}
-    >
-      <SettingsPanel
+    <ErrorBoundary>
+      <div
+        className={`h-screen bg-zinc-950 text-white flex flex-col overflow-hidden ${className}`}
+        style={{ height }}
+      >
+        {error && (
+          <div className="p-4 border-b border-red-500/50 bg-red-500/10">
+            <ErrorDisplay
+              error={error}
+              onRetry={() => {
+                setError(null);
+                if (analysisQuery) {
+                  setIsAnalyzing(true);
+                }
+              }}
+              onDismiss={() => setError(null)}
+              variant="error"
+            />
+          </div>
+        )}
+        <SettingsPanel
         backendUrl={backendUrl}
         defaultProvider={provider}
         onBackendUrlChange={(url) => {

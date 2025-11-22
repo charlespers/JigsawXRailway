@@ -30,11 +30,13 @@ export interface DesignApiConfig {
   timeout?: number;
 }
 
+import configService from "./config";
+
 const defaultConfig: DesignApiConfig = {
-  baseUrl: "http://localhost:3001",
+  baseUrl: configService.getBackendUrl(),
   queryEndpoint: "/design/query",
   continueEndpoint: "/design/continue",
-  timeout: 30000,
+  timeout: configService.getTimeout(),
 };
 
 let mockQueryIdCounter = 0;
@@ -275,21 +277,9 @@ class DesignApiService {
   }
 }
 
-function getDesignServerUrl(): string {
-  if (typeof window === "undefined") {
-    return "http://localhost:3001";
-  }
-  try {
-    const url = import.meta.env?.VITE_BACKEND_URL || import.meta.env?.VITE_DESIGN_SERVER_URL || "http://localhost:3001";
-    return url;
-  } catch {
-    return "http://localhost:3001";
-  }
-}
-
 export const designApi = new DesignApiService(
   {
-    baseUrl: getDesignServerUrl(),
+    baseUrl: configService.getBackendUrl(),
   },
   false
 );
