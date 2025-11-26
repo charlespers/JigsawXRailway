@@ -44,18 +44,29 @@ class ThermalAnalysisAgent:
             part_id = part.get("id")
             category = part.get("category", "")
             
-            # Calculate power dissipation
-            power_dissipation = self._calculate_power_dissipation(part, item)
-            total_power_dissipation += power_dissipation * quantity
+            # Import safe_float_extract
+            from agents.design_analyzer import safe_float_extract
             
-            if power_dissipation > 0:
-                # Get thermal resistance
+            # Calculate power dissipation - use safe extraction
+            power_dissipation = self._calculate_power_dissipation(part, item)
+            power_dissipation_float = safe_float_extract(
+                power_dissipation,
+                context=f"power_dissipation for {part.get('id', 'unknown')}"
+            )
+            total_power_dissipation += power_dissipation_float * quantity
+            
+            if power_dissipation_float > 0:
+                # Get thermal resistance - use safe extraction
                 thermal_resistance = self._get_thermal_resistance(part)
+                thermal_resistance_float = safe_float_extract(
+                    thermal_resistance,
+                    context=f"thermal_resistance for {part.get('id', 'unknown')}"
+                )
                 
                 # Calculate junction temperature
                 junction_temp = None
-                if thermal_resistance:
-                    junction_temp = ambient_temp + (power_dissipation * thermal_resistance)
+                if thermal_resistance_float and thermal_resistance_float > 0:
+                    junction_temp = ambient_temp + (power_dissipation_float * thermal_resistance_float)
                 
                 # Get maximum operating temperature
                 max_temp = self._get_max_temperature(part)
@@ -199,24 +210,21 @@ class ThermalAnalysisAgent:
             if vin > 0 and vout > 0 and iout > 0:
                 return (vin - vout) * iout
         
-        # For other components, use supply voltage * current
+        # Import safe_float_extract
+        from agents.design_analyzer import safe_float_extract
+        
+        # For other components, use supply voltage * current - use safe extraction
         supply_range = part.get("supply_voltage_range", {})
-        if isinstance(supply_range, dict):
-            voltage = supply_range.get("nominal") or supply_range.get("max", 0)
-            if isinstance(voltage, dict):
-                voltage = voltage.get("value") or voltage.get("nominal") or 0
-            voltage = float(voltage) if voltage else 0.0
-        else:
-            voltage = float(supply_range) if supply_range else 0.0
+        voltage = safe_float_extract(
+            supply_range.get("nominal") if isinstance(supply_range, dict) else supply_range,
+            context=f"voltage for {part.get('id', 'unknown')}"
+        )
         
         current_max = part.get("current_max", {})
-        if isinstance(current_max, dict):
-            current = current_max.get("typical") or current_max.get("max", 0)
-            if isinstance(current, dict):
-                current = current.get("value") or current.get("max") or 0
-            current = float(current) if current else 0.0
-        else:
-            current = float(current_max) if current_max else 0.0
+        current = safe_float_extract(
+            current_max.get("typical") if isinstance(current_max, dict) else current_max,
+            context=f"current for {part.get('id', 'unknown')}"
+        )
         
         if voltage > 0 and current > 0:
             return voltage * current

@@ -90,15 +90,95 @@ export interface DesignValidation {
   issues: Array<{
     type: string;
     severity: "error" | "warning";
+    component?: string | null;
     message: string;
+    current?: string | null;
+    required?: string | null;
+    recommendation?: string;
+    fixable?: boolean;
+    category?: string;
   }>;
-  warnings: string[];
+  warnings: Array<string | {
+    type: string;
+    severity: "error" | "warning";
+    component?: string | null;
+    message: string;
+    current?: string | null;
+    required?: string | null;
+    recommendation?: string;
+    fixable?: boolean;
+    category?: string;
+  }>;
   compliance: {
     ipc_2221: boolean;
     ipc_7351: boolean;
     rohs: boolean;
     power_budget: boolean;
   };
+  summary?: {
+    error_count: number;
+    warning_count: number;
+    compliance_score: number;
+  };
+}
+
+export interface ManufacturingReadiness {
+  dfm_checks: Record<string, any>;
+  assembly_complexity: {
+    complexity_score: number;
+    factors: string[];
+  };
+  test_point_coverage: {
+    coverage_percentage: number;
+    recommendations: string[];
+  };
+  panelization_recommendations: string[];
+  overall_readiness: "ready" | "needs_review" | "not_ready";
+  recommendations: string[];
+}
+
+export interface SignalIntegrityAnalysis {
+  high_speed_signals: Array<{
+    part_id: string;
+    name: string;
+    interface: string;
+    calculated_impedance_ohms: number;
+    required_impedance_ohms: number;
+    impedance_ok: boolean;
+    recommendation: string;
+  }>;
+  impedance_recommendations: Array<{
+    interface: string;
+    part: string;
+    current_impedance: number;
+    required_impedance: number;
+    recommendation: string;
+  }>;
+  emi_emc_recommendations: string[];
+  routing_recommendations: string[];
+  decoupling_analysis: {
+    adequate: boolean;
+    recommendations: string[];
+  };
+}
+
+export interface ThermalAnalysis {
+  component_thermal: Record<string, {
+    power_dissipation_w: number;
+    junction_temp_c: number;
+    max_temp_c: number;
+    thermal_ok: boolean;
+  }>;
+  thermal_issues: Array<{
+    part_id: string;
+    junction_temp_c: number;
+    max_temp_c: number;
+    power_dissipation_w: number;
+    issue: string;
+  }>;
+  total_thermal_issues: number;
+  total_power_dissipation_w: number;
+  recommendations: string[];
 }
 
 export interface DesignHealthScore {

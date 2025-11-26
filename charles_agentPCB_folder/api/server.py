@@ -42,6 +42,34 @@ from api.conversation_manager import ConversationManager
 
 app = FastAPI(title="PCB Design API")
 
+
+def ensure_selected_parts_is_dict(design_state: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Ensure selected_parts is a dict, convert list if needed.
+    This prevents dict/float multiplication errors when parts are stored incorrectly.
+    """
+    selected_parts = design_state.get("selected_parts", {})
+    
+    if isinstance(selected_parts, list):
+        logger.warning("[DATA_VALIDATION] selected_parts is a list, converting to dict")
+        # Convert list to dict using componentId or index
+        converted = {}
+        for i, part in enumerate(selected_parts):
+            if isinstance(part, dict):
+                key = part.get("componentId") or part.get("id") or f"part_{i}"
+                converted[key] = part
+            else:
+                logger.error(f"[DATA_VALIDATION] Invalid part at index {i}: {type(part)}")
+        design_state["selected_parts"] = converted
+        return converted
+    
+    if not isinstance(selected_parts, dict):
+        logger.error(f"[DATA_VALIDATION] selected_parts is invalid type: {type(selected_parts)}, resetting to empty dict")
+        design_state["selected_parts"] = {}
+        return {}
+    
+    return selected_parts
+
 # Initialize conversation manager (singleton)
 conversation_manager = ConversationManager()
 
@@ -922,9 +950,20 @@ async def answer_question(
         if question_type == "cost":
             from agents.cost_optimizer_agent import CostOptimizerAgent
             cost_agent = CostOptimizerAgent()
+            # CRITICAL: Ensure selected_parts is a dict and validate structure
+            ensure_selected_parts_is_dict(orchestrator.design_state)
             bom_items = []
             for block_name, part in orchestrator.design_state["selected_parts"].items():
-                bom_items.append({"part_data": part, "quantity": 1})
+                # Ensure part is a dict, not a list or other structure
+                if isinstance(part, dict):
+                    bom_items.append({"part_data": part, "quantity": 1})
+                elif isinstance(part, list):
+                    # Handle list case (shouldn't happen, but safety check)
+                    logger.warning(f"[BOM_VALIDATION] Part {block_name} is a list, using first element")
+                    if part and isinstance(part[0], dict):
+                        bom_items.append({"part_data": part[0], "quantity": 1})
+                else:
+                    logger.error(f"[BOM_VALIDATION] Invalid part type for {block_name}: {type(part)}")
             cost_analysis = cost_agent.optimize_cost(bom_items)
             total_cost = cost_analysis.get("total_cost", 0)
             answer = f"Total BOM cost: ${total_cost:.2f}"
@@ -932,9 +971,19 @@ async def answer_question(
         elif question_type == "power":
             from agents.power_calculator_agent import PowerCalculatorAgent
             power_agent = PowerCalculatorAgent()
+            # CRITICAL: Ensure selected_parts is a dict and validate structure
+            ensure_selected_parts_is_dict(orchestrator.design_state)
             bom_items = []
             for block_name, part in orchestrator.design_state["selected_parts"].items():
-                bom_items.append({"part_data": part, "quantity": 1})
+                # Ensure part is a dict, not a list or other structure
+                if isinstance(part, dict):
+                    bom_items.append({"part_data": part, "quantity": 1})
+                elif isinstance(part, list):
+                    logger.warning(f"[BOM_VALIDATION] Part {block_name} is a list, using first element")
+                    if part and isinstance(part[0], dict):
+                        bom_items.append({"part_data": part[0], "quantity": 1})
+                else:
+                    logger.error(f"[BOM_VALIDATION] Invalid part type for {block_name}: {type(part)}")
             power_analysis = power_agent.calculate_power(bom_items, orchestrator.design_state.get("connections", []))
             total_power = power_analysis.get("total_power_watts", 0)
             answer = f"Total power consumption: {total_power:.2f}W"

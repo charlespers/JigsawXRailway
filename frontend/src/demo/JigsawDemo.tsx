@@ -448,15 +448,18 @@ export default function JigsawDemo({
     };
     
     // CRITICAL: Track parts by componentId to handle cases where same part is used in different components
-    // This ensures all parts are displayed even if they share the same MPN
+    // Enhanced duplicate check: componentId + mpn + manufacturer
     setParts((prev) => {
       // Check if this exact component-part combination already exists
       const existingIndex = prev.findIndex((p) => {
-        return p.componentId === partWithComponentId.componentId && p.mpn === partWithComponentId.mpn;
+        return p.componentId === partWithComponentId.componentId && 
+               p.mpn === partWithComponentId.mpn &&
+               p.manufacturer === partWithComponentId.manufacturer;
       });
       
       if (existingIndex >= 0) {
-        // Same component selecting same part - increment quantity
+        // Duplicate detected - increment quantity and show info toast
+        showToast(`Part ${partWithComponentId.mpn} already exists, incrementing quantity`, "info", 2000);
         return prev.map((p, idx) => {
           if (idx === existingIndex) {
             return { ...p, quantity: (p.quantity || 1) + 1 };
@@ -699,10 +702,21 @@ export default function JigsawDemo({
                     healthBreakdown={designHealth.healthBreakdown}
                   />
                 )}
-                <BOMInsights 
-                  parts={parts} 
+                <DesignValidationPanel
+                  parts={parts}
                   connections={connections}
-                  onPartAdd={(part) => {
+                  onPartAdd={(part: PartObject) => {
+                    // CRITICAL: Check if part already exists before adding
+                    const exists = parts.some(p => 
+                      p.mpn === part.mpn && 
+                      p.manufacturer === part.manufacturer
+                    );
+                    
+                    if (exists) {
+                      showToast(`${part.mpn} is already in the BOM`, "warning", 2000);
+                      return;
+                    }
+                    
                     // CRITICAL: Ensure part has componentId
                     const partWithComponentId = {
                       ...part,
@@ -712,7 +726,79 @@ export default function JigsawDemo({
                     
                     // Add part to the BOM (parts array)
                     setParts(prev => {
-                      const existingIndex = prev.findIndex(p => p.mpn === part.mpn && p.componentId === partWithComponentId.componentId);
+                      const existingIndex = prev.findIndex(p => 
+                        p.mpn === part.mpn && 
+                        p.manufacturer === part.manufacturer &&
+                        p.componentId === partWithComponentId.componentId
+                      );
+                      if (existingIndex >= 0) {
+                        const updated = prev.map((p, idx) => 
+                          idx === existingIndex ? { ...p, quantity: (p.quantity || 1) + 1 } : p
+                        );
+                        saveToHistory(updated);
+                        return updated;
+                      }
+                      const updated = [...prev, partWithComponentId];
+                      saveToHistory(updated);
+                      return updated;
+                    });
+                    
+                    // CRITICAL: Also add to selectedComponents Map for PCBViewer visualization
+                    setSelectedComponents(prev => {
+                      const newMap = new Map(prev);
+                      const existingComponents = Array.from(prev.values()).map((c) => ({
+                        id: c.id,
+                        position: c.position,
+                        size: c.size,
+                      }));
+                      
+                      const organizedPosition = calculateComponentPosition(
+                        partWithComponentId.componentId,
+                        existingComponents,
+                        prev.size
+                      );
+                      
+                      newMap.set(partWithComponentId.componentId, {
+                        id: partWithComponentId.componentId,
+                        label: part.mpn.split("-")[0] || partWithComponentId.componentId,
+                        position: organizedPosition,
+                        partData: partWithComponentId,
+                      });
+                      return newMap;
+                    });
+                    
+                    showToast(`Added ${part.mpn} to BOM`, "success", 2000);
+                  }}
+                />
+                <BOMInsights 
+                  parts={parts} 
+                  connections={connections}
+                  onPartAdd={(part) => {
+                    // CRITICAL: Check if part already exists before adding
+                    const exists = parts.some(p => 
+                      p.mpn === part.mpn && 
+                      p.manufacturer === part.manufacturer
+                    );
+                    
+                    if (exists) {
+                      showToast(`${part.mpn} is already in the BOM`, "warning", 2000);
+                      return;
+                    }
+                    
+                    // CRITICAL: Ensure part has componentId
+                    const partWithComponentId = {
+                      ...part,
+                      componentId: part.componentId || `added_${Date.now()}`,
+                      quantity: part.quantity || 1
+                    };
+                    
+                    // Add part to the BOM (parts array)
+                    setParts(prev => {
+                      const existingIndex = prev.findIndex(p => 
+                        p.mpn === part.mpn && 
+                        p.manufacturer === part.manufacturer &&
+                        p.componentId === partWithComponentId.componentId
+                      );
                       if (existingIndex >= 0) {
                         const updated = prev.map((p, idx) => 
                           idx === existingIndex ? { ...p, quantity: (p.quantity || 1) + 1 } : p
@@ -760,12 +846,22 @@ export default function JigsawDemo({
               <div className="space-y-4 p-4 overflow-y-auto">
                 <DesignTemplates
                   onTemplateSelect={(query) => {
-                    // Save current design as previous
-                    setPreviousDesign([...parts]);
-                    // Start new design with template
-                    setAnalysisQuery(query);
-                    setIsAnalyzing(true);
-                    setActiveTab("design");
+                    try {
+                      // Save current design as previous
+                      setPreviousDesign([...parts]);
+                      // Clear any previous errors
+                      setError(null);
+                      // Start new design with template
+                      setAnalysisQuery(query);
+                      setIsAnalyzing(true);
+                      setActiveTab("design");
+                      showToast(`Starting template: ${query.substring(0, 50)}...`, "info", 2000);
+                    } catch (error) {
+                      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+                      showToast(`Template error: ${errorMessage}`, "error", 3000);
+                      setError(errorMessage);
+                      console.error("Template selection error:", error);
+                    }
                   }}
                 />
                 {previousDesign && (

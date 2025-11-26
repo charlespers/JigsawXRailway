@@ -5,12 +5,21 @@ Performs power consumption analysis, thermal analysis, and design rule checks
 
 from typing import Dict, Any, List, Optional, Union
 from collections import defaultdict
+import logging
+
+logger = logging.getLogger(__name__)
 
 
-def safe_float_extract(value: Any, default: float = 0.0) -> float:
+def safe_float_extract(value: Any, default: float = 0.0, context: str = "") -> float:
     """
     Safely extract a float value from nested dicts or direct values.
     Recursively extracts until a number is found.
+    Enhanced with logging for debugging dict/float multiplication errors.
+    
+    Args:
+        value: The value to extract (can be dict, list, number, or string)
+        default: Default value if extraction fails
+        context: Optional context string for logging (e.g., "voltage for U1")
     """
     if value is None:
         return default
@@ -21,19 +30,41 @@ def safe_float_extract(value: Any, default: float = 0.0) -> float:
     
     # If it's a dict, recursively extract
     if isinstance(value, dict):
-        # Try common keys
+        # Log warning for deeply nested dicts (potential issue)
+        if len(value) > 3 and context:
+            logger.warning(f"[FLOAT_EXTRACT] Deeply nested dict in {context}: keys={list(value.keys())[:5]}")
+        
+        # Try common keys in order of preference
         for key in ["value", "nominal", "max", "typical", "min"]:
             if key in value:
-                return safe_float_extract(value[key], default)
+                result = safe_float_extract(value[key], default, f"{context}.{key}" if context else key)
+                if result != default:
+                    return result
+        
         # If no common keys, try first value
         if value:
-            return safe_float_extract(next(iter(value.values())), default)
+            first_key = next(iter(value.keys()))
+            result = safe_float_extract(value[first_key], default, f"{context}.{first_key}" if context else first_key)
+            if result != default:
+                return result
+        
+        if context:
+            logger.warning(f"[FLOAT_EXTRACT] Could not extract float from dict in {context}, using default {default}")
+        return default
+    
+    # If it's a list, try first element
+    if isinstance(value, list):
+        if value and len(value) > 0:
+            logger.warning(f"[FLOAT_EXTRACT] Value is a list in {context}, using first element")
+            return safe_float_extract(value[0], default, context)
         return default
     
     # Try to convert to float
     try:
         return float(value)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as e:
+        if context:
+            logger.warning(f"[FLOAT_EXTRACT] Failed to convert {type(value).__name__} to float in {context}: {e}, using default {default}")
         return default
 
 
@@ -124,14 +155,18 @@ class DesignAnalyzer:
             else:
                 current = safe_float_extract(current_max)
             
-            # Ensure voltage is a valid float for use as dict key
-            if not isinstance(voltage, (int, float)) or voltage <= 0:
-                continue  # Skip this part if voltage is invalid
+            # Use safe extraction with context for debugging
+            voltage_float = safe_float_extract(voltage, context=f"voltage for {part_id}")
+            current_float = safe_float_extract(current, context=f"current for {part_id}")
             
-            if voltage > 0 and current > 0:
-                power = float(voltage) * float(current)
+            # Skip if voltage is invalid
+            if voltage_float <= 0:
+                continue
+            
+            if voltage_float > 0 and current_float > 0:
+                power = voltage_float * current_float
                 # Use float voltage as key to ensure it's hashable
-                power_rails[float(voltage)] += float(current)
+                power_rails[voltage_float] += current_float
                 component_power[part_id] = {
                     "voltage": voltage,
                     "current": current,

@@ -37,15 +37,14 @@ class CostOptimizerAgent:
             quantity = item.get("quantity", 1)
             part = item.get("part_data", {})
             
+            # Import safe_float_extract from design_analyzer
+            from agents.design_analyzer import safe_float_extract
+            
             cost_est = part.get("cost_estimate", {})
-            if isinstance(cost_est, dict):
-                unit_cost = cost_est.get("value", 0)
-                # Ensure unit_cost is a float, not a dict
-                if isinstance(unit_cost, dict):
-                    unit_cost = unit_cost.get("value") or 0.0
-                unit_cost = float(unit_cost) if unit_cost else 0.0
-            else:
-                unit_cost = float(cost_est) if cost_est else 0.0
+            unit_cost = safe_float_extract(
+                cost_est.get("value") if isinstance(cost_est, dict) else cost_est,
+                context=f"cost for {part.get('id', 'unknown')}"
+            )
             
             item_cost = unit_cost * quantity
             total_cost += item_cost

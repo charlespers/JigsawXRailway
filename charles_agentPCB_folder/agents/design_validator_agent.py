@@ -64,60 +64,89 @@ class DesignValidatorAgent:
             if "protection" in category or "tvs" in category or "polyfuse" in category:
                 has_protection = True
             
-            # Power consumption estimate
+            # Import safe_float_extract
+            from agents.design_analyzer import safe_float_extract
+            
+            # Power consumption estimate - use safe extraction
             current_max = part.get("current_max", {})
-            if isinstance(current_max, dict):
-                current = current_max.get("max") or current_max.get("typical", 0)
-                # Ensure current is a float, not a dict
-                if isinstance(current, dict):
-                    current = current.get("value") or current.get("max") or 0.0
-                current = float(current) if current else 0.0
-            else:
-                current = float(current_max) if current_max else 0.0
+            current = safe_float_extract(
+                current_max.get("max") if isinstance(current_max, dict) else current_max,
+                context=f"current for {part.get('id', 'unknown')}"
+            )
             
             voltage_range = part.get("supply_voltage_range", {})
-            if isinstance(voltage_range, dict):
-                voltage = voltage_range.get("nominal") or voltage_range.get("max", 0)
-                # Ensure voltage is a float, not a dict
-                if isinstance(voltage, dict):
-                    voltage = voltage.get("value") or voltage.get("nominal") or 0.0
-                voltage = float(voltage) if voltage else 0.0
-            else:
-                voltage = float(voltage_range) if voltage_range else 0.0
+            voltage = safe_float_extract(
+                voltage_range.get("nominal") if isinstance(voltage_range, dict) else voltage_range,
+                context=f"voltage for {part.get('id', 'unknown')}"
+            )
             
             if current > 0 and voltage > 0:
                 power = current * voltage
                 total_power += power
         
-        # Validation checks
+        # Validation checks with actionable recommendations
         if not has_power_regulator:
             issues.append({
                 "type": "missing_component",
                 "severity": "error",
-                "message": "No power regulator found - design requires power management"
+                "component": None,
+                "message": "No power regulator found - design requires power management",
+                "current": None,
+                "required": "Power regulator (LDO or switching regulator)",
+                "recommendation": "Add a power regulator to provide stable voltage rails. For 3.3V systems, consider: TPS62133 (switching) or LP5907 (LDO)",
+                "fixable": True,
+                "category": "power_management"
             })
             compliance["power_budget"] = False
         
         if not has_decoupling_caps:
-            warnings.append("No decoupling capacitors found - recommended for power supply stability")
+            warnings.append({
+                "type": "missing_component",
+                "severity": "warning",
+                "component": None,
+                "message": "No decoupling capacitors found - recommended for power supply stability",
+                "current": None,
+                "required": "Decoupling capacitors (100nF ceramic + 10uF tantalum per IC)",
+                "recommendation": "Add 100nF ceramic capacitor within 2mm of each IC power pin, plus 10uF bulk capacitor per power rail",
+                "fixable": True,
+                "category": "power_management"
+            })
         
         if not has_protection:
-            warnings.append("No protection components found - consider ESD/TVS protection for I/O")
+            warnings.append({
+                "type": "missing_component",
+                "severity": "warning",
+                "component": None,
+                "message": "No protection components found - consider ESD/TVS protection for I/O",
+                "current": None,
+                "required": "ESD/TVS protection diodes on I/O lines",
+                "recommendation": "Add TVS diodes (e.g., SMAJ5.0A) on all external I/O lines to protect against ESD events",
+                "fixable": True,
+                "category": "protection"
+            })
         
         # Check power budget
         if power_components:
             for regulator in power_components:
+                from agents.design_analyzer import safe_float_extract
                 reg_current = regulator.get("current_max", {})
-                if isinstance(reg_current, dict):
-                    reg_max_current = reg_current.get("max") or reg_current.get("typical", 0)
-                else:
-                    reg_max_current = reg_current or 0
+                reg_max_current = safe_float_extract(
+                    reg_current.get("max") if isinstance(reg_current, dict) else reg_current,
+                    context=f"regulator current for {regulator.get('id', 'unknown')}"
+                )
                 
                 if reg_max_current > 0 and total_power / reg_max_current > 0.8:
+                    utilization = (total_power / reg_max_current) * 100
                     issues.append({
                         "type": "power_budget",
                         "severity": "warning",
-                        "message": f"Power consumption ({total_power:.2f}W) may exceed regulator capacity"
+                        "component": regulator.get("id", "regulator"),
+                        "message": f"Power consumption ({total_power:.2f}W) exceeds {utilization:.1f}% of regulator capacity ({reg_max_current:.2f}A)",
+                        "current": f"{total_power:.2f}W ({utilization:.1f}% utilization)",
+                        "required": f"< 80% of {reg_max_current:.2f}A capacity",
+                        "recommendation": f"Upgrade to regulator with >{reg_max_current * 1.25:.2f}A capacity or reduce power consumption",
+                        "fixable": True,
+                        "category": "power_management"
                     })
         
         # Check RoHS compliance
@@ -130,23 +159,56 @@ class DesignValidatorAgent:
                 compliance["rohs"] = False
         
         if non_rohs_parts:
-            warnings.append(f"Non-RoHS compliant parts found: {', '.join(non_rohs_parts)}")
+            warnings.append({
+                "type": "rohs_compliance",
+                "severity": "warning",
+                "component": ", ".join(non_rohs_parts),
+                "message": f"Non-RoHS compliant parts found: {', '.join(non_rohs_parts)}",
+                "current": "Non-RoHS",
+                "required": "RoHS compliant parts",
+                "recommendation": "Replace with RoHS-compliant alternatives to meet environmental regulations",
+                "fixable": True,
+                "category": "compliance"
+            })
         
-        # Check footprint compliance (IPC-7351)
+        # Check footprint compliance (IPC-7351) - structured warnings
         for item in bom_items:
             part = item.get("part_data", {})
             footprint = part.get("footprint")
             if not footprint:
-                warnings.append(f"{part.get('name')} missing IPC-7351 footprint designation")
+                part_name = part.get("name") or part.get("id") or "Unknown"
+                package = part.get("package", "")
+                warnings.append({
+                    "type": "missing_footprint",
+                    "severity": "warning",
+                    "component": part_name,
+                    "message": f"{part_name} missing IPC-7351 footprint designation",
+                    "current": None,
+                    "required": f"IPC-7351 compliant footprint for {package}",
+                    "recommendation": f"Add footprint designation (e.g., {package}_IPC7351) or use standard library footprint",
+                    "fixable": True,
+                    "category": "ipc_compliance"
+                })
         
-        # Check MSL levels for ICs
+        # Check MSL levels for ICs - structured warnings
         for item in bom_items:
             part = item.get("part_data", {})
             category = part.get("category", "")
-            if "ic" in category or "mcu" in category:
+            if "ic" in category.lower() or "mcu" in category.lower():
                 msl = part.get("msl_level")
                 if not msl:
-                    warnings.append(f"{part.get('name')} missing MSL level - required for assembly planning")
+                    part_name = part.get("name") or part.get("id") or "Unknown"
+                    warnings.append({
+                        "type": "missing_msl",
+                        "severity": "warning",
+                        "component": part_name,
+                        "message": f"{part_name} missing MSL level - required for assembly planning",
+                        "current": None,
+                        "required": "MSL level (1-6) per J-STD-020",
+                        "recommendation": "Add MSL level to part data. Most ICs are MSL 3. Check datasheet for exact value.",
+                        "fixable": True,
+                        "category": "assembly_planning"
+                    })
         
         valid = len([i for i in issues if i.get("severity") == "error"]) == 0
         
