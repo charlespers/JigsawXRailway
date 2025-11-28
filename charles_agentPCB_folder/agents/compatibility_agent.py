@@ -40,44 +40,38 @@ class CompatibilityAgent:
         if self._initialized:
             return
         
+        # Always use XAI - OpenAI support removed
+        self.provider = "xai"
         if load_config:
             try:
                 config = load_config()
-                self.api_key = config.get("api_key")
-                self.endpoint = config.get("endpoint")
-                self.model = config.get("model")
-                self.temperature = config.get("temperature")
-                self.provider = config.get("provider", "openai")
-            except Exception as e:
-                provider = os.getenv("LLM_PROVIDER", "openai").lower()
-                if provider == "xai":
+                # Only use config if it's for xAI
+                if config.get("provider", "xai").lower() == "xai":
+                    self.api_key = config.get("api_key") or os.getenv("XAI_API_KEY")
+                    self.endpoint = config.get("endpoint") or "https://api.x.ai/v1/chat/completions"
+                    self.model = config.get("model") or os.getenv("XAI_MODEL", "grok-3")
+                    self.temperature = config.get("temperature") or float(os.getenv("XAI_TEMPERATURE", "0.2"))
+                else:
+                    # Force xAI
                     self.api_key = os.getenv("XAI_API_KEY")
                     self.endpoint = "https://api.x.ai/v1/chat/completions"
                     self.model = os.getenv("XAI_MODEL", "grok-3")
                     self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
-                else:
-                    self.api_key = os.getenv("OPENAI_API_KEY")
-                    self.endpoint = "https://api.openai.com/v1/chat/completions"
-                    self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                    self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
-                self.provider = provider
-        else:
-            provider = os.getenv("LLM_PROVIDER", "openai").lower()
-            if provider == "xai":
+            except Exception as e:
+                # Fallback to environment - always xAI
                 self.api_key = os.getenv("XAI_API_KEY")
                 self.endpoint = "https://api.x.ai/v1/chat/completions"
                 self.model = os.getenv("XAI_MODEL", "grok-3")
                 self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
-            else:
-                self.api_key = os.getenv("OPENAI_API_KEY")
-                self.endpoint = "https://api.openai.com/v1/chat/completions"
-                self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
-            self.provider = provider
+        else:
+            # Read from environment - always xAI
+            self.api_key = os.getenv("XAI_API_KEY")
+            self.endpoint = "https://api.x.ai/v1/chat/completions"
+            self.model = os.getenv("XAI_MODEL", "grok-3")
+            self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
         
         if not self.api_key:
-            provider_name = "XAI" if self.provider == "xai" else "OpenAI"
-            raise ValueError(f"{provider_name}_API_KEY not found.")
+            raise ValueError("XAI_API_KEY not found. Please set XAI_API_KEY environment variable on Railway.")
         
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",

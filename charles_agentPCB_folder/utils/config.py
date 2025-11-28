@@ -20,19 +20,17 @@ except ImportError:
 def load_config() -> Dict[str, Any]:
     """
     Load configuration from environment.
-    Supports both OpenAI and XAI (Grok) APIs.
+    Only supports XAI (Grok) API - OpenAI support removed.
     
-    Set LLM_PROVIDER to 'openai' or 'xai' to choose provider.
+    Set LLM_PROVIDER to 'xai' (default).
     """
     
-    # Determine which provider to use
-    provider = os.getenv("LLM_PROVIDER", "openai").lower()
+    # Always use xai - OpenAI support removed
+    provider = os.getenv("LLM_PROVIDER", "xai").lower()
     
-    if provider not in ["openai", "xai"]:
-        raise ValueError(
-            f"LLM_PROVIDER must be 'openai' or 'xai', got '{provider}'.\n"
-            "Set it with: export LLM_PROVIDER='openai' or export LLM_PROVIDER='xai'"
-        )
+    if provider != "xai":
+        # Force xai if something else is set
+        provider = "xai"
     
     config = {
         "provider": provider,
@@ -41,37 +39,20 @@ def load_config() -> Dict[str, Any]:
         "debug_mode": os.getenv("DEBUG_MODE", "false").lower() == "true"
     }
     
-    if provider == "openai":
-        # OpenAI configuration
-        openai_api_key = os.getenv("OPENAI_API_KEY")
-        if not openai_api_key:
-            raise ValueError(
-                "OPENAI_API_KEY environment variable is required when using OpenAI.\n"
-                "Set it with: export OPENAI_API_KEY='your_key'"
-            )
-        
-        config.update({
-            "api_key": openai_api_key,
-            "endpoint": "https://api.openai.com/v1/chat/completions",
-            "model": os.getenv("OPENAI_MODEL", "gpt-3.5-turbo"),
-            "temperature": float(os.getenv("OPENAI_TEMPERATURE", "0.3")),
-        })
+    # XAI (Grok) configuration - only provider supported
+    xai_api_key = os.getenv("XAI_API_KEY")
+    if not xai_api_key:
+        raise ValueError(
+            "XAI_API_KEY environment variable is required.\n"
+            "Set it with: export XAI_API_KEY='your_key' or set it on Railway."
+        )
     
-    elif provider == "xai":
-        # XAI (Grok) configuration
-        xai_api_key = os.getenv("XAI_API_KEY")
-        if not xai_api_key:
-            raise ValueError(
-                "XAI_API_KEY environment variable is required when using XAI.\n"
-                "Set it with: export XAI_API_KEY='your_key'"
-            )
-        
-        config.update({
-            "api_key": xai_api_key,
-            "endpoint": "https://api.x.ai/v1/chat/completions",
-            "model": os.getenv("XAI_MODEL", "grok-3"),
-            "temperature": float(os.getenv("XAI_TEMPERATURE", "0.3")),
-        })
+    config.update({
+        "api_key": xai_api_key,
+        "endpoint": "https://api.x.ai/v1/chat/completions",
+        "model": os.getenv("XAI_MODEL", "grok-3"),
+        "temperature": float(os.getenv("XAI_TEMPERATURE", "0.3")),
+    })
     
     return config
 

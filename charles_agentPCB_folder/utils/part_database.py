@@ -374,13 +374,20 @@ def get_intermediary_candidates(
     def rank_score(part: Dict[str, Any]) -> float:
         score = 0.0
         
-        # Prefer higher efficiency
+        # Prefer higher efficiency - safely extract float value
         efficiency_val = part.get("efficiency", 0)
-        # Handle efficiency as dict or float
+        efficiency = 0.0
         if isinstance(efficiency_val, dict):
-            efficiency = efficiency_val.get("value") or efficiency_val.get("typical") or efficiency_val.get("max") or 0
-        else:
-            efficiency = float(efficiency_val) if efficiency_val else 0
+            # Try multiple keys to extract efficiency value
+            efficiency = float(efficiency_val.get("value") or efficiency_val.get("typical") or efficiency_val.get("max") or efficiency_val.get("nominal") or 0)
+        elif isinstance(efficiency_val, (int, float)):
+            efficiency = float(efficiency_val)
+        elif efficiency_val:
+            try:
+                efficiency = float(efficiency_val)
+            except (ValueError, TypeError):
+                efficiency = 0.0
+        
         if efficiency > 0:
             score += efficiency * 0.4
         

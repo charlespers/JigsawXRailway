@@ -10,7 +10,7 @@ from .common import BOMItem, Connection
 class ComponentAnalysisRequest(BaseModel):
     """Request for component analysis (SSE endpoint)"""
     query: str = Field(..., min_length=1, description="Natural language design query")
-    provider: str = Field(default="openai", pattern="^(openai|xai)$")
+    provider: str = Field(default="xai", pattern="^xai$", description="LLM provider: 'xai' (OpenAI support removed)")
     sessionId: Optional[str] = None
     contextQueryId: Optional[str] = None
     context: Optional[str] = None

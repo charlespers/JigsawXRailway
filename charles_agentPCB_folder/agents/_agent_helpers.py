@@ -15,54 +15,52 @@ except ImportError:
 def initialize_llm_config() -> Dict[str, Any]:
     """
     Initialize LLM configuration from config file or environment variables.
-    This function reads the provider from the environment at runtime,
-    allowing the provider to be set dynamically.
+    Defaults to XAI - OpenAI support removed.
     
     Returns:
         Dictionary with api_key, endpoint, model, temperature, provider, headers
     """
+    # Default to xAI - no OpenAI support
+    provider = os.getenv("LLM_PROVIDER", "xai").lower()
+    
     if load_config:
         try:
             config = load_config()
-            api_key = config.get("api_key")
-            endpoint = config.get("endpoint")
-            model = config.get("model")
-            temperature = config.get("temperature")
-            provider = config.get("provider", "openai")
-        except Exception:
-            # Fallback to environment
-            provider = os.getenv("LLM_PROVIDER", "openai").lower()
-            if provider == "xai":
+            # Only use config if provider is xai
+            if config.get("provider", "xai").lower() == "xai":
+                api_key = config.get("api_key") or os.getenv("XAI_API_KEY")
+                endpoint = config.get("endpoint") or "https://api.x.ai/v1/chat/completions"
+                model = config.get("model") or os.getenv("XAI_MODEL", "grok-3")
+                temperature = config.get("temperature") or float(os.getenv("XAI_TEMPERATURE", "0.3"))
+                provider = "xai"
+            else:
+                # Force xAI even if config says otherwise
                 api_key = os.getenv("XAI_API_KEY")
                 endpoint = "https://api.x.ai/v1/chat/completions"
                 model = os.getenv("XAI_MODEL", "grok-3")
                 temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
-            else:
-                api_key = os.getenv("OPENAI_API_KEY")
-                endpoint = "https://api.openai.com/v1/chat/completions"
-                model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-    else:
-        # Read from environment
-        provider = os.getenv("LLM_PROVIDER", "openai").lower()
-        if provider == "xai":
+                provider = "xai"
+        except Exception:
+            # Fallback to environment - always xAI
+            provider = "xai"
             api_key = os.getenv("XAI_API_KEY")
             endpoint = "https://api.x.ai/v1/chat/completions"
             model = os.getenv("XAI_MODEL", "grok-3")
             temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
-        else:
-            api_key = os.getenv("OPENAI_API_KEY")
-            endpoint = "https://api.openai.com/v1/chat/completions"
-            model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-            temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
+    else:
+        # Read from environment - always xAI
+        provider = "xai"
+        api_key = os.getenv("XAI_API_KEY")
+        endpoint = "https://api.x.ai/v1/chat/completions"
+        model = os.getenv("XAI_MODEL", "grok-3")
+        temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
     
     if not api_key:
-        provider_name = "XAI" if provider == "xai" else "OpenAI"
         env_provider = os.getenv("LLM_PROVIDER", "not_set")
         error_msg = (
-            f"{provider_name}_API_KEY not found. "
-            f"Provider requested: '{provider}', LLM_PROVIDER env: '{env_provider}'. "
-            f"Please set {provider_name}_API_KEY environment variable on Railway."
+            f"XAI_API_KEY not found. "
+            f"LLM_PROVIDER env: '{env_provider}'. "
+            f"Please set XAI_API_KEY environment variable on Railway."
         )
         # Log for debugging
         import logging
@@ -71,10 +69,8 @@ def initialize_llm_config() -> Dict[str, Any]:
         raise ValueError(error_msg)
     
     # Validate API key format (basic check)
-    if provider == "xai" and len(api_key) < 20:
-        raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your .env file.")
-    if provider == "openai" and not api_key.startswith("sk-"):
-        raise ValueError("OPENAI_API_KEY appears to be invalid (should start with 'sk-'). Please check your .env file.")
+    if len(api_key) < 20:
+        raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your Railway environment variables.")
     
     headers = {
         "Authorization": f"Bearer {api_key}",

@@ -39,8 +39,8 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 async def analyze_cost(request: CostAnalysisRequest):
     """Analyze BOM cost and suggest optimizations."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -68,8 +68,8 @@ async def analyze_cost(request: CostAnalysisRequest):
 async def analyze_supply_chain(request: SupplyChainAnalysisRequest):
     """Analyze supply chain risks."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -97,8 +97,8 @@ async def analyze_supply_chain(request: SupplyChainAnalysisRequest):
 async def analyze_power(request: PowerAnalysisRequest):
     """Calculate power consumption."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -148,8 +148,8 @@ async def analyze_power(request: PowerAnalysisRequest):
 async def analyze_thermal(request: ThermalAnalysisRequest):
     """Perform detailed thermal analysis."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -181,8 +181,8 @@ async def analyze_thermal(request: ThermalAnalysisRequest):
 async def analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
     """Perform signal integrity and EMI/EMC analysis."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -223,8 +223,8 @@ async def analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
 async def analyze_manufacturing_readiness(request: ManufacturingReadinessRequest):
     """Perform manufacturing readiness analysis."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -260,8 +260,8 @@ async def analyze_manufacturing_readiness(request: ManufacturingReadinessRequest
 async def validate_design(request: DesignValidationRequest):
     """Validate design against industry standards."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -308,8 +308,8 @@ async def validate_design(request: DesignValidationRequest):
 async def analyze_bom_insights(request: BOMInsightsRequest):
     """Get comprehensive BOM insights and statistics."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:
@@ -337,8 +337,8 @@ async def analyze_bom_insights(request: BOMInsightsRequest):
 async def batch_analysis(request: BatchAnalysisRequest):
     """Run multiple analyses in parallel."""
     # Set provider before creating agents
-    provider = request.provider or "openai"
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     os.environ["LLM_PROVIDER"] = provider
     
     try:

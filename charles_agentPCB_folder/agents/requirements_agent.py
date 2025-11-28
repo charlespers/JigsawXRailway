@@ -39,56 +39,46 @@ class RequirementsAgent:
         if self._initialized:
             return
         
+        # Always use XAI - OpenAI support removed
+        self.provider = "xai"
         if load_config:
             try:
                 config = load_config()
-                self.api_key = config.get("api_key")
-                self.endpoint = config.get("endpoint")
-                self.model = config.get("model")
-                self.temperature = config.get("temperature")
-                self.provider = config.get("provider", "openai")
-            except Exception as e:
-                # Fallback if config not available
-                provider = os.getenv("LLM_PROVIDER", "openai").lower()
-                if provider == "xai":
+                # Only use config if it's for xAI
+                if config.get("provider", "xai").lower() == "xai":
+                    self.api_key = config.get("api_key") or os.getenv("XAI_API_KEY")
+                    self.endpoint = config.get("endpoint") or "https://api.x.ai/v1/chat/completions"
+                    self.model = config.get("model") or os.getenv("XAI_MODEL", "grok-3")
+                    self.temperature = config.get("temperature") or float(os.getenv("XAI_TEMPERATURE", "0.3"))
+                else:
+                    # Force xAI
                     self.api_key = os.getenv("XAI_API_KEY")
                     self.endpoint = "https://api.x.ai/v1/chat/completions"
                     self.model = os.getenv("XAI_MODEL", "grok-3")
                     self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
-                else:
-                    self.api_key = os.getenv("OPENAI_API_KEY")
-                    self.endpoint = "https://api.openai.com/v1/chat/completions"
-                    self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                    self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-                self.provider = provider
-        else:
-            # Fallback if config not available
-            provider = os.getenv("LLM_PROVIDER", "openai").lower()
-            if provider == "xai":
+            except Exception as e:
+                # Fallback to environment - always xAI
                 self.api_key = os.getenv("XAI_API_KEY")
                 self.endpoint = "https://api.x.ai/v1/chat/completions"
                 self.model = os.getenv("XAI_MODEL", "grok-3")
                 self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
-            else:
-                self.api_key = os.getenv("OPENAI_API_KEY")
-                self.endpoint = "https://api.openai.com/v1/chat/completions"
-                self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-            self.provider = provider
+        else:
+            # Read from environment - always xAI
+            self.api_key = os.getenv("XAI_API_KEY")
+            self.endpoint = "https://api.x.ai/v1/chat/completions"
+            self.model = os.getenv("XAI_MODEL", "grok-3")
+            self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
         
         if not self.api_key:
-            provider_name = "XAI" if self.provider == "xai" else "OpenAI"
             env_provider = os.getenv("LLM_PROVIDER", "not_set")
             raise ValueError(
-                f"{provider_name}_API_KEY not found. Set environment variable to enable reasoning. "
-                f"(Provider requested: {self.provider}, LLM_PROVIDER env: {env_provider})"
+                f"XAI_API_KEY not found. Set environment variable to enable reasoning. "
+                f"(LLM_PROVIDER env: {env_provider})"
             )
         
         # Validate API key format (basic check)
-        if self.provider == "xai" and len(self.api_key) < 20:
-            raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your .env file.")
-        if self.provider == "openai" and not self.api_key.startswith("sk-"):
-            raise ValueError("OPENAI_API_KEY appears to be invalid (should start with 'sk-'). Please check your .env file.")
+        if len(self.api_key) < 20:
+            raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your Railway environment variables.")
         
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
@@ -96,17 +86,6 @@ class RequirementsAgent:
         }
         
         self._initialized = True
-        
-        # Validate API key format (basic check)
-        if self.provider == "xai" and len(self.api_key) < 20:
-            raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your .env file.")
-        if self.provider == "openai" and not self.api_key.startswith("sk-"):
-            raise ValueError("OPENAI_API_KEY appears to be invalid (should start with 'sk-'). Please check your .env file.")
-        
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
     
     def extract_requirements(self, query: str) -> Dict[str, Any]:
         """Extract requirements from query - ensures provider is set before LLM calls."""

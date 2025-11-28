@@ -33,33 +33,34 @@ class AutoFixAgent:
                 self.endpoint = config.get("endpoint")
                 self.model = config.get("model")
                 self.temperature = config.get("temperature", 0.2)
-                self.provider = config.get("provider", "openai")
-            except Exception:
-                provider = os.getenv("LLM_PROVIDER", "openai").lower()
-                if provider == "xai":
+                # Only use config if it's for xAI
+                if config.get("provider", "xai").lower() == "xai":
+                    self.api_key = config.get("api_key") or os.getenv("XAI_API_KEY")
+                    self.endpoint = config.get("endpoint") or "https://api.x.ai/v1/chat/completions"
+                    self.model = config.get("model") or os.getenv("XAI_MODEL", "grok-3")
+                    self.temperature = config.get("temperature") or float(os.getenv("XAI_TEMPERATURE", "0.2"))
+                    self.provider = "xai"
+                else:
+                    # Force xAI
                     self.api_key = os.getenv("XAI_API_KEY")
                     self.endpoint = "https://api.x.ai/v1/chat/completions"
                     self.model = os.getenv("XAI_MODEL", "grok-3")
                     self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
-                else:
-                    self.api_key = os.getenv("OPENAI_API_KEY")
-                    self.endpoint = "https://api.openai.com/v1/chat/completions"
-                    self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                    self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
-                self.provider = provider
-        else:
-            provider = os.getenv("LLM_PROVIDER", "openai").lower()
-            if provider == "xai":
+                    self.provider = "xai"
+            except Exception:
+                # Fallback to environment - always xAI
                 self.api_key = os.getenv("XAI_API_KEY")
                 self.endpoint = "https://api.x.ai/v1/chat/completions"
                 self.model = os.getenv("XAI_MODEL", "grok-3")
                 self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
-            else:
-                self.api_key = os.getenv("OPENAI_API_KEY")
-                self.endpoint = "https://api.openai.com/v1/chat/completions"
-                self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.2"))
-            self.provider = provider
+                self.provider = "xai"
+        else:
+            # Read from environment - always xAI
+            self.api_key = os.getenv("XAI_API_KEY")
+            self.endpoint = "https://api.x.ai/v1/chat/completions"
+            self.model = os.getenv("XAI_MODEL", "grok-3")
+            self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.2"))
+            self.provider = "xai"
         
         if self.api_key:
             self.headers = {

@@ -11,7 +11,7 @@ class AnalysisRequest(BaseModel):
     """Base analysis request"""
     bom_items: List[BOMItem]
     connections: Optional[List[Connection]] = Field(default_factory=list)
-    provider: Optional[str] = Field(default="openai", description="LLM provider: 'openai' or 'xai'")
+    provider: Optional[str] = Field(default="xai", description="LLM provider: 'xai' (OpenAI support removed)")
 
 
 class CostAnalysisRequest(AnalysisRequest):

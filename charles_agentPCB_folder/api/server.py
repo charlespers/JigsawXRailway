@@ -40,13 +40,43 @@ from agents.query_router_agent import QueryRouterAgent
 from api.data_mapper import part_data_to_part_object
 from api.conversation_manager import ConversationManager
 
-# Import modular routes
-from routes import api_router
+# Import modular routes with error handling
+try:
+    from routes import api_router
+    logger.info("[ROUTES] Successfully imported api_router from routes module")
+except Exception as e:
+    logger.error(f"[ROUTES] Failed to import api_router: {e}", exc_info=True)
+    # Create empty router as fallback
+    from fastapi import APIRouter
+    api_router = APIRouter(prefix="/api/v1")
+    logger.warning("[ROUTES] Using fallback empty router")
 
 app = FastAPI(title="PCB Design API", version="1.0.0")
 
-# Include API v1 routes
-app.include_router(api_router)
+# Include API v1 routes with error handling
+try:
+    app.include_router(api_router)
+    total_routes = len([r for r in app.routes if hasattr(r, 'path')])
+    analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    logger.info(f"[ROUTES] Successfully included api_router. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
+    if len(analysis_routes) == 0:
+        logger.error("[ROUTES] WARNING: No analysis routes found! Routes may not be registered correctly.")
+    else:
+        logger.info(f"[ROUTES] Analysis routes registered: {[r.path for r in analysis_routes[:3]]}...")
+except Exception as e:
+    logger.error(f"[ROUTES] Failed to include api_router: {e}", exc_info=True)
+
+# Add startup event to log route registration
+@app.on_event("startup")
+async def startup_event():
+    """Log route registration on startup."""
+    total_routes = len([r for r in app.routes if hasattr(r, 'path')])
+    analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    logger.info(f"[STARTUP] Application started. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
+    if len(analysis_routes) > 0:
+        logger.info(f"[STARTUP] Analysis routes: {[r.path for r in analysis_routes]}")
+    else:
+        logger.error("[STARTUP] CRITICAL: No analysis routes registered!")
 
 # Health check endpoint to verify routes are registered
 @app.get("/health")
@@ -69,7 +99,17 @@ async def list_routes():
                 "path": route.path,
                 "methods": list(route.methods) if route.methods else []
             })
-    return {"routes": sorted(routes, key=lambda x: x["path"])}
+    
+    # Check if analysis routes are present
+    analysis_routes = [r for r in routes if '/analysis' in r['path']]
+    
+    return {
+        "routes": sorted(routes, key=lambda x: x["path"]),
+        "total_routes": len(routes),
+        "analysis_routes_count": len(analysis_routes),
+        "analysis_routes": [r['path'] for r in analysis_routes],
+        "health_check_works": True
+    }
 
 
 def ensure_selected_parts_is_dict(design_state: Dict[str, Any]) -> Dict[str, Any]:
@@ -420,7 +460,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         })
         
         # Ensure provider is still set (defensive check)
-        current_provider = os.environ.get("LLM_PROVIDER", "openai")
+        current_provider = os.environ.get("LLM_PROVIDER", "xai")
         logger.info(f"[WORKFLOW] Extracting requirements (provider={current_provider})")
         
         requirements = orchestrator.requirements_agent.extract_requirements(query)
@@ -1134,7 +1174,7 @@ async def component_analysis(request: Request):
     
     body = await request.json()
     query = body.get("query", "")
-    provider = body.get("provider", "openai")  # Default to openai
+    provider = body.get("provider", "xai")  # Default to xai - OpenAI support removed
     session_id = body.get("sessionId")  # Conversation session ID
     context_query_id = body.get("contextQueryId")
     context = body.get("context", "")
@@ -1142,9 +1182,10 @@ async def component_analysis(request: Request):
     if not query:
         return {"error": "Query is required"}, 400
     
-    # Validate provider
-    if provider not in ["openai", "xai"]:
-        return {"error": f"Invalid provider '{provider}'. Must be 'openai' or 'xai'."}, 400
+    # Validate provider - only xai supported
+    if provider not in ["xai"]:
+        logger.warning(f"[PROVIDER] Invalid provider '{provider}' requested, defaulting to 'xai'")
+        provider = "xai"
     
     # Get or create session
     if not session_id:
@@ -1157,7 +1198,7 @@ async def component_analysis(request: Request):
     has_existing_design = existing_design_state is not None
     
     # Store original provider to restore later
-    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
     
     async def event_stream():
         # CRITICAL: Set provider in environment FIRST, before ANY agent creation
@@ -1243,8 +1284,7 @@ async def component_analysis(request: Request):
             error_msg = str(e)
             current_provider = os.environ.get("LLM_PROVIDER", "not_set")
             if "API_KEY" in error_msg:
-                provider_name = "XAI" if current_provider == "xai" else "OpenAI"
-                error_msg = f"{provider_name}_API_KEY not found. Provider was set to '{current_provider}'. Please check your environment variables on Railway."
+                error_msg = f"XAI_API_KEY not found. Provider was set to '{current_provider}'. Please check your XAI_API_KEY environment variable on Railway."
             logger.error(f"[PROVIDER] Agent initialization failed: {error_msg} (provider={current_provider})")
             await queue.put({
                 "type": "error",
