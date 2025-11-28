@@ -19,7 +19,16 @@ import DesignTemplates from "./components/DesignTemplates";
 import DesignValidationPanel from "./components/validation/DesignValidationPanel";
 
 // New components
-import { BOMEditor, BOMTable, BOMCostTracking, BOMGrouping, BOMSupplierLinks } from "./components/bom";
+import { 
+  BOMEditor, 
+  BOMTable, 
+  BOMCostTracking, 
+  BOMGrouping, 
+  BOMSupplierLinks,
+  BOMVersioning,
+  BOMSupplierManagement,
+  BOMExport,
+} from "./components/bom";
 import { SchematicView, NetlistView } from "./components/visualization";
 import { AnalysisDashboard } from "./components/analysis";
 import { ExportDialog } from "./components/export";
@@ -212,6 +221,11 @@ export default function JigsawDemoRefactored({
                   <BOMCostTracking parts={parts} />
                   <BOMGrouping parts={parts} groupBy="category" />
                 </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <BOMVersioning parts={parts} />
+                  <BOMSupplierManagement parts={parts} />
+                </div>
+                <BOMExport parts={parts} connections={connections} />
                 <BOMSupplierLinks parts={parts} />
               </div>
             )}

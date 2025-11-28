@@ -232,6 +232,9 @@ class QueryRouterAgent:
         design_context: Optional[Dict[str, Any]]
     ) -> Dict[str, Any]:
         """Use LLM for complex query classification."""
+        # Ensure agent is initialized before using LLM
+        self._ensure_initialized()
+        
         context_info = ""
         if design_context:
             part_count = len(design_context.get("selected_parts", {}))

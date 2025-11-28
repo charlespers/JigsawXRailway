@@ -96,6 +96,9 @@ class ArchitectureAgent:
             self._initialized = True
     
     def build_architecture(self, requirements: Dict[str, Any]) -> Dict[str, Any]:
+        """Build architecture - ensures provider is set before LLM calls."""
+        # CRITICAL: Ensure initialized before any LLM usage
+        self._ensure_initialized()
         """
         Build functional hierarchy from requirements.
         

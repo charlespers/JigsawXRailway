@@ -109,6 +109,9 @@ class RequirementsAgent:
         }
     
     def extract_requirements(self, query: str) -> Dict[str, Any]:
+        """Extract requirements from query - ensures provider is set before LLM calls."""
+        # CRITICAL: Ensure initialized before any LLM usage
+        self._ensure_initialized()
         """
         Extract structured requirements from a natural language query.
         

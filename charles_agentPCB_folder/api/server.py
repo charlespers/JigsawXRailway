@@ -378,7 +378,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
     workflow_start_time = time.time()
     
     try:
-        # Step 1: Requirements
+        # Step 1: Requirements - send immediate update
         await queue.put({
             "type": "reasoning",
             "componentId": "requirements",
@@ -386,6 +386,10 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "reasoning": f"Analyzing user query: '{query}'. Extracting functional blocks, constraints, and preferences...",
             "hierarchyLevel": 0
         })
+        
+        # Ensure provider is still set (defensive check)
+        current_provider = os.environ.get("LLM_PROVIDER", "openai")
+        logger.info(f"[WORKFLOW] Extracting requirements (provider={current_provider})")
         
         requirements = orchestrator.requirements_agent.extract_requirements(query)
         orchestrator.design_state["requirements"] = requirements
@@ -515,15 +519,14 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         else:
             # Group blocks by dependencies for parallel processing
             # Independent blocks (no dependencies) can be processed in parallel
-        
-        for block in child_blocks:
-            depends_on = block.get("depends_on", [])
-            # Filter out "power" dependency as it's handled via anchor
-            depends_on = [d for d in depends_on if d != "power"]
-            if not depends_on:
-                independent_blocks.append(block)
-            else:
-                dependent_blocks.append(block)
+            for block in child_blocks:
+                depends_on = block.get("depends_on", [])
+                # Filter out "power" dependency as it's handled via anchor
+                depends_on = [d for d in depends_on if d != "power"]
+                if not depends_on:
+                    independent_blocks.append(block)
+                else:
+                    dependent_blocks.append(block)
         
         # Process independent blocks in parallel
         if independent_blocks:
@@ -1125,16 +1128,31 @@ async def component_analysis(request: Request):
     original_provider = os.environ.get("LLM_PROVIDER", "openai")
     
     async def event_stream():
-        # Set provider in environment BEFORE creating agents
+        # CRITICAL: Set provider in environment FIRST, before ANY agent creation
+        # This must happen before any import or agent instantiation
         os.environ["LLM_PROVIDER"] = provider
+        logger.info(f"[PROVIDER] Set LLM_PROVIDER='{provider}' (env now: {os.environ.get('LLM_PROVIDER')})")
+        
+        # Send immediate update to frontend
+        yield f"data: {json.dumps({'type': 'reasoning', 'componentId': 'system', 'componentName': 'System', 'reasoning': f'Initializing with {provider.upper()} provider...', 'hierarchyLevel': 0})}\n\n"
         
         queue = asyncio.Queue()
         
         try:
-            # Initialize query router
+            # Verify provider is set before creating any agents
+            current_provider = os.environ.get("LLM_PROVIDER")
+            if current_provider != provider:
+                logger.error(f"[PROVIDER] MISMATCH! Expected '{provider}', got '{current_provider}'")
+                os.environ["LLM_PROVIDER"] = provider  # Force set again
+            
+            # Initialize query router (will use provider from environment via lazy init)
+            logger.info(f"[PROVIDER] Creating QueryRouterAgent (LLM_PROVIDER={os.environ.get('LLM_PROVIDER')})")
             query_router = QueryRouterAgent()
             
-            # Classify query intent
+            # Send update
+            yield f"data: {json.dumps({'type': 'reasoning', 'componentId': 'router', 'componentName': 'Query Router', 'reasoning': 'Analyzing query intent...', 'hierarchyLevel': 0})}\n\n"
+            
+            # Classify query intent (will initialize LLM config if needed)
             classification = query_router.classify_query(query, has_existing_design, existing_design_state)
             intent = classification.get("intent", "new_design")
             action_details = classification.get("action_details", {})
@@ -1151,6 +1169,8 @@ async def component_analysis(request: Request):
             })
             
             # Create orchestrator with cache manager
+            # CRITICAL: Provider MUST be set before this point
+            logger.info(f"[PROVIDER] Creating StreamingOrchestrator (LLM_PROVIDER={os.environ.get('LLM_PROVIDER')})")
             from core.cache import get_cache_manager
             cache_manager = get_cache_manager()
             orchestrator = StreamingOrchestrator()
@@ -1158,10 +1178,12 @@ async def component_analysis(request: Request):
             orchestrator.requirements_agent.cache_manager = cache_manager
             orchestrator.part_search_agent.cache_manager = cache_manager
             orchestrator.compatibility_agent.cache_manager = cache_manager
+            logger.info(f"[PROVIDER] Orchestrator created successfully")
             
             # Route based on intent
             if intent == "new_design":
-                # Full design generation
+                # Full design generation - start immediately
+                logger.info(f"[WORKFLOW] Starting new design generation (provider={os.environ.get('LLM_PROVIDER')})")
                 task = asyncio.create_task(generate_design_stream(query, orchestrator, queue))
             elif intent == "refinement":
                 # Refine existing design
@@ -1186,14 +1208,31 @@ async def component_analysis(request: Request):
             
         except ValueError as e:
             # If agent initialization fails (e.g., missing API key), send error
+            error_msg = str(e)
+            current_provider = os.environ.get("LLM_PROVIDER", "not_set")
+            if "API_KEY" in error_msg:
+                provider_name = "XAI" if current_provider == "xai" else "OpenAI"
+                error_msg = f"{provider_name}_API_KEY not found. Provider was set to '{current_provider}'. Please check your environment variables on Railway."
+            logger.error(f"[PROVIDER] Agent initialization failed: {error_msg} (provider={current_provider})")
             await queue.put({
                 "type": "error",
-                "message": f"Failed to initialize agents: {str(e)}. Please check your API keys in .env file."
+                "message": error_msg
             })
             # Restore original provider
             os.environ["LLM_PROVIDER"] = original_provider
             # Yield error and return
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
+            return
+        except Exception as e:
+            error_msg = str(e)
+            current_provider = os.environ.get("LLM_PROVIDER", "not_set")
+            logger.error(f"[ERROR] Unexpected error in event_stream: {error_msg} (provider={current_provider})", exc_info=True)
+            await queue.put({
+                "type": "error",
+                "message": f"Unexpected error: {error_msg}"
+            })
+            os.environ["LLM_PROVIDER"] = original_provider
+            yield f"data: {json.dumps({'type': 'error', 'message': error_msg})}\n\n"
             return
         
         try:
@@ -1202,17 +1241,23 @@ async def component_analysis(request: Request):
             
             while True:
                 try:
-                    # Wait for event with timeout (increased for long operations)
-                    timeout = 60.0  # Increased timeout for complex designs
+                    # Wait for event with shorter timeout for faster updates
+                    timeout = 5.0  # Shorter timeout for more responsive updates
                     event = await asyncio.wait_for(queue.get(), timeout=timeout)
                     
+                    # Immediately yield the event
+                    event_json = json.dumps(event)
+                    yield f"data: {event_json}\n\n"
+                    
+                    # Flush immediately for live updates
+                    import sys
+                    if hasattr(sys.stdout, 'flush'):
+                        sys.stdout.flush()
+                    
                     if event.get("type") == "error":
-                        yield f"data: {json.dumps(event)}\n\n"
-                        # Don't break on error - let workflow complete
+                        # Don't break on error - let workflow complete unless fatal
                         if event.get("message", "").startswith("Fatal"):
                             break
-                    
-                    yield f"data: {json.dumps(event)}\n\n"
                     
                     if event.get("type") == "complete":
                         break
@@ -1255,7 +1300,8 @@ async def component_analysis(request: Request):
         headers={
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Accel-Buffering": "no",
+            "X-Accel-Buffering": "no",  # Disable nginx buffering for live updates
+            "X-Session-Id": session_id,  # Return session ID in headers
         }
     )
 
@@ -1465,19 +1511,7 @@ async def forecast_obsolescence(request: Request):
         return {"error": str(e)}
 
 
-@app.post("/api/analysis/design-reuse")
-async def analyze_design_reuse(request: Request):
-    """Analyze design for reusability."""
-    try:
-        data = await request.json()
-        bom_items = data.get("bom_items", [])
-        existing_designs = data.get("existing_designs")
-        
-        agent = DesignReuseAgent()
-        analysis = agent.analyze_reusability(bom_items, existing_designs)
-        return analysis
-    except Exception as e:
-        return {"error": str(e)}
+# Removed duplicate route - now handled by routes/analysis.py
 
 
 @app.post("/api/forecast/cost")

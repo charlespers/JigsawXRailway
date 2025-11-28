@@ -3,7 +3,7 @@ Obsolescence Forecast Agent
 Component lifecycle forecasting and obsolescence risk analysis
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 
 

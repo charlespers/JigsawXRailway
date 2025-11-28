@@ -15,7 +15,7 @@ from api.schemas.design import (
 from api.schemas.common import ErrorResponse
 from agents.design_review_agent import DesignReviewAgent
 from agents.design_comparison_agent import DesignComparisonAgent
-from core.exceptions import AgentException, OrchestrationException
+from core.exceptions import AgentException
 
 logger = logging.getLogger(__name__)
 

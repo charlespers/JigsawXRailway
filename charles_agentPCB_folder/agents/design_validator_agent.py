@@ -212,10 +212,43 @@ class DesignValidatorAgent:
         
         valid = len([i for i in issues if i.get("severity") == "error"]) == 0
         
+        # Calculate compliance score (0-100)
+        # Start with 100 and deduct for each compliance failure
+        compliance_score = 100.0
+        
+        # Deduct points for each compliance failure
+        if not compliance.get("ipc_2221", True):
+            compliance_score -= 25.0
+        if not compliance.get("ipc_7351", True):
+            compliance_score -= 25.0
+        if not compliance.get("rohs", True):
+            compliance_score -= 20.0
+        if not compliance.get("power_budget", True):
+            compliance_score -= 30.0
+        
+        # Deduct points for errors (5 points per error)
+        error_count = len([i for i in issues if i.get("severity") == "error"])
+        compliance_score -= error_count * 5.0
+        
+        # Deduct points for warnings (1 point per warning, max 10 points)
+        warning_count = len(warnings)
+        compliance_score -= min(warning_count * 1.0, 10.0)
+        
+        # Ensure score is between 0 and 100
+        compliance_score = max(0.0, min(100.0, compliance_score))
+        
+        # Calculate summary statistics
+        summary = {
+            "error_count": error_count,
+            "warning_count": warning_count,
+            "compliance_score": round(compliance_score, 1)
+        }
+        
         return {
             "valid": valid,
             "issues": issues,
             "warnings": warnings,
-            "compliance": compliance
+            "compliance": compliance,
+            "summary": summary
         }
 
