@@ -19,6 +19,7 @@ import {
   Package,
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
+import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface Supplier {
   name: string;

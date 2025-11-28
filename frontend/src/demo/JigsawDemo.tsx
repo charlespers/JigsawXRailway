@@ -32,7 +32,7 @@ import { useToast } from "./components/Toast";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";
 import configService from "./services/config";
-import { normalizePartObject } from "./utils/partNormalizer";
+import { normalizePartObject, normalizeQuantity } from "./utils/partNormalizer";
 
 export interface JigsawDemoProps {
   /** Backend API URL (optional, defaults to config service) */
