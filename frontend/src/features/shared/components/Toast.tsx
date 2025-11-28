@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, CheckCircle2, AlertCircle, Info, AlertTriangle } from "lucide-react";
-import { Button } from "../../shared/components/ui/button";
+import { Button } from "./ui/button";
 
 export type ToastVariant = "success" | "error" | "warning" | "info";
 
