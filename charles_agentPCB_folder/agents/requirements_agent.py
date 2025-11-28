@@ -78,7 +78,11 @@ class RequirementsAgent:
         
         if not self.api_key:
             provider_name = "XAI" if self.provider == "xai" else "OpenAI"
-            raise ValueError(f"{provider_name}_API_KEY not found. Set environment variable to enable reasoning.")
+            env_provider = os.getenv("LLM_PROVIDER", "not_set")
+            raise ValueError(
+                f"{provider_name}_API_KEY not found. Set environment variable to enable reasoning. "
+                f"(Provider requested: {self.provider}, LLM_PROVIDER env: {env_provider})"
+            )
         
         # Validate API key format (basic check)
         if self.provider == "xai" and len(self.api_key) < 20:

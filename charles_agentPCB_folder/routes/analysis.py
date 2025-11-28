@@ -4,6 +4,7 @@ Analysis-related routes
 
 import logging
 import asyncio
+import os
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 
@@ -37,6 +38,11 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 @router.post("/cost", response_model=CostAnalysisResponse)
 async def analyze_cost(request: CostAnalysisRequest):
     """Analyze BOM cost and suggest optimizations."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.cost_optimizer_agent import CostOptimizerAgent
         
@@ -53,11 +59,19 @@ async def analyze_cost(request: CostAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in cost analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/supply-chain", response_model=SupplyChainAnalysisResponse)
 async def analyze_supply_chain(request: SupplyChainAnalysisRequest):
     """Analyze supply chain risks."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.supply_chain_agent import SupplyChainAgent
         
@@ -74,11 +88,19 @@ async def analyze_supply_chain(request: SupplyChainAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in supply chain analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/power", response_model=PowerAnalysisResponse)
 async def analyze_power(request: PowerAnalysisRequest):
     """Calculate power consumption."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.power_calculator_agent import PowerCalculatorAgent
         
@@ -117,11 +139,19 @@ async def analyze_power(request: PowerAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in power analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/thermal", response_model=ThermalAnalysisResponse)
 async def analyze_thermal(request: ThermalAnalysisRequest):
     """Perform detailed thermal analysis."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.thermal_analysis_agent import ThermalAnalysisAgent
         
@@ -142,11 +172,19 @@ async def analyze_thermal(request: ThermalAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in thermal analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/signal-integrity", response_model=SignalIntegrityAnalysisResponse)
 async def analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
     """Perform signal integrity and EMI/EMC analysis."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.signal_integrity_agent import SignalIntegrityAgent
         
@@ -176,11 +214,19 @@ async def analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in signal integrity analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/manufacturing-readiness", response_model=ManufacturingReadinessResponse)
 async def analyze_manufacturing_readiness(request: ManufacturingReadinessRequest):
     """Perform manufacturing readiness analysis."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
         
@@ -205,11 +251,19 @@ async def analyze_manufacturing_readiness(request: ManufacturingReadinessRequest
     except Exception as e:
         logger.error(f"Error in manufacturing readiness analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/validation", response_model=DesignValidationResponse)
 async def validate_design(request: DesignValidationRequest):
     """Validate design against industry standards."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.design_validator_agent import DesignValidatorAgent
         from agents.auto_fix_agent import AutoFixAgent
@@ -245,11 +299,19 @@ async def validate_design(request: DesignValidationRequest):
     except Exception as e:
         logger.error(f"Error in design validation: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/bom-insights", response_model=BOMInsightsResponse)
 async def analyze_bom_insights(request: BOMInsightsRequest):
     """Get comprehensive BOM insights and statistics."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.bom_insights_agent import BOMInsightsAgent
         
@@ -266,11 +328,19 @@ async def analyze_bom_insights(request: BOMInsightsRequest):
     except Exception as e:
         logger.error(f"Error in BOM insights: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 
 
 @router.post("/batch", response_model=BatchAnalysisResponse)
 async def batch_analysis(request: BatchAnalysisRequest):
     """Run multiple analyses in parallel."""
+    # Set provider before creating agents
+    provider = request.provider or "openai"
+    original_provider = os.environ.get("LLM_PROVIDER", "openai")
+    os.environ["LLM_PROVIDER"] = provider
+    
     try:
         from agents.cost_optimizer_agent import CostOptimizerAgent
         from agents.supply_chain_agent import SupplyChainAgent
@@ -356,4 +426,7 @@ async def batch_analysis(request: BatchAnalysisRequest):
     except Exception as e:
         logger.error(f"Error in batch analysis: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
 

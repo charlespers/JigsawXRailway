@@ -86,7 +86,11 @@ class ReasoningAgent:
             
             if not self.api_key:
                 provider_name = "XAI" if self.provider == "xai" else "OpenAI"
-                raise ValueError(f"{provider_name}_API_KEY not found.")
+                env_provider = os.getenv("LLM_PROVIDER", "not_set")
+                raise ValueError(
+                    f"{provider_name}_API_KEY not found. Set environment variable to enable reasoning. "
+                    f"(Provider requested: {self.provider}, LLM_PROVIDER env: {env_provider})"
+                )
             
             self.headers = {
                 "Authorization": f"Bearer {self.api_key}",
