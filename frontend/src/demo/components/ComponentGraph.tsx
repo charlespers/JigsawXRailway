@@ -45,7 +45,7 @@ interface ComponentNode {
 export default function ComponentGraph({
   onComponentSelected,
   analysisQuery,
-  provider = "openai",
+  provider = "xai",
   isAnalyzing = false,
   onAnalysisComplete,
   onReset: _onReset,
