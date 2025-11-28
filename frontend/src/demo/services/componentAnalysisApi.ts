@@ -134,7 +134,10 @@ async function realStartAnalysis(
           .find((line) => line.startsWith("data: "));
         if (dataLine) {
           try {
-            const jsonText = dataLine.slice(6);
+            const jsonText = dataLine.slice(6).trim();
+            if (!jsonText) {
+              continue;
+            }
             const data: ComponentAnalysisResponse = JSON.parse(jsonText);
             
             // Log selection events for debugging
@@ -153,7 +156,11 @@ async function realStartAnalysis(
               return;
             }
           } catch (e) {
-            console.error("Failed to parse SSE data:", e);
+            console.error("Failed to parse SSE data:", e, dataLine);
+            onUpdate({
+              type: "error",
+              message: "Malformed update received from server. See console for details."
+            });
           }
         }
       }
@@ -165,11 +172,17 @@ async function realStartAnalysis(
         .find((line) => line.startsWith("data: "));
       if (dataLine) {
         try {
-          const jsonText = dataLine.slice(6);
-          const data: ComponentAnalysisResponse = JSON.parse(jsonText);
-          onUpdate(data);
+          const jsonText = dataLine.slice(6).trim();
+          if (jsonText) {
+            const data: ComponentAnalysisResponse = JSON.parse(jsonText);
+            onUpdate(data);
+          }
         } catch (e) {
           console.error("Failed to parse final SSE data:", e);
+          onUpdate({
+            type: "error",
+            message: "Malformed final update from server."
+          });
         }
       }
     }

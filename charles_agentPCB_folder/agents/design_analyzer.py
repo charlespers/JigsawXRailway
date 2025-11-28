@@ -598,12 +598,39 @@ class DesignAnalyzer:
                 "category": "compliance"
             })
         
-        return recommendations("Add test points for all power rails (3V3, 5V, GND) for debugging")
-        
         # General recommendations
-        recommendations.append("Add decoupling capacitors close to all IC power pins")
-        recommendations.append("Include fiducial marks for automated assembly")
-        recommendations.append("Ensure silkscreen labels are clear and include pin 1 markers")
+        recommendations.append({
+            "issue_description": "Add test points for all power rails (3V3, 5V, GND) for debugging",
+            "suggested_parts": [],
+            "expected_improvement": "Enable easier debugging and testing",
+            "cost_impact": None,
+            "priority": "low",
+            "category": "testability"
+        })
+        recommendations.append({
+            "issue_description": "Add decoupling capacitors close to all IC power pins",
+            "suggested_parts": [],
+            "expected_improvement": "Improve power supply stability and reduce noise",
+            "cost_impact": None,
+            "priority": "medium",
+            "category": "power"
+        })
+        recommendations.append({
+            "issue_description": "Include fiducial marks for automated assembly",
+            "suggested_parts": [],
+            "expected_improvement": "Enable automated pick-and-place assembly",
+            "cost_impact": None,
+            "priority": "medium",
+            "category": "manufacturing"
+        })
+        recommendations.append({
+            "issue_description": "Ensure silkscreen labels are clear and include pin 1 markers",
+            "suggested_parts": [],
+            "expected_improvement": "Improve assembly accuracy and debugging",
+            "cost_impact": None,
+            "priority": "low",
+            "category": "manufacturing"
+        })
         
         return recommendations
 

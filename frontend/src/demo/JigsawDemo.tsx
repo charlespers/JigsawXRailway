@@ -32,6 +32,7 @@ import { useToast } from "./components/Toast";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";
 import configService from "./services/config";
+import { normalizePartObject } from "./utils/partNormalizer";
 
 export interface JigsawDemoProps {
   /** Backend API URL (optional, defaults to config service) */
@@ -209,11 +210,13 @@ export default function JigsawDemo({
         const designData = JSON.parse(e.target?.result as string);
         if (designData.parts && Array.isArray(designData.parts)) {
           // CRITICAL: Ensure all parts have componentId
-          const validatedParts = designData.parts.map((part: any, index: number) => ({
-            ...part,
-            componentId: part.componentId || `imported_${index}`,  // Ensure componentId exists
-            quantity: part.quantity || 1
-          }));
+          // CRITICAL: Normalize all imported parts to prevent runtime errors
+          const validatedParts = designData.parts.map((part: any, index: number) => 
+            normalizePartObject({
+              ...part,
+              componentId: part.componentId || `imported_${index}`,  // Ensure componentId exists
+            })
+          );
           
           // CRITICAL: Update both parts array AND selectedComponents Map
           // This ensures parts are displayed in both PartsList and PCBViewer
@@ -441,37 +444,36 @@ export default function JigsawDemo({
     _position?: { x: number; y: number },
     hierarchyOffset?: number
   ) => {
-    // CRITICAL: Ensure componentId is preserved in partData
-    // Backend sends componentId in partData, but we ensure it's set
-    const partWithComponentId = {
+    // CRITICAL: Normalize part data to ensure price and quantity are always numbers
+    // This prevents "dict * float" errors
+    const normalizedPart = normalizePartObject({
       ...partData,
       componentId: partData.componentId || componentId,  // Use partData.componentId if present, fallback to parameter
-      quantity: partData.quantity || 1
-    };
+    });
     
     // CRITICAL: Track parts by componentId to handle cases where same part is used in different components
     // Enhanced duplicate check: componentId + mpn + manufacturer
     setParts((prev) => {
       // Check if this exact component-part combination already exists
       const existingIndex = prev.findIndex((p) => {
-        return p.componentId === partWithComponentId.componentId && 
-               p.mpn === partWithComponentId.mpn &&
-               p.manufacturer === partWithComponentId.manufacturer;
+        return p.componentId === normalizedPart.componentId && 
+               p.mpn === normalizedPart.mpn &&
+               p.manufacturer === normalizedPart.manufacturer;
       });
       
       if (existingIndex >= 0) {
         // Duplicate detected - increment quantity and show info toast
-        showToast(`Part ${partWithComponentId.mpn} already exists, incrementing quantity`, "info", 2000);
+        showToast(`Part ${normalizedPart.mpn} already exists, incrementing quantity`, "info", 2000);
         return prev.map((p, idx) => {
           if (idx === existingIndex) {
-            return { ...p, quantity: (p.quantity || 1) + 1 };
+            return { ...p, quantity: normalizeQuantity(p.quantity) + 1 };
           }
           return p;
         });
       }
       
-      // New part selection - add with componentId preserved
-      return [...prev, partWithComponentId];
+      // New part selection - add with normalized data
+      return [...prev, normalizedPart];
     });
 
     setSelectedComponents((prev) => {

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
 import { useBOMManagement } from "../../hooks";
+import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMEditorProps {
   parts: PartObject[];
@@ -336,7 +337,7 @@ export default function BOMEditor({ parts, onPartsChange }: BOMEditorProps) {
                         )}
                       </td>
                       <td className="p-3 text-sm text-white font-medium">
-                        ${((part.price || 0) * (part.quantity || 1)).toFixed(2)}
+                        ${(normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2)}
                       </td>
                       <td className="p-3 text-sm text-neutral-blue">{part.package || "-"}</td>
                       <td className="p-3">

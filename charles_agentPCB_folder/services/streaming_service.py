@@ -171,10 +171,12 @@ async def _process_block_async(
         voltage_range = part.get("supply_voltage_range", {})
         current_max = part.get("current_max", {})
         if isinstance(voltage_range, dict) and isinstance(current_max, dict):
-            voltage = voltage_range.get("nominal") or voltage_range.get("max", 0)
-            current = current_max.get("max") or current_max.get("typical", 0)
-            if isinstance(voltage, (int, float)) and isinstance(current, (int, float)):
-                power_estimate = float(voltage) * float(current)
+            # CRITICAL: Use safe extraction to prevent dict * float errors
+            from agents.design_analyzer import safe_float_extract
+            voltage = safe_float_extract(voltage_range.get("nominal") or voltage_range.get("max", 0), default=0.0, context=f"voltage for {block_name}")
+            current = safe_float_extract(current_max.get("max") or current_max.get("typical", 0), default=0.0, context=f"current for {block_name}")
+            if voltage > 0 and current > 0:
+                power_estimate = voltage * current
                 if power_estimate > 1.0:  # > 1W
                     await queue.put({
                         "type": "reasoning",
@@ -305,6 +307,8 @@ async def _process_block_async(
             orchestrator.design_state["compatibility_results"][block_name] = compat_result
         
         # Add part to design state
+        # CRITICAL: Ensure selected_parts is a dict before adding
+        ensure_selected_parts_is_dict(orchestrator.design_state)
         orchestrator.design_state["selected_parts"][block_name] = part
         # CRITICAL: Pass block_name as component_id to preserve mapping
         part_object = part_data_to_part_object(part, quantity=1, component_id=block_name)
@@ -751,7 +755,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         
         # Step 6: Enrich with datasheets (PARALLELIZED with concurrency limits)
         # CRITICAL: Ensure selected_parts is a dict before processing
-        orchestrator.design_state = ensure_selected_parts_is_dict(orchestrator.design_state)
+        ensure_selected_parts_is_dict(orchestrator.design_state)
         selected_parts = orchestrator.design_state.get("selected_parts", {})
         
         await queue.put({
@@ -1097,9 +1101,17 @@ async def answer_question(
                         bom_items.append({"part_data": part[0], "quantity": 1})
                 else:
                     logger.error(f"[BOM_VALIDATION] Invalid part type for {block_name}: {type(part)}")
-            cost_analysis = cost_agent.optimize_cost(bom_items)
-            total_cost = cost_analysis.get("total_cost", 0)
-            answer = f"Total BOM cost: ${total_cost:.2f}"
+            try:
+                cost_analysis = cost_agent.optimize_cost(bom_items)
+                total_cost = cost_analysis.get("total_cost", 0)
+                # CRITICAL: Ensure total_cost is a number, not a dict
+                if isinstance(total_cost, dict):
+                    total_cost = total_cost.get("value") or total_cost.get("cost") or 0.0
+                total_cost = float(total_cost) if total_cost else 0.0
+                answer = f"Total BOM cost: ${total_cost:.2f}"
+            except Exception as e:
+                logger.error(f"[QUESTION] Cost analysis error: {str(e)}")
+                answer = f"Error calculating cost: {str(e)}"
         
         elif question_type == "power":
             from agents.power_calculator_agent import PowerCalculatorAgent
@@ -1117,9 +1129,17 @@ async def answer_question(
                         bom_items.append({"part_data": part[0], "quantity": 1})
                 else:
                     logger.error(f"[BOM_VALIDATION] Invalid part type for {block_name}: {type(part)}")
-            power_analysis = power_agent.calculate_power(bom_items, orchestrator.design_state.get("connections", []))
-            total_power = power_analysis.get("total_power_watts", 0)
-            answer = f"Total power consumption: {total_power:.2f}W"
+            try:
+                power_analysis = power_agent.calculate_power(bom_items, orchestrator.design_state.get("connections", []))
+                total_power = power_analysis.get("total_power_watts", 0)
+                # CRITICAL: Ensure total_power is a number, not a dict
+                if isinstance(total_power, dict):
+                    total_power = total_power.get("value") or total_power.get("watts") or 0.0
+                total_power = float(total_power) if total_power else 0.0
+                answer = f"Total power consumption: {total_power:.2f}W"
+            except Exception as e:
+                logger.error(f"[QUESTION] Power analysis error: {str(e)}")
+                answer = f"Error calculating power: {str(e)}"
         
         elif question_type == "compatibility":
             # Check compatibility between parts

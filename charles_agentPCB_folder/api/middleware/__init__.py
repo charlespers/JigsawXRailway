@@ -9,7 +9,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .error_handler import ErrorHandlerMiddleware
-from .logging import LoggingMiddleware
+from .request_logging import LoggingMiddleware
 
 logger = logging.getLogger(__name__)
 

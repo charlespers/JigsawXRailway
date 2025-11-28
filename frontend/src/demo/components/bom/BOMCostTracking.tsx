@@ -14,6 +14,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
+import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMCostTrackingProps {
   parts: PartObject[];
@@ -26,7 +27,7 @@ export default function BOMCostTracking({
 }: BOMCostTrackingProps) {
   const costAnalysis = useMemo(() => {
     const total = parts.reduce(
-      (sum, part) => sum + (part.price || 0) * (part.quantity || 1),
+      (sum, part) => sum + normalizePrice(part.price) * normalizeQuantity(part.quantity),
       0
     );
 
@@ -34,7 +35,7 @@ export default function BOMCostTracking({
     const byManufacturer: Record<string, number> = {};
 
     parts.forEach((part) => {
-      const partCost = (part.price || 0) * (part.quantity || 1);
+      const partCost = normalizePrice(part.price) * normalizeQuantity(part.quantity);
       
       const category = part.category || "Uncategorized";
       byCategory[category] = (byCategory[category] || 0) + partCost;
@@ -46,7 +47,7 @@ export default function BOMCostTracking({
     const highCostItems = parts
       .map((part) => ({
         part,
-        cost: (part.price || 0) * (part.quantity || 1),
+        cost: normalizePrice(part.price) * normalizeQuantity(part.quantity),
       }))
       .sort((a, b) => b.cost - a.cost)
       .slice(0, 5);

@@ -118,6 +118,10 @@ def part_data_to_part_object(part_data: Dict[str, Any], quantity: int = 1, compo
     from utils.cost_utils import safe_extract_cost
     cost_estimate = part_data.get("cost_estimate", {})
     unit_cost = safe_extract_cost(cost_estimate, default=0.0)
+    # CRITICAL: Ensure unit_cost is always a float, not a dict
+    if not isinstance(unit_cost, (int, float)):
+        unit_cost = 0.0
+    unit_cost = float(unit_cost)
     
     # Extract footprint (IPC-7351 compliant)
     footprint = part_data.get("footprint", "")

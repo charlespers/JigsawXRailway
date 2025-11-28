@@ -16,6 +16,7 @@ import {
   Tag,
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
+import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMGroupingProps {
   parts: PartObject[];
@@ -72,7 +73,7 @@ export default function BOMGrouping({
 
   const totalCost = (groupParts: PartObject[]) => {
     return groupParts.reduce(
-      (sum, part) => sum + (part.price || 0) * (part.quantity || 1),
+      (sum, part) => sum + normalizePrice(part.price) * normalizeQuantity(part.quantity),
       0
     );
   };
@@ -183,7 +184,7 @@ export default function BOMGrouping({
                             Qty: {part.quantity || 1}
                           </div>
                           <div className="text-neutral-blue text-xs">
-                            ${((part.price || 0) * (part.quantity || 1)).toFixed(2)}
+                            ${(normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2)}
                           </div>
                         </div>
                       </div>

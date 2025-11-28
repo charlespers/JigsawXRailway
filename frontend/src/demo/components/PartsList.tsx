@@ -8,6 +8,7 @@ import { Card } from "../ui/card";
 import { Input } from "../ui/input";
 import { Textarea } from "../ui/textarea";
 import type { PartObject } from "../services/types";
+import { normalizePrice, normalizeQuantity } from "../utils/partNormalizer";
 
 interface PartsListProps {
   parts?: PartObject[];
@@ -122,7 +123,10 @@ export default function PartsList({
   };
 
   const totalCost = localParts.reduce((sum, part) => {
-    return sum + (part.price * (part.quantity || 1));
+    // CRITICAL: Normalize price and quantity to prevent "dict * float" errors
+    const price = normalizePrice(part.price);
+    const quantity = normalizeQuantity(part.quantity);
+    return sum + (price * quantity);
   }, 0);
 
   const currency = localParts[0]?.currency || "USD";
@@ -227,7 +231,7 @@ export default function PartsList({
                     </div>
                     <div className="text-right ml-4 flex-shrink-0">
                       <div className="text-lg font-semibold text-emerald-400">
-                        {part.currency || "USD"} {part.price.toFixed(2)}
+                        {part.currency || "USD"} {normalizePrice(part.price).toFixed(2)}
                       </div>
                       <div className="flex items-center gap-2 mt-1">
                         <Button
@@ -558,9 +562,9 @@ export default function PartsList({
                     part.mpn,
                     part.manufacturer,
                     part.description,
-                    part.quantity || 1,
-                    part.price,
-                    (part.price * (part.quantity || 1)).toFixed(2),
+                    normalizeQuantity(part.quantity),
+                    normalizePrice(part.price),
+                    (normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2),
                     part.currency || "USD",
                     part.package || "",
                     part.footprint || "",
@@ -600,9 +604,9 @@ export default function PartsList({
                       "MPN": part.mpn,
                       "Manufacturer": part.manufacturer,
                       "Description": part.description,
-                      "Quantity": part.quantity || 1,
-                      "Unit Price": part.price,
-                      "Total Price": (part.price * (part.quantity || 1)).toFixed(2),
+                      "Quantity": normalizeQuantity(part.quantity),
+                      "Unit Price": normalizePrice(part.price),
+                      "Total Price": (normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2),
                       "Currency": part.currency || "USD",
                       "Package": part.package || "",
                       "Footprint": part.footprint || "",

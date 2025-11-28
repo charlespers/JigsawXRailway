@@ -16,6 +16,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
+import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMExportProps {
   parts: PartObject[];
@@ -100,8 +101,8 @@ export default function BOMExport({
       part.manufacturer,
       part.description,
       (part.quantity || 1).toString(),
-      (part.price || 0).toFixed(2),
-      ((part.price || 0) * (part.quantity || 1)).toFixed(2),
+      normalizePrice(part.price).toFixed(2),
+      (normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2),
       part.package || "",
       part.footprint || "",
       part.category || "",
@@ -132,7 +133,7 @@ export default function BOMExport({
         ? {
             totalParts: parts.length,
             totalCost: parts.reduce(
-              (sum, p) => sum + (p.price || 0) * (p.quantity || 1),
+              (sum, p) => sum + normalizePrice(p.price) * normalizeQuantity(p.quantity),
               0
             ),
             connections: includeConnections ? connections.length : 0,
@@ -145,8 +146,8 @@ export default function BOMExport({
         manufacturer: part.manufacturer,
         description: part.description,
         quantity: part.quantity || 1,
-        unitPrice: part.price || 0,
-        totalPrice: (part.price || 0) * (part.quantity || 1),
+        unitPrice: normalizePrice(part.price),
+        totalPrice: normalizePrice(part.price) * normalizeQuantity(part.quantity),
         package: part.package,
         footprint: part.footprint,
         category: part.category,

@@ -17,6 +17,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
+import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMTableProps {
   parts: PartObject[];
@@ -82,7 +83,7 @@ export default function BOMTable({
 
   const totalCost = useMemo(() => {
     return sortedParts.reduce(
-      (sum, part) => sum + (part.price || 0) * (part.quantity || 1),
+      (sum, part) => sum + normalizePrice(part.price) * normalizeQuantity(part.quantity),
       0
     );
   }, [sortedParts]);
@@ -215,12 +216,12 @@ export default function BOMTable({
                 <td className="p-3 text-sm text-white max-w-xs truncate" title={part.description}>
                   {part.description}
                 </td>
-                <td className="p-3 text-sm text-white text-right">{part.quantity || 1}</td>
+                <td className="p-3 text-sm text-white text-right">{normalizeQuantity(part.quantity)}</td>
                 <td className="p-3 text-sm text-white text-right">
-                  ${(part.price || 0).toFixed(2)}
+                  ${normalizePrice(part.price).toFixed(2)}
                 </td>
                 <td className="p-3 text-sm font-medium text-white text-right">
-                  ${((part.price || 0) * (part.quantity || 1)).toFixed(2)}
+                  ${(normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2)}
                 </td>
                 <td className="p-3 text-sm text-neutral-blue">{part.package || "-"}</td>
                 <td className="p-3">

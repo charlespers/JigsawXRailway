@@ -5,9 +5,11 @@ Converts natural language query → structured requirements
 
 import json
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Dict, Any, List
+import logging
 import requests
 
 # Add development_demo/utils to path for config access
@@ -17,6 +19,9 @@ try:
 except ImportError:
     # Fallback: try to load from environment directly
     load_config = None
+
+
+logger = logging.getLogger(__name__)
 
 
 class RequirementsAgent:
@@ -186,7 +191,7 @@ Return ONLY valid JSON, no additional text.
             
             # Extract JSON from response
             json_str = self._extract_json(content)
-            result = json.loads(json_str)
+            result = self._safe_load_requirements(json_str, query)
             
             # Cache result
             if self.cache_manager:
@@ -215,7 +220,8 @@ Return ONLY valid JSON, no additional text.
             debug_info = f"Endpoint: {self.endpoint}, Model: {self.model}, Provider: {getattr(self, 'provider', 'unknown')}"
             raise RuntimeError(f"Requirements extraction failed: HTTP {status_code} - {error_detail}\nDebug: {debug_info}")
         except Exception as e:
-            raise RuntimeError(f"Requirements extraction failed: {e}")
+            logger.warning("Requirements extraction failed, using fallback structure: %s", e)
+            return self._build_fallback_requirements(query)
     
     def _extract_json(self, text: str) -> str:
         """Extract JSON from LLM response."""
@@ -236,4 +242,102 @@ Return ONLY valid JSON, no additional text.
             return text[start_idx:end_idx + 1]
         
         return text
+
+    def _safe_load_requirements(self, json_str: str, query: str) -> Dict[str, Any]:
+        """Safely load requirements JSON and apply fallback defaults."""
+        try:
+            data = json.loads(json_str)
+        except json.JSONDecodeError as exc:
+            logger.warning("Invalid JSON from requirements agent: %s\nPayload:%s", exc, json_str[:500])
+            return self._build_fallback_requirements(query)
+        
+        # Ensure required keys exist
+        if not isinstance(data.get("functional_blocks"), list) or not data["functional_blocks"]:
+            data["functional_blocks"] = self._build_fallback_requirements(query)["functional_blocks"]
+        if "constraints" not in data or not isinstance(data["constraints"], dict):
+            data["constraints"] = {}
+        if "preferences" not in data or not isinstance(data["preferences"], dict):
+            data["preferences"] = {}
+        return data
+
+    def _build_fallback_requirements(self, query: str) -> Dict[str, Any]:
+        """Build heuristic-based requirements when the agent output is unusable."""
+        query_lower = query.lower()
+        blocks = [
+            {
+                "type": "mcu",
+                "description": "Primary controller / anchor component",
+                "required": True
+            }
+        ]
+        if "wifi" in query_lower or "esp" in query_lower:
+            blocks.append({
+                "type": "wifi_module",
+                "description": "Wireless connectivity block",
+                "required": True
+            })
+        if "sensor" in query_lower:
+            blocks.append({
+                "type": "sensor",
+                "description": "Sensor interface block",
+                "required": True
+            })
+        if "power" in query_lower or "battery" in query_lower:
+            blocks.append({
+                "type": "power",
+                "description": "Power regulation block",
+                "required": True
+            })
+        if "usb" in query_lower:
+            blocks.append({
+                "type": "connector",
+                "description": "USB/IO connector block",
+                "required": False
+            })
+        # Ensure at least MCU + Power
+        if not any(b["type"] == "power" for b in blocks):
+            blocks.append({
+                "type": "power",
+                "description": "Power regulation block",
+                "required": True
+            })
+        
+        voltage_matches = re.findall(r"(\d+(\.\d+)?)\s*v", query_lower)
+        voltage_values = sorted({float(match[0]) for match in voltage_matches}, reverse=True)
+        voltage_constraint = {}
+        if voltage_values:
+            voltage_constraint = {
+                "input": f"{voltage_values[0]}V",
+                "outputs": [f"{v}V" for v in voltage_values[1:]] or ["3.3V"],
+                "unit": "V"
+            }
+        else:
+            voltage_constraint = {"input": "5V", "outputs": ["3.3V"], "unit": "V"}
+        
+        constraints = {
+            "voltage": voltage_constraint,
+            "interfaces": []
+        }
+        if "i2c" in query_lower:
+            constraints["interfaces"].append("I2C")
+        if "spi" in query_lower:
+            constraints["interfaces"].append("SPI")
+        if "uart" in query_lower:
+            constraints["interfaces"].append("UART")
+        if "wifi" in query_lower:
+            constraints["interfaces"].append("WiFi")
+        if not constraints["interfaces"]:
+            constraints["interfaces"] = ["GPIO"]
+        
+        preferences = {
+            "package_type": "SMT" if "smt" in query_lower or "compact" in query_lower else "any",
+            "cost_range": "low" if "low cost" in query_lower else "any",
+            "availability": "in_stock"
+        }
+        
+        return {
+            "functional_blocks": blocks,
+            "constraints": constraints,
+            "preferences": preferences
+        }
 

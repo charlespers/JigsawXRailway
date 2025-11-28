@@ -115,8 +115,8 @@ export default function BOMSupplierManagement({
       const suppliers = MOCK_SUPPLIERS[part.mpn] || [];
       const bestPrice = suppliers.length > 0
         ? Math.min(...suppliers.map((s) => s.price))
-        : part.price || 0;
-      const currentPrice = part.price || 0;
+        : normalizePrice(part.price);
+      const currentPrice = normalizePrice(part.price);
       const savings = currentPrice > 0 ? currentPrice - bestPrice : 0;
       const savingsPercent = currentPrice > 0 ? (savings / currentPrice) * 100 : 0;
 
@@ -137,7 +137,7 @@ export default function BOMSupplierManagement({
 
   const totalPotentialSavings = useMemo(() => {
     return partsWithSuppliers.reduce((sum, item) => {
-      return sum + item.savings * (item.part.quantity || 1);
+      return sum + item.savings * normalizeQuantity(item.part.quantity);
     }, 0);
   }, [partsWithSuppliers]);
 

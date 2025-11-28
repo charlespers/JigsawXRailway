@@ -8,6 +8,7 @@ import os
 import sys
 from pathlib import Path
 from typing import Dict, Any, List, Optional
+import logging
 import requests
 
 # Add development_demo/utils to path for config access
@@ -17,6 +18,9 @@ try:
 except ImportError:
     # Fallback: try to load from environment directly
     load_config = None
+
+
+logger = logging.getLogger(__name__)
 
 
 class ArchitectureAgent:
@@ -175,9 +179,11 @@ Return ONLY valid JSON, no additional text.
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"]
             json_str = self._extract_json(content)
-            return json.loads(json_str)
+            data = json.loads(json_str)
+            return self._validate_architecture(data, requirements)
         except Exception as e:
-            raise RuntimeError(f"Architecture building failed: {e}")
+            logger.warning("Architecture agent failed, using fallback structure: %s", e)
+            return self._build_fallback_architecture(requirements)
     
     def _extract_json(self, text: str) -> str:
         """Extract JSON from LLM response."""
@@ -194,4 +200,34 @@ Return ONLY valid JSON, no additional text.
         if start_idx >= 0 and end_idx > start_idx:
             return text[start_idx:end_idx + 1]
         return text
+
+    def _validate_architecture(self, data: Dict[str, Any], requirements: Dict[str, Any]) -> Dict[str, Any]:
+        """Ensure architecture JSON has required fields, otherwise fallback."""
+        if not isinstance(data, dict):
+            return self._build_fallback_architecture(requirements)
+        if "anchor_block" not in data or not data["anchor_block"]:
+            return self._build_fallback_architecture(requirements)
+        if "child_blocks" not in data or not isinstance(data["child_blocks"], list):
+            data["child_blocks"] = []
+        if "dependency_graph" not in data or not isinstance(data["dependency_graph"], dict):
+            data["dependency_graph"] = {}
+        return data
+
+    def _build_fallback_architecture(self, requirements: Dict[str, Any]) -> Dict[str, Any]:
+        """Create a minimal architecture if the agent output is invalid."""
+        functional_blocks = requirements.get("functional_blocks", []) if isinstance(requirements, dict) else []
+        anchor_block = functional_blocks[0] if functional_blocks else {
+            "type": "mcu",
+            "description": "Primary controller",
+            "required_interfaces": ["GPIO"],
+            "required_power_rails": ["3.3V"],
+        }
+        child_blocks = functional_blocks[1:] if len(functional_blocks) > 1 else []
+        dependency_graph = {"anchor": [block.get("type", f"block_{idx}") for idx, block in enumerate(child_blocks, start=1)]}
+        return {
+            "anchor_block": anchor_block,
+            "child_blocks": child_blocks,
+            "dependency_graph": dependency_graph,
+            "constraints_per_block": {}
+        }
 
