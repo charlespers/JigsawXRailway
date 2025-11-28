@@ -7,9 +7,9 @@ import configService from "../services/config";
 
 interface SettingsPanelProps {
   backendUrl: string;
-  defaultProvider: "openai" | "xai";
+  defaultProvider: "xai";
   onBackendUrlChange?: (url: string) => void;
-  onProviderChange?: (provider: "openai" | "xai") => void;
+  onProviderChange?: (provider: "xai") => void;
 }
 
 export default function SettingsPanel({
@@ -20,7 +20,7 @@ export default function SettingsPanel({
 }: SettingsPanelProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [localBackendUrl, setLocalBackendUrl] = useState(backendUrl);
-  const [localProvider, setLocalProvider] = useState<"openai" | "xai">(defaultProvider);
+  const [localProvider, setLocalProvider] = useState<"xai">(defaultProvider);
 
   useEffect(() => {
     setLocalBackendUrl(backendUrl);
@@ -97,30 +97,13 @@ export default function SettingsPanel({
                 {/* Provider */}
                 <div>
                   <label className="block text-sm font-medium mb-2 text-zinc-300">
-                    Default AI Provider
+                    AI Provider
                   </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setLocalProvider("openai")}
-                      className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${
-                        localProvider === "openai"
-                          ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                          : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
-                      }`}>
-                      OpenAI
-                    </button>
-                    <button
-                      onClick={() => setLocalProvider("xai")}
-                      className={`flex-1 px-4 py-2 rounded-lg border transition-colors ${
-                        localProvider === "xai"
-                          ? "bg-emerald-500/20 border-emerald-500 text-emerald-400"
-                          : "bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700"
-                      }`}>
-                      XAI (Grok)
-                    </button>
+                  <div className="px-4 py-2 rounded-lg border bg-emerald-500/20 border-emerald-500 text-emerald-400">
+                    XAI (Grok)
                   </div>
                   <p className="text-xs text-zinc-500 mt-1">
-                    Default provider for new queries (can be changed per query)
+                    Using XAI (Grok) for all AI reasoning
                   </p>
                 </div>
               </div>

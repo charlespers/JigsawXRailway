@@ -41,6 +41,7 @@ from api.data_mapper import part_data_to_part_object
 from api.conversation_manager import ConversationManager
 
 # Import modular routes with error handling
+api_router = None
 try:
     from routes import api_router
     logger.info("[ROUTES] Successfully imported api_router from routes module")
@@ -50,21 +51,48 @@ except Exception as e:
     from fastapi import APIRouter
     api_router = APIRouter(prefix="/api/v1")
     logger.warning("[ROUTES] Using fallback empty router")
+    
+    # Try to manually import and register analysis routes
+    try:
+        from routes.analysis import router as analysis_router
+        api_router.include_router(analysis_router, tags=["analysis"])
+        logger.info("[ROUTES] Manually registered analysis router as fallback")
+    except Exception as e2:
+        logger.error(f"[ROUTES] Failed to manually register analysis router: {e2}", exc_info=True)
 
 app = FastAPI(title="PCB Design API", version="1.0.0")
 
 # Include API v1 routes with error handling
 try:
-    app.include_router(api_router)
-    total_routes = len([r for r in app.routes if hasattr(r, 'path')])
-    analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
-    logger.info(f"[ROUTES] Successfully included api_router. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
-    if len(analysis_routes) == 0:
-        logger.error("[ROUTES] WARNING: No analysis routes found! Routes may not be registered correctly.")
+    if api_router:
+        app.include_router(api_router)
+        total_routes = len([r for r in app.routes if hasattr(r, 'path')])
+        analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+        logger.info(f"[ROUTES] Successfully included api_router. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
+        if len(analysis_routes) == 0:
+            logger.error("[ROUTES] WARNING: No analysis routes found! Attempting direct registration...")
+            # Try direct registration as last resort
+            try:
+                from routes.analysis import router as analysis_router
+                app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
+                logger.info("[ROUTES] Directly registered analysis router as fallback")
+                analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+                logger.info(f"[ROUTES] After direct registration: {len(analysis_routes)} analysis routes")
+            except Exception as e3:
+                logger.error(f"[ROUTES] Direct registration also failed: {e3}", exc_info=True)
+        else:
+            logger.info(f"[ROUTES] Analysis routes registered: {[r.path for r in analysis_routes[:3]]}...")
     else:
-        logger.info(f"[ROUTES] Analysis routes registered: {[r.path for r in analysis_routes[:3]]}...")
+        logger.error("[ROUTES] api_router is None! Cannot include routes.")
 except Exception as e:
     logger.error(f"[ROUTES] Failed to include api_router: {e}", exc_info=True)
+    # Last resort: try direct registration
+    try:
+        from routes.analysis import router as analysis_router
+        app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
+        logger.info("[ROUTES] Directly registered analysis router as last resort")
+    except Exception as e4:
+        logger.error(f"[ROUTES] Last resort registration failed: {e4}", exc_info=True)
 
 # Add startup event to log route registration
 @app.on_event("startup")
@@ -463,7 +491,36 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         current_provider = os.environ.get("LLM_PROVIDER", "xai")
         logger.info(f"[WORKFLOW] Extracting requirements (provider={current_provider})")
         
-        requirements = orchestrator.requirements_agent.extract_requirements(query)
+        # Wrap synchronous LLM call in async with timeout to prevent hanging
+        try:
+            requirements = await asyncio.wait_for(
+                asyncio.to_thread(orchestrator.requirements_agent.extract_requirements, query),
+                timeout=30.0  # 30 second timeout for requirements extraction
+            )
+        except asyncio.TimeoutError:
+            logger.error("[WORKFLOW] Requirements extraction timed out after 30s")
+            await queue.put({
+                "type": "error",
+                "message": "Requirements extraction timed out. Using fallback requirements..."
+            })
+            # Use minimal fallback requirements to continue
+            requirements = {
+                "functional_blocks": [{"type": "mcu", "description": "Main processing unit"}],
+                "constraints": {},
+                "preferences": {}
+            }
+        except Exception as e:
+            logger.error(f"[WORKFLOW] Requirements extraction error: {str(e)}")
+            await queue.put({
+                "type": "error",
+                "message": f"Requirements extraction error: {str(e)}. Using fallback..."
+            })
+            requirements = {
+                "functional_blocks": [{"type": "mcu", "description": "Main processing unit"}],
+                "constraints": {},
+                "preferences": {}
+            }
+        
         orchestrator.design_state["requirements"] = requirements
         
         # Extract functional blocks for reasoning
@@ -486,7 +543,50 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "hierarchyLevel": 0
         })
         
-        architecture = orchestrator.architecture_agent.build_architecture(requirements)
+        # Wrap synchronous LLM call in async with timeout
+        try:
+            architecture = await asyncio.wait_for(
+                asyncio.to_thread(orchestrator.architecture_agent.build_architecture, requirements),
+                timeout=30.0  # 30 second timeout for architecture building
+            )
+        except asyncio.TimeoutError:
+            logger.error("[WORKFLOW] Architecture building timed out after 30s")
+            await queue.put({
+                "type": "error",
+                "message": "Architecture building timed out. Using fallback architecture..."
+            })
+            # Use minimal fallback architecture based on requirements
+            functional_blocks = requirements.get("functional_blocks", [])
+            if functional_blocks:
+                anchor_block = functional_blocks[0]
+                child_blocks = functional_blocks[1:] if len(functional_blocks) > 1 else []
+            else:
+                anchor_block = {"type": "mcu", "description": "Main processing unit"}
+                child_blocks = []
+            architecture = {
+                "anchor_block": anchor_block,
+                "child_blocks": child_blocks,
+                "dependency_graph": {}
+            }
+        except Exception as e:
+            logger.error(f"[WORKFLOW] Architecture building error: {str(e)}")
+            await queue.put({
+                "type": "error",
+                "message": f"Architecture building error: {str(e)}. Using fallback..."
+            })
+            functional_blocks = requirements.get("functional_blocks", [])
+            if functional_blocks:
+                anchor_block = functional_blocks[0]
+                child_blocks = functional_blocks[1:] if len(functional_blocks) > 1 else []
+            else:
+                anchor_block = {"type": "mcu", "description": "Main processing unit"}
+                child_blocks = []
+            architecture = {
+                "anchor_block": anchor_block,
+                "child_blocks": child_blocks,
+                "dependency_graph": {}
+            }
+        
         orchestrator.design_state["architecture"] = architecture
         
         anchor_block = architecture.get("anchor_block", {})
@@ -510,7 +610,26 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
             "hierarchyLevel": 0
         })
         
-        anchor_part = orchestrator._select_anchor_part(anchor_block, requirements)
+        # Wrap synchronous part selection in async with timeout
+        try:
+            anchor_part = await asyncio.wait_for(
+                asyncio.to_thread(orchestrator._select_anchor_part, anchor_block, requirements),
+                timeout=15.0  # 15 second timeout for part selection
+            )
+        except asyncio.TimeoutError:
+            logger.error("[WORKFLOW] Anchor part selection timed out after 15s")
+            await queue.put({
+                "type": "error",
+                "message": "Anchor part selection timed out. Using default part..."
+            })
+            anchor_part = None
+        except Exception as e:
+            logger.error(f"[WORKFLOW] Anchor part selection error: {str(e)}")
+            await queue.put({
+                "type": "error",
+                "message": f"Anchor part selection error: {str(e)}. Continuing without anchor..."
+            })
+            anchor_part = None
         if anchor_part:
             orchestrator.design_state["selected_parts"]["anchor"] = anchor_part
             part_mpn = anchor_part.get("mpn", anchor_part.get("id", ""))
@@ -1310,6 +1429,7 @@ async def component_analysis(request: Request):
         try:
             last_heartbeat = time.time()
             heartbeat_interval = 15.0  # Send heartbeat every 15 seconds
+            complete_sent = False  # Track if complete event was sent
             
             while True:
                 try:
@@ -1329,9 +1449,11 @@ async def component_analysis(request: Request):
                     if event.get("type") == "error":
                         # Don't break on error - let workflow complete unless fatal
                         if event.get("message", "").startswith("Fatal"):
+                            complete_sent = True
                             break
                     
                     if event.get("type") == "complete":
+                        complete_sent = True
                         break
                     
                     # Reset heartbeat timer on any event
@@ -1347,16 +1469,31 @@ async def component_analysis(request: Request):
                     # Check if task is done
                     if task.done():
                         # Task completed but no complete event? Send one
-                        try:
-                            result = task.result()
-                        except Exception:
-                            pass
+                        if not complete_sent:
+                            try:
+                                result = task.result()
+                                # Task completed successfully but no complete event was sent
+                                logger.warning("[STREAM] Task completed but no complete event received. Sending completion.")
+                                yield f"data: {json.dumps({'type': 'complete', 'message': 'Design generation completed.'})}\n\n"
+                                complete_sent = True
+                            except Exception as e:
+                                # Task completed with exception
+                                logger.error(f"[STREAM] Task completed with exception: {str(e)}")
+                                yield f"data: {json.dumps({'type': 'error', 'message': f'Task error: {str(e)}'})}\n\n"
+                                yield f"data: {json.dumps({'type': 'complete', 'message': f'Design generation completed with errors: {str(e)}'})}\n\n"
+                                complete_sent = True
                         break
+                    # Continue waiting for events
                     continue
                     
         except Exception as e:
-            yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+            logger.error(f"[STREAM] Event stream error: {str(e)}", exc_info=True)
+            if not complete_sent:
+                yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
+                yield f"data: {json.dumps({'type': 'complete', 'message': f'Stream ended with error: {str(e)}'})}\n\n"
+                complete_sent = True
         finally:
+            # Cleanup: cancel task if still running
             if not task.done():
                 task.cancel()
                 try:

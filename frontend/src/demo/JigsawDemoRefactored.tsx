@@ -86,7 +86,7 @@ export default function JigsawDemoRefactored({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
-  const [provider, setProvider] = useState<"openai" | "xai">("openai");
+  const [provider, setProvider] = useState<"xai">("xai");
 
   // Handle component selection from PCB viewer
   const handleComponentSelected = (
@@ -139,7 +139,7 @@ export default function JigsawDemoRefactored({
             >
               Export
             </Button>
-            <SettingsPanel backendUrl={backendUrl || configService.getBackendUrl()} defaultProvider="openai" />
+            <SettingsPanel backendUrl={backendUrl || configService.getBackendUrl()} defaultProvider="xai" />
           </div>
         </header>
 

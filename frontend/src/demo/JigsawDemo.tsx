@@ -61,7 +61,7 @@ export default function JigsawDemo({
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisQuery, setAnalysisQuery] = useState<string>(initialQuery);
-  const [provider, setProvider] = useState<"openai" | "xai">("openai");
+  const [provider, setProvider] = useState<"xai">("xai");
   const [parts, setParts] = useState<PartObject[]>([]);
   const [activeTab, setActiveTab] = useState<"design" | "bom" | "analysis" | "templates">("design");
   const [previousDesign, setPreviousDesign] = useState<PartObject[] | null>(null);
@@ -284,7 +284,7 @@ export default function JigsawDemo({
   }, [initialQuery]);
 
   // Handle query sent from chat - start analysis
-  const handleQuerySent = (query: string, selectedProvider: "openai" | "xai" = "openai") => {
+  const handleQuerySent = (query: string, selectedProvider: "xai" = "xai") => {
     // Get or create session ID
     let currentSessionId = sessionId;
     if (!currentSessionId) {
@@ -518,13 +518,13 @@ export default function JigsawDemo({
     if (savedBackendUrl) {
       componentAnalysisApi.updateConfig({ baseUrl: savedBackendUrl });
     }
-    // Only use saved provider if it's valid, otherwise default to "openai"
-    if (savedProvider === "openai" || savedProvider === "xai") {
+    // Only use saved provider if it's valid, otherwise default to "xai"
+    if (savedProvider === "xai") {
       setProvider(savedProvider);
     } else {
-      // Ensure default is "openai" if localStorage has invalid value
-      setProvider("openai");
-      localStorage.setItem("demo_provider", "openai");
+      // Ensure default is "xai" if localStorage has invalid value
+      setProvider("xai");
+      localStorage.setItem("demo_provider", "xai");
     }
   }, []);
 

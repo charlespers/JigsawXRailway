@@ -48,7 +48,7 @@ const defaultConfig: ComponentAnalysisConfig = {
 
 async function realStartAnalysis(
   query: string,
-  provider: "openai" | "xai",
+  provider: "xai",
   config: ComponentAnalysisConfig,
   onUpdate: (update: ComponentAnalysisResponse) => void,
   signal?: AbortSignal,
@@ -65,13 +65,13 @@ async function realStartAnalysis(
   try {
     const requestBody: {
       query: string;
-      provider: "openai" | "xai";
+      provider: "xai";
       contextQueryId?: string;
       context?: string;
       sessionId?: string;
     } = { 
       query,
-      provider: provider || "openai"
+      provider: provider || "xai"
     };
 
     if (contextQueryId && context) {
@@ -215,7 +215,7 @@ class ComponentAnalysisService {
 
   async startAnalysis(
     query: string,
-    provider: "openai" | "xai" = "openai",
+    provider: "xai" = "xai",
     onUpdate: (update: ComponentAnalysisResponse) => void,
     signal?: AbortSignal,
     contextQueryId?: string,

@@ -20,7 +20,7 @@ import ErrorDisplay from "./ErrorDisplay";
 interface ComponentGraphProps {
   onComponentSelected?: (componentId: string, partData: any, position?: { x: number; y: number }, hierarchyOffset?: number) => void;
   analysisQuery?: string;
-  provider?: "openai" | "xai"; // AI provider to use for analysis
+  provider?: "xai"; // AI provider to use for analysis
   isAnalyzing?: boolean;
   onAnalysisComplete?: () => void;
   onReset?: () => void; // Callback to reset components when new query starts
@@ -255,8 +255,8 @@ export default function ComponentGraph({
 
     // Start analysis with context if resuming
     const contextId = contextQueryIdRef.current;
-    // Ensure provider is valid, default to "openai" if not
-    const validProvider = (provider === "openai" || provider === "xai") ? provider : "openai";
+    // Ensure provider is valid, default to "xai" if not
+    const validProvider = provider === "xai" ? provider : "xai";
     componentAnalysisApi
       .startAnalysis(
         analysisQuery,

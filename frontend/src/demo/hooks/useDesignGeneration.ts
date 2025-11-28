@@ -15,7 +15,7 @@ export function useDesignGeneration() {
   const handleQuerySent = useCallback(
     async (
       query: string,
-      provider: "openai" | "xai" = "openai",
+      provider: "xai" = "xai",
       onUpdate?: (update: any) => void
     ) => {
       setIsGenerating(true);

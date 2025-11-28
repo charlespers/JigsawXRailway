@@ -21,7 +21,7 @@ export interface Connection {
 // Aligned with api/schemas/design.py
 export interface ComponentAnalysisRequest {
   query: string;
-  provider: "openai" | "xai";
+  provider: "xai";
   sessionId?: string;
   contextQueryId?: string;
   context?: string;
