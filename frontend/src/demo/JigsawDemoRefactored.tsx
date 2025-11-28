@@ -77,6 +77,7 @@ export default function JigsawDemoRefactored({
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showShareDialog, setShowShareDialog] = useState(false);
   const [selectedComponentId, setSelectedComponentId] = useState<string | null>(null);
+  const [provider, setProvider] = useState<"openai" | "xai">("openai");
 
   // Handle component selection from PCB viewer
   const handleComponentSelected = (
@@ -186,7 +187,10 @@ export default function JigsawDemoRefactored({
             {activeTab === "design" && (
               <div className="space-y-4">
                 <DesignChat
-                  onQuerySent={handleQuerySent}
+                  onQuerySent={(query, selectedProvider) => {
+                    setProvider(selectedProvider);
+                    handleQuerySent(query, selectedProvider);
+                  }}
                 />
                 {error && <ErrorDisplay error={error} onDismiss={() => setError(null)} />}
                 {parts.length > 0 && (
@@ -225,8 +229,9 @@ export default function JigsawDemoRefactored({
             )}
 
             {activeTab === "templates" && (
-              <DesignTemplates onTemplateSelect={(template) => {
-                // Handle template selection
+              <DesignTemplates onTemplateSelect={(query) => {
+                // Use current provider setting
+                handleQuerySent(query, provider);
               }} />
             )}
           </main>

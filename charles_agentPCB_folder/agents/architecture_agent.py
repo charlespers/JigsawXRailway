@@ -23,15 +23,55 @@ class ArchitectureAgent:
     """Agent that builds block-level hierarchy and selects anchor part."""
     
     def __init__(self):
-        if load_config:
-            try:
-                config = load_config()
-                self.api_key = config.get("api_key")
-                self.endpoint = config.get("endpoint")
-                self.model = config.get("model")
-                self.temperature = config.get("temperature")
-                self.provider = config.get("provider", "openai")
-            except Exception as e:
+        # Don't initialize API keys here - do it lazily
+        # This allows the provider to be set in the environment before use
+        self._initialized = False
+        self.api_key = None
+        self.endpoint = None
+        self.model = None
+        self.temperature = None
+        self.provider = None
+        self.headers = None
+    
+    def _ensure_initialized(self):
+        """Lazily initialize API configuration based on current environment."""
+        if self._initialized:
+            return
+        
+        try:
+            from agents._agent_helpers import initialize_llm_config
+            config = initialize_llm_config()
+            self.api_key = config["api_key"]
+            self.endpoint = config["endpoint"]
+            self.model = config["model"]
+            self.temperature = config["temperature"]
+            self.provider = config["provider"]
+            self.headers = config["headers"]
+            self._initialized = True
+        except ImportError:
+            # Fallback to inline initialization
+            if load_config:
+                try:
+                    config = load_config()
+                    self.api_key = config.get("api_key")
+                    self.endpoint = config.get("endpoint")
+                    self.model = config.get("model")
+                    self.temperature = config.get("temperature")
+                    self.provider = config.get("provider", "openai")
+                except Exception:
+                    provider = os.getenv("LLM_PROVIDER", "openai").lower()
+                    if provider == "xai":
+                        self.api_key = os.getenv("XAI_API_KEY")
+                        self.endpoint = "https://api.x.ai/v1/chat/completions"
+                        self.model = os.getenv("XAI_MODEL", "grok-3")
+                        self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
+                    else:
+                        self.api_key = os.getenv("OPENAI_API_KEY")
+                        self.endpoint = "https://api.openai.com/v1/chat/completions"
+                        self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
+                        self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
+                    self.provider = provider
+            else:
                 provider = os.getenv("LLM_PROVIDER", "openai").lower()
                 if provider == "xai":
                     self.api_key = os.getenv("XAI_API_KEY")
@@ -44,28 +84,16 @@ class ArchitectureAgent:
                     self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
                     self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
                 self.provider = provider
-        else:
-            provider = os.getenv("LLM_PROVIDER", "openai").lower()
-            if provider == "xai":
-                self.api_key = os.getenv("XAI_API_KEY")
-                self.endpoint = "https://api.x.ai/v1/chat/completions"
-                self.model = os.getenv("XAI_MODEL", "grok-3")
-                self.temperature = float(os.getenv("XAI_TEMPERATURE", "0.3"))
-            else:
-                self.api_key = os.getenv("OPENAI_API_KEY")
-                self.endpoint = "https://api.openai.com/v1/chat/completions"
-                self.model = os.getenv("OPENAI_MODEL", "gpt-3.5-turbo")
-                self.temperature = float(os.getenv("OPENAI_TEMPERATURE", "0.3"))
-            self.provider = provider
-        
-        if not self.api_key:
-            provider_name = "XAI" if self.provider == "xai" else "OpenAI"
-            raise ValueError(f"{provider_name}_API_KEY not found.")
-        
-        self.headers = {
-            "Authorization": f"Bearer {self.api_key}",
-            "Content-Type": "application/json",
-        }
+            
+            if not self.api_key:
+                provider_name = "XAI" if self.provider == "xai" else "OpenAI"
+                raise ValueError(f"{provider_name}_API_KEY not found.")
+            
+            self.headers = {
+                "Authorization": f"Bearer {self.api_key}",
+                "Content-Type": "application/json",
+            }
+            self._initialized = True
     
     def build_architecture(self, requirements: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -79,6 +107,9 @@ class ArchitectureAgent:
                 "constraints_per_block": {...}
             }
         """
+        # Ensure API is initialized (reads provider from environment at runtime)
+        self._ensure_initialized()
+        
         prompt = f"""
 You are a PCB architecture design agent. Given the following requirements, build a functional block hierarchy.
 

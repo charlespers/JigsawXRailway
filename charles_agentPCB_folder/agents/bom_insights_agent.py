@@ -47,16 +47,11 @@ class BOMInsightsAgent:
             category = part.get("category", "unknown")
             component_count_by_category[category] += quantity
             
-            # Cost breakdown
+            # Cost breakdown - safe extraction
+            from utils.cost_utils import safe_extract_cost, safe_extract_quantity
             cost_est = part.get("cost_estimate", {})
-            if isinstance(cost_est, dict):
-                unit_cost = cost_est.get("value", 0)
-                if isinstance(unit_cost, dict):
-                    unit_cost = unit_cost.get("value", 0)
-                unit_cost = float(unit_cost) if unit_cost else 0.0
-            else:
-                unit_cost = float(cost_est) if cost_est else 0.0
-            
+            unit_cost = safe_extract_cost(cost_est, default=0.0)
+            quantity = safe_extract_quantity(quantity, default=1)
             item_cost = unit_cost * quantity
             total_cost += item_cost
             cost_by_category[category] += item_cost
@@ -106,13 +101,8 @@ class BOMInsightsAgent:
             part = item.get("part_data", {})
             quantity = item.get("quantity", 1)
             cost_est = part.get("cost_estimate", {})
-            if isinstance(cost_est, dict):
-                unit_cost = cost_est.get("value", 0)
-                if isinstance(unit_cost, dict):
-                    unit_cost = unit_cost.get("value", 0)
-                unit_cost = float(unit_cost) if unit_cost else 0.0
-            else:
-                unit_cost = float(cost_est) if cost_est else 0.0
+            unit_cost = safe_extract_cost(cost_est, default=0.0)
+            quantity = safe_extract_quantity(quantity, default=1)
             item_cost = unit_cost * quantity
             if item_cost > high_cost_threshold:
                 high_cost_items.append({

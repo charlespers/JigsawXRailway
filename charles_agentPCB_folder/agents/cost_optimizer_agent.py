@@ -37,15 +37,12 @@ class CostOptimizerAgent:
             quantity = item.get("quantity", 1)
             part = item.get("part_data", {})
             
-            # Import safe_float_extract from design_analyzer
-            from agents.design_analyzer import safe_float_extract
+            # Use safe cost extraction utility
+            from utils.cost_utils import safe_extract_cost, safe_extract_quantity
             
             cost_est = part.get("cost_estimate", {})
-            unit_cost = safe_float_extract(
-                cost_est.get("value") if isinstance(cost_est, dict) else cost_est,
-                context=f"cost for {part.get('id', 'unknown')}"
-            )
-            
+            unit_cost = safe_extract_cost(cost_est, default=0.0)
+            quantity = safe_extract_quantity(quantity, default=1)
             item_cost = unit_cost * quantity
             total_cost += item_cost
             
@@ -83,27 +80,14 @@ class CostOptimizerAgent:
             if alternatives:
                 best_alt = alternatives[0]
                 alt_cost = best_alt.get("cost_estimate", {})
-                if isinstance(alt_cost, dict):
-                    alt_cost_value = alt_cost.get("value", 0)
-                    # Ensure alt_cost_value is a float, not a dict
-                    if isinstance(alt_cost_value, dict):
-                        alt_cost_value = alt_cost_value.get("value") or 0.0
-                    alt_cost_value = float(alt_cost_value) if alt_cost_value else 0.0
-                else:
-                    alt_cost_value = float(alt_cost) if alt_cost else 0.0
+                alt_cost_value = safe_extract_cost(alt_cost, default=0.0)
                 
                 current_cost = part.get("cost_estimate", {})
-                if isinstance(current_cost, dict):
-                    current_cost_value = current_cost.get("value", 0)
-                    # Ensure current_cost_value is a float, not a dict
-                    if isinstance(current_cost_value, dict):
-                        current_cost_value = current_cost_value.get("value") or 0.0
-                    current_cost_value = float(current_cost_value) if current_cost_value else 0.0
-                else:
-                    current_cost_value = float(current_cost) if current_cost else 0.0
+                current_cost_value = safe_extract_cost(current_cost, default=0.0)
                 
+                item_quantity = safe_extract_quantity(item.get("quantity", 1), default=1)
                 if alt_cost_value > 0 and current_cost_value > alt_cost_value:
-                    savings = (current_cost_value - alt_cost_value) * item.get("quantity", 1)
+                    savings = (current_cost_value - alt_cost_value) * item_quantity
                     optimization_opportunities.append({
                         "part_id": part_id,
                         "part_name": part.get("name"),

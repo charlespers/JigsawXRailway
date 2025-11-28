@@ -24,6 +24,21 @@ class RequirementsAgent:
     
     def __init__(self, cache_manager=None):
         self.cache_manager = cache_manager
+        # Don't initialize API keys here - do it lazily in extract_requirements
+        # This allows the provider to be set in the environment before use
+        self._initialized = False
+        self.api_key = None
+        self.endpoint = None
+        self.model = None
+        self.temperature = None
+        self.provider = None
+        self.headers = None
+    
+    def _ensure_initialized(self):
+        """Lazily initialize API configuration based on current environment."""
+        if self._initialized:
+            return
+        
         if load_config:
             try:
                 config = load_config()
@@ -75,6 +90,19 @@ class RequirementsAgent:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
+        
+        self._initialized = True
+        
+        # Validate API key format (basic check)
+        if self.provider == "xai" and len(self.api_key) < 20:
+            raise ValueError("XAI_API_KEY appears to be invalid (too short). Please check your .env file.")
+        if self.provider == "openai" and not self.api_key.startswith("sk-"):
+            raise ValueError("OPENAI_API_KEY appears to be invalid (should start with 'sk-'). Please check your .env file.")
+        
+        self.headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
     
     def extract_requirements(self, query: str) -> Dict[str, Any]:
         """
@@ -91,6 +119,9 @@ class RequirementsAgent:
                 "preferences": {...}
             }
         """
+        # Ensure API is initialized (reads provider from environment at runtime)
+        self._ensure_initialized()
+        
         # Check cache first
         if self.cache_manager:
             import hashlib

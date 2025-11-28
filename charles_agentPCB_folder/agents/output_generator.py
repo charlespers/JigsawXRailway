@@ -11,6 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from agents.testpoint_fiducial_agent import TestPointFiducialAgent
 from agents.eda_asset_agent import EDAAssetAgent
+from utils.cost_utils import safe_extract_cost, safe_extract_quantity
 
 
 class OutputGenerator:
@@ -384,14 +385,9 @@ class OutputGenerator:
             designator = f"{prefix}{designator_counters[prefix]}"
             designator_counters[prefix] += 1
             
-            # Extract cost
+            # Extract cost - safe extraction to handle nested dicts
             cost_estimate = part_data.get("cost_estimate", {})
-            unit_cost = 0.0
-            if isinstance(cost_estimate, dict):
-                unit_cost = cost_estimate.get("unit", 0.0) or cost_estimate.get("value", 0.0)
-            elif isinstance(cost_estimate, (int, float)):
-                unit_cost = float(cost_estimate)
-            
+            unit_cost = safe_extract_cost(cost_estimate, default=0.0)
             extended_cost = unit_cost * 1  # qty = 1 for main parts
             total_cost += extended_cost
             
@@ -517,14 +513,10 @@ class OutputGenerator:
             elif comp_type == "resistor":
                 description = f"{value}Ω {package} resistor"
             
-            # Extract cost for external components
+            # Extract cost for external components - safe extraction to handle nested dicts
             cost_estimate = first.get("cost_estimate", {})
-            unit_cost = 0.0
-            if isinstance(cost_estimate, dict):
-                unit_cost = cost_estimate.get("unit", 0.0) or cost_estimate.get("value", 0.0)
-            elif isinstance(cost_estimate, (int, float)):
-                unit_cost = float(cost_estimate)
-            
+            unit_cost = safe_extract_cost(cost_estimate, default=0.0)
+            qty = safe_extract_quantity(qty, default=1)
             extended_cost = unit_cost * qty
             total_cost += extended_cost
             

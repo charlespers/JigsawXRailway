@@ -29,9 +29,11 @@ class SupplyChainAgent:
         warnings = []
         risk_score = 0.0
         
+        from utils.cost_utils import safe_extract_quantity
+        
         for item in bom_items:
             part = item.get("part_data", {})
-            quantity = item.get("quantity", 1)
+            quantity = safe_extract_quantity(item.get("quantity", 1), default=1)
             
             part_risks = []
             item_risk_score = 0.0
@@ -89,6 +91,7 @@ class SupplyChainAgent:
                     "risk_score": item_risk_score,
                     "quantity": quantity
                 })
+                # quantity already extracted safely above
                 risk_score += item_risk_score * quantity
         
         # Normalize risk score (0-100)

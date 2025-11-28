@@ -114,13 +114,10 @@ def part_data_to_part_object(part_data: Dict[str, Any], quantity: int = 1, compo
     # Format voltage
     voltage = format_voltage_range(part_data.get("supply_voltage_range"))
     
-    # Extract cost
+    # Extract cost - safe extraction to handle nested dicts
+    from utils.cost_utils import safe_extract_cost
     cost_estimate = part_data.get("cost_estimate", {})
-    unit_cost = 0.0
-    if isinstance(cost_estimate, dict):
-        unit_cost = cost_estimate.get("unit", 0.0) or cost_estimate.get("value", 0.0)
-    elif isinstance(cost_estimate, (int, float)):
-        unit_cost = float(cost_estimate)
+    unit_cost = safe_extract_cost(cost_estimate, default=0.0)
     
     # Extract footprint (IPC-7351 compliant)
     footprint = part_data.get("footprint", "")

@@ -852,9 +852,8 @@ export default function JigsawDemo({
                       setPreviousDesign([...parts]);
                       // Clear any previous errors
                       setError(null);
-                      // Start new design with template
-                      setAnalysisQuery(query);
-                      setIsAnalyzing(true);
+                      // Start new design with template - use current provider
+                      handleQuerySent(query, provider);
                       setActiveTab("design");
                       showToast(`Starting template: ${query.substring(0, 50)}...`, "info", 2000);
                     } catch (error) {

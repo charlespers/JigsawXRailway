@@ -163,19 +163,13 @@ class DesignComparisonAgent:
     def _calculate_total_cost(self, bom_items: List[Dict[str, Any]]) -> float:
         """Calculate total cost of BOM."""
         total = 0.0
+        from utils.cost_utils import safe_extract_cost, safe_extract_quantity
+        
         for item in bom_items:
             part = item.get("part_data", {})
-            quantity = item.get("quantity", 1)
+            quantity = safe_extract_quantity(item.get("quantity", 1), default=1)
             cost_est = part.get("cost_estimate", {})
-            
-            if isinstance(cost_est, dict):
-                unit_cost = cost_est.get("value", 0)
-                if isinstance(unit_cost, dict):
-                    unit_cost = unit_cost.get("value", 0)
-                unit_cost = float(unit_cost) if unit_cost else 0.0
-            else:
-                unit_cost = float(cost_est) if cost_est else 0.0
-            
+            unit_cost = safe_extract_cost(cost_est, default=0.0)
             total += unit_cost * quantity
         return total
     

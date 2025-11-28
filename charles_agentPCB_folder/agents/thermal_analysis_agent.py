@@ -38,14 +38,14 @@ class ThermalAnalysisAgent:
         heat_sink_recommendations = []
         total_power_dissipation = 0.0
         
+        from utils.cost_utils import safe_extract_quantity
+        from agents.design_analyzer import safe_float_extract
+        
         for item in bom_items:
             part = item.get("part_data", {})
-            quantity = item.get("quantity", 1)
+            quantity = safe_extract_quantity(item.get("quantity", 1), default=1)
             part_id = part.get("id")
             category = part.get("category", "")
-            
-            # Import safe_float_extract
-            from agents.design_analyzer import safe_float_extract
             
             # Calculate power dissipation - use safe extraction
             power_dissipation = self._calculate_power_dissipation(part, item)
