@@ -257,19 +257,26 @@ async def component_analysis(request: Request):
             # Ensure complete is always sent
             if not complete_sent:
                 logger.warning("[STREAM] Stream ending without complete event - sending final complete")
-                yield f"data: {json.dumps({'type': 'complete', 'message': 'Stream ended'})}\n\n"
-                if hasattr(sys.stdout, 'flush'):
-                    sys.stdout.flush()
+                try:
+                    yield f"data: {json.dumps({'type': 'complete', 'message': 'Stream ended'})}\n\n"
+                    if hasattr(sys.stdout, 'flush'):
+                        sys.stdout.flush()
+                except Exception as e:
+                    logger.error(f"[STREAM] Error sending final complete: {e}")
             
             # Cleanup: cancel task if still running
-            if not task.done():
+            if 'task' in locals() and not task.done():
+                logger.info("[STREAM] Cancelling incomplete task")
                 task.cancel()
                 try:
                     await asyncio.wait_for(task, timeout=2.0)
                 except (asyncio.CancelledError, asyncio.TimeoutError):
                     pass
+                except Exception as e:
+                    logger.warning(f"[STREAM] Error during task cleanup: {e}")
             # Restore original provider
             os.environ["LLM_PROVIDER"] = original_provider
+            logger.info(f"[PROVIDER] Restored LLM_PROVIDER='{original_provider}'")
     
     return StreamingResponse(
         event_stream(),

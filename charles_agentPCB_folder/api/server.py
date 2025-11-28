@@ -18,7 +18,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Add project root to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
+# Also add src/ directory for new structure
+src_dir = project_root / "src"
+if src_dir.exists():
+    sys.path.insert(0, str(src_dir))
 
 # Load .env file if available
 try:
@@ -92,6 +97,21 @@ async def startup_event():
     logger.info(f"[STARTUP]   - EDA: {len(eda_routes)} routes")
     logger.info(f"[STARTUP]   - Forecast: {len(forecast_routes)} routes")
     logger.info(f"[STARTUP]   - Streaming: {len(streaming_routes)} routes")
+    
+    # CRITICAL: Verify analysis routes are accessible
+    if len(analysis_routes) == 0:
+        logger.error("[STARTUP] CRITICAL: No analysis routes found! All /api/v1/analysis/* endpoints will return 404.")
+        logger.error("[STARTUP] This indicates a route registration problem. Check routes/__init__.py")
+    else:
+        # Log specific analysis endpoints for debugging
+        analysis_paths = [r.path for r in analysis_routes if hasattr(r, 'path')]
+        logger.info(f"[STARTUP] Analysis endpoints: {', '.join(analysis_paths[:10])}")
+        
+        # Verify critical endpoints exist
+        critical_endpoints = ["/api/v1/analysis/cost", "/api/v1/analysis/power", "/api/v1/analysis/validation"]
+        missing = [ep for ep in critical_endpoints if ep not in analysis_paths]
+        if missing:
+            logger.warning(f"[STARTUP] Missing critical analysis endpoints: {', '.join(missing)}")
 
 
 # Shutdown event

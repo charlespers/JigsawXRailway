@@ -51,9 +51,10 @@ class TestHealthEndpoints:
         response = requests.get(f"{BACKEND_URL}/api/v1/routes", timeout=10)
         assert response.status_code == 200
         data = response.json()
-        assert "routes" in data
-        assert "analysis_routes_count" in data
-        print(f"✓ Routes endpoint: {data['analysis_routes_count']} analysis routes")
+        assert data.get("status") == "ok"
+        assert isinstance(data.get("routes"), list)
+        assert data.get("analysis_routes_count", 0) >= 0
+        print(f"✓ Routes endpoint: {data['analysis_routes_count']} analysis routes, {data['total_routes']} total routes")
 
 
 class TestAnalysisEndpoints:
@@ -69,9 +70,10 @@ class TestAnalysisEndpoints:
         )
         assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
         data = response.json()
-        assert "status" in data
-        assert data["status"] == "ok"
-        print(f"✓ Test endpoint: {data}")
+        assert data.get("status") == "ok"
+        assert data.get("analysis_routes_count", 0) >= 0
+        assert isinstance(data.get("routes"), list)
+        print(f"✓ Test endpoint: {data['analysis_routes_count']} analysis routes exposed")
     
     def test_cost_analysis_endpoint(self):
         """Test /api/v1/analysis/cost endpoint."""

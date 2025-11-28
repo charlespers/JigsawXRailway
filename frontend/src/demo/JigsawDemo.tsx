@@ -202,7 +202,11 @@ export default function JigsawDemo({
   // Load design handler
   const handleLoadDesign = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file) {
+      // Reset input to allow re-importing the same file
+      event.target.value = '';
+      return;
+    }
     
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -267,10 +271,17 @@ export default function JigsawDemo({
       } catch (error) {
         console.error("Failed to load design:", error);
         showToast(`Failed to load design file: ${error instanceof Error ? error.message : 'Unknown error'}`, "error", 3000);
+      } finally {
+        // Reset input to allow re-importing the same file
+        event.target.value = '';
       }
     };
+    reader.onerror = () => {
+      showToast("Failed to read design file", "error", 3000);
+      event.target.value = '';
+    };
     reader.readAsText(file);
-  }, [showToast, saveToHistory]);
+  }, [showToast, saveToHistory, calculateComponentPosition]);
 
   // Update query when initialQuery changes and auto-start analysis
   useEffect(() => {
@@ -492,9 +503,9 @@ export default function JigsawDemo({
 
       newMap.set(componentId, {
         id: componentId,
-        label: partData.mpn.split("-")[0] || componentId,
+        label: normalizedPart.mpn.split("-")[0] || componentId,
         position: organizedPosition,
-        partData,
+        partData: normalizedPart,  // CRITICAL: Use normalized part data for consistency
       });
       return newMap;
     });

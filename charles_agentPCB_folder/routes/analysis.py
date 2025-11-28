@@ -5,6 +5,7 @@ Analysis-related routes
 import logging
 import asyncio
 import os
+import time
 from fastapi import APIRouter, HTTPException
 from typing import Dict, Any
 
@@ -26,7 +27,9 @@ from api.schemas.analysis import (
     BatchAnalysisRequest,
     BatchAnalysisResponse,
     BOMInsightsRequest,
-    BOMInsightsResponse
+    BOMInsightsResponse,
+    ComplianceAnalysisRequest,
+    ComplianceAnalysisResponse
 )
 from core.exceptions import AgentException
 
@@ -37,6 +40,34 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 # Log router creation for debugging
 logger.info(f"[ANALYSIS_ROUTER] Router created with prefix='/analysis'. Router ID: {id(router)}")
+
+
+@router.post("/test")
+async def analysis_test_endpoint():
+    """
+    Lightweight diagnostics endpoint so deployments can verify analysis routes quickly.
+    Returns summary metadata instead of calling any downstream agents.
+    """
+    try:
+        analysis_routes = [
+            {
+                "path": route.path,
+                "name": route.name,
+                "methods": sorted(
+                    list({m for m in getattr(route, "methods", set()) if m not in {"OPTIONS", "HEAD"}})
+                ),
+            }
+            for route in router.routes
+            if getattr(route, "path", "").startswith("/analysis/")
+        ]
+        return {
+            "status": "ok",
+            "analysis_routes_count": len(analysis_routes),
+            "routes": analysis_routes,
+        }
+    except Exception as err:
+        logger.error(f"[ANALYSIS_TEST] Failed to enumerate analysis routes: {err}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Diagnostics failed")
 
 
 @router.post("/cost", response_model=CostAnalysisResponse)
@@ -56,13 +87,20 @@ async def analyze_cost(request: CostAnalysisRequest):
             for item in request.bom_items
         ]
         analysis = agent.analyze_bom_cost(bom_items)
+        # Ensure all numeric fields are actually numbers, not dicts
+        if isinstance(analysis.get("total_cost"), dict):
+            analysis["total_cost"] = analysis["total_cost"].get("value") or analysis["total_cost"].get("cost") or 0.0
+        analysis["total_cost"] = float(analysis.get("total_cost", 0.0))
         return CostAnalysisResponse(**analysis)
     except AgentException as e:
-        logger.error(f"Agent error in cost analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[COST_ANALYSIS] Agent error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Cost analysis agent error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"[COST_ANALYSIS] Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
     except Exception as e:
-        logger.error(f"Error in cost analysis: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"[COST_ANALYSIS] Unexpected error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error in cost analysis: {str(e)}")
     finally:
         # Restore original provider
         os.environ["LLM_PROVIDER"] = original_provider
@@ -87,11 +125,14 @@ async def analyze_supply_chain(request: SupplyChainAnalysisRequest):
         analysis = agent.analyze_supply_chain(bom_items)
         return SupplyChainAnalysisResponse(**analysis)
     except AgentException as e:
-        logger.error(f"Agent error in supply chain analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[SUPPLY_CHAIN] Agent error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Supply chain analysis agent error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"[SUPPLY_CHAIN] Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
     except Exception as e:
-        logger.error(f"Error in supply chain analysis: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"[SUPPLY_CHAIN] Unexpected error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error in supply chain analysis: {str(e)}")
     finally:
         # Restore original provider
         os.environ["LLM_PROVIDER"] = original_provider
@@ -127,6 +168,11 @@ async def analyze_power(request: PowerAnalysisRequest):
             request.operating_modes or {}
         )
         
+        # Ensure all numeric fields are actually numbers, not dicts
+        if isinstance(analysis.get("total_power"), dict):
+            analysis["total_power"] = analysis["total_power"].get("value") or analysis["total_power"].get("watts") or 0.0
+        analysis["total_power"] = float(analysis.get("total_power", 0.0))
+        
         # If battery capacity provided, estimate battery life
         if request.battery_capacity_mah:
             battery_life = calculator.estimate_battery_life(
@@ -138,11 +184,14 @@ async def analyze_power(request: PowerAnalysisRequest):
         
         return PowerAnalysisResponse(**analysis)
     except AgentException as e:
-        logger.error(f"Agent error in power analysis: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[POWER_ANALYSIS] Agent error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Power analysis agent error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"[POWER_ANALYSIS] Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
     except Exception as e:
-        logger.error(f"Error in power analysis: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"[POWER_ANALYSIS] Unexpected error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error in power analysis: {str(e)}")
     finally:
         # Restore original provider
         os.environ["LLM_PROVIDER"] = original_provider
@@ -298,11 +347,14 @@ async def validate_design(request: DesignValidationRequest):
         
         return DesignValidationResponse(**validation)
     except AgentException as e:
-        logger.error(f"Agent error in design validation: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[VALIDATION] Agent error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Design validation agent error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"[VALIDATION] Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
     except Exception as e:
-        logger.error(f"Error in design validation: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"[VALIDATION] Unexpected error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error in design validation: {str(e)}")
     finally:
         # Restore original provider
         os.environ["LLM_PROVIDER"] = original_provider
@@ -327,11 +379,47 @@ async def analyze_bom_insights(request: BOMInsightsRequest):
         insights = agent.analyze_bom(bom_items)
         return BOMInsightsResponse(**insights)
     except AgentException as e:
-        logger.error(f"Agent error in BOM insights: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"[BOM_INSIGHTS] Agent error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"BOM insights agent error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"[BOM_INSIGHTS] Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
     except Exception as e:
-        logger.error(f"Error in BOM insights: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+        logger.error(f"[BOM_INSIGHTS] Unexpected error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error in BOM insights: {str(e)}")
+    finally:
+        # Restore original provider
+        os.environ["LLM_PROVIDER"] = original_provider
+
+
+@router.post("/compliance", response_model=ComplianceAnalysisResponse)
+async def analyze_compliance(request: ComplianceAnalysisRequest):
+    """Check design compliance with environmental and regulatory standards."""
+    # Set provider before creating agents
+    provider = request.provider or "xai"  # Default to xai - OpenAI support removed
+    original_provider = os.environ.get("LLM_PROVIDER", "xai")
+    os.environ["LLM_PROVIDER"] = provider
+    
+    try:
+        from agents.compliance_agent import ComplianceAgent
+        
+        agent = ComplianceAgent()
+        bom_items = [
+            {"part_data": item.part_data, "quantity": item.quantity}
+            for item in request.bom_items
+        ]
+        
+        compliance = agent.check_compliance(bom_items, request.regions)
+        return ComplianceAnalysisResponse(**compliance)
+    except AgentException as e:
+        logger.error(f"[COMPLIANCE] Agent error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Compliance analysis agent error: {str(e)}")
+    except ValueError as e:
+        logger.error(f"[COMPLIANCE] Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {str(e)}")
+    except Exception as e:
+        logger.error(f"[COMPLIANCE] Unexpected error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Internal server error in compliance analysis: {str(e)}")
     finally:
         # Restore original provider
         os.environ["LLM_PROVIDER"] = original_provider
@@ -375,7 +463,7 @@ async def batch_analysis(request: BatchAnalysisRequest):
         if "cost" in request.analysis_types:
             cost_agent = CostOptimizerAgent()
             tasks["cost"] = asyncio.create_task(
-                asyncio.to_thread(cost_agent.optimize_cost, bom_items)
+                asyncio.to_thread(cost_agent.analyze_bom_cost, bom_items)
             )
         
         if "supply_chain" in request.analysis_types:
@@ -387,7 +475,7 @@ async def batch_analysis(request: BatchAnalysisRequest):
         if "power" in request.analysis_types:
             power_agent = PowerCalculatorAgent()
             tasks["power"] = asyncio.create_task(
-                asyncio.to_thread(power_agent.calculate_power, bom_items, connections)
+                asyncio.to_thread(power_agent.calculate_power_consumption, bom_items, {})
             )
         
         if "thermal" in request.analysis_types:
@@ -405,7 +493,7 @@ async def batch_analysis(request: BatchAnalysisRequest):
         if "manufacturing" in request.analysis_types:
             mfg_agent = ManufacturingReadinessAgent()
             tasks["manufacturing"] = asyncio.create_task(
-                asyncio.to_thread(mfg_agent.analyze_manufacturing_readiness, bom_items)
+                asyncio.to_thread(mfg_agent.analyze_manufacturing_readiness, bom_items, connections)
             )
         
         if "validation" in request.analysis_types:
@@ -414,13 +502,38 @@ async def batch_analysis(request: BatchAnalysisRequest):
                 asyncio.to_thread(validator.validate_design, bom_items, connections)
             )
         
-        # Wait for all tasks to complete
-        for analysis_type, task in tasks.items():
-            try:
-                results[analysis_type] = await task
-            except Exception as e:
-                errors[analysis_type] = str(e)
-                logger.error(f"Error in {analysis_type} analysis: {e}")
+        # Wait for all tasks to complete with timeout
+        try:
+            # Use asyncio.wait_for to add overall timeout (60 seconds for all analyses)
+            completed_tasks = await asyncio.wait_for(
+                asyncio.gather(*tasks.values(), return_exceptions=True),
+                timeout=60.0
+            )
+            
+            # Process results
+            for (analysis_type, task), result in zip(tasks.items(), completed_tasks):
+                if isinstance(result, Exception):
+                    errors[analysis_type] = str(result)
+                    logger.error(f"[BATCH_ANALYSIS] Error in {analysis_type} analysis: {result}")
+                else:
+                    results[analysis_type] = result
+        except asyncio.TimeoutError:
+            logger.error("[BATCH_ANALYSIS] Batch analysis timed out after 60s")
+            # Cancel remaining tasks
+            for task in tasks.values():
+                if not task.done():
+                    task.cancel()
+            # Collect partial results
+            for analysis_type, task in tasks.items():
+                if task.done() and not task.cancelled():
+                    try:
+                        result = await task
+                        results[analysis_type] = result
+                    except Exception as e:
+                        errors[analysis_type] = str(e)
+                else:
+                    errors[analysis_type] = "Analysis timed out"
+            raise HTTPException(status_code=504, detail="Batch analysis timed out after 60 seconds")
         
         return BatchAnalysisResponse(
             results=results,
