@@ -22,11 +22,20 @@ api_router = APIRouter(prefix="/api/v1")
 _imported_routers = []
 
 # 1. Analysis routes (most critical)
+analysis_router_imported = False
 try:
     from routes.analysis import router as analysis_router
+    # CRITICAL: analysis_router has prefix="/analysis", api_router has prefix="/api/v1"
+    # So including it will create /api/v1/analysis/* routes
     api_router.include_router(analysis_router, tags=["analysis"])
     _imported_routers.append("analysis")
-    logger.info("[ROUTES] ✓ Analysis router included successfully")
+    analysis_router_imported = True
+    logger.info(f"[ROUTES] ✓ Analysis router included successfully. Router ID: {id(analysis_router)}")
+    # Verify routes are in the router
+    analysis_routes_in_router = [r for r in api_router.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    logger.info(f"[ROUTES] Analysis routes in api_router: {len(analysis_routes_in_router)}")
+    if len(analysis_routes_in_router) > 0:
+        logger.info(f"[ROUTES] Sample routes: {[r.path for r in analysis_routes_in_router[:3]]}")
 except Exception as e:
     logger.error(f"[ROUTES] ✗ Failed to import/include analysis router: {e}", exc_info=True)
     # Try alternative import path
@@ -37,9 +46,14 @@ except Exception as e:
             analysis_module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(analysis_module)
             api_router.include_router(analysis_module.router, tags=["analysis"])
+            analysis_router_imported = True
+            _imported_routers.append("analysis")
             logger.info("[ROUTES] ✓ Analysis router included via alternative import")
     except Exception as e2:
         logger.error(f"[ROUTES] ✗ Alternative import also failed: {e2}", exc_info=True)
+
+if not analysis_router_imported:
+    logger.error("[ROUTES] CRITICAL: Analysis router NOT imported! Routes will return 404.")
 
 # 2. Design routes
 try:

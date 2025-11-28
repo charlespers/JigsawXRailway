@@ -110,13 +110,15 @@ except Exception as e:
 if not analysis_routes_registered:
     logger.warning("[ROUTES] Attempting emergency direct registration of analysis routes...")
     try:
-        # Try absolute import
+        # Try absolute import - CRITICAL: analysis_router already has /analysis prefix, so just add /api/v1
         from routes.analysis import router as analysis_router
+        # The analysis_router has prefix="/analysis", so we add /api/v1 to get /api/v1/analysis/*
         app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
         analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
         if len(analysis_routes) > 0:
             analysis_routes_registered = True
             logger.info(f"[ROUTES] ✓ Emergency registration successful: {len(analysis_routes)} analysis routes")
+            logger.info(f"[ROUTES] Registered paths: {[r.path for r in analysis_routes[:5]]}")
         else:
             logger.error("[ROUTES] Emergency registration added router but no routes found!")
     except Exception as e:
@@ -132,11 +134,13 @@ if not analysis_routes_registered:
                 if spec and spec.loader:
                     analysis_module = importlib.util.module_from_spec(spec)
                     spec.loader.exec_module(analysis_module)
+                    # CRITICAL: analysis_module.router already has /analysis prefix
                     app.include_router(analysis_module.router, prefix="/api/v1", tags=["analysis"])
                     analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
                     if len(analysis_routes) > 0:
                         analysis_routes_registered = True
                         logger.info(f"[ROUTES] ✓ File-based import successful: {len(analysis_routes)} analysis routes")
+                        logger.info(f"[ROUTES] Registered paths: {[r.path for r in analysis_routes[:5]]}")
         except Exception as e2:
             logger.error(f"[ROUTES] File-based import also failed: {e2}", exc_info=True)
 
@@ -171,8 +175,15 @@ async def startup_event():
     logger.info(f"[STARTUP] Application started. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
     if len(analysis_routes) > 0:
         logger.info(f"[STARTUP] Analysis routes: {[r.path for r in analysis_routes]}")
+        # Log methods for each route
+        for route in analysis_routes[:10]:
+            methods = getattr(route, 'methods', set())
+            logger.info(f"[STARTUP] Route {route.path} methods: {methods}")
     else:
         logger.error("[STARTUP] CRITICAL: No analysis routes registered!")
+        # List all available routes for debugging
+        all_routes = [r for r in app.routes if hasattr(r, 'path')]
+        logger.error(f"[STARTUP] Available routes: {[r.path for r in all_routes[:20]]}")
 
 # Health check endpoint to verify routes are registered
 @app.get("/health")
@@ -204,13 +215,197 @@ async def list_routes():
     # Check if analysis routes are present
     analysis_routes = [r for r in routes if '/analysis' in r['path']]
     
+    # Check for expected routes
+    expected_analysis_routes = [
+        "/api/v1/analysis/cost",
+        "/api/v1/analysis/supply-chain",
+        "/api/v1/analysis/power",
+        "/api/v1/analysis/thermal",
+        "/api/v1/analysis/signal-integrity",
+        "/api/v1/analysis/manufacturing-readiness",
+        "/api/v1/analysis/validation"
+    ]
+    registered_paths = [r['path'] for r in analysis_routes]
+    missing_routes = [p for p in expected_analysis_routes if p not in registered_paths]
+    
     return {
         "routes": sorted(routes, key=lambda x: x["path"]),
         "total_routes": len(routes),
         "analysis_routes_count": len(analysis_routes),
-        "analysis_routes": [r['path'] for r in analysis_routes],
-        "health_check_works": True
+        "analysis_routes": [r for r in analysis_routes],
+        "expected_routes": expected_analysis_routes,
+        "missing_routes": missing_routes,
+        "health": "ok" if len(missing_routes) == 0 else "degraded"
     }
+
+# Test endpoint to verify analysis routes work
+@app.post("/api/v1/analysis/test")
+async def test_analysis_route():
+    """Test endpoint to verify analysis routes are registered."""
+    return {
+        "status": "ok",
+        "message": "Analysis routes are working",
+        "timestamp": time.time()
+    }
+
+# FINAL FALLBACK: Always register analysis routes inline as backup
+# This ensures routes work even if all other registration methods fail on Railway
+# We register inline routes regardless of analysis_routes_registered to ensure they're always available
+try:
+    logger.error("[ROUTES] CRITICAL FALLBACK: Registering analysis routes directly inline in server.py")
+    try:
+        from api.schemas.analysis import (
+            CostAnalysisRequest, CostAnalysisResponse,
+            SupplyChainAnalysisRequest, SupplyChainAnalysisResponse,
+            PowerAnalysisRequest, PowerAnalysisResponse,
+            ThermalAnalysisRequest, ThermalAnalysisResponse,
+            SignalIntegrityAnalysisRequest, SignalIntegrityAnalysisResponse,
+            ManufacturingReadinessRequest, ManufacturingReadinessResponse,
+            DesignValidationRequest, DesignValidationResponse
+        )
+        from core.exceptions import AgentException
+        from fastapi import HTTPException
+        
+        @app.post("/api/v1/analysis/cost", response_model=CostAnalysisResponse)
+        async def inline_analyze_cost(request: CostAnalysisRequest):
+            """Inline cost analysis endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.cost_optimizer_agent import CostOptimizerAgent
+                agent = CostOptimizerAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                analysis = agent.analyze_bom_cost(bom_items)
+                return CostAnalysisResponse(**analysis)
+            except Exception as e:
+                logger.error(f"Error in cost analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/supply-chain", response_model=SupplyChainAnalysisResponse)
+        async def inline_analyze_supply_chain(request: SupplyChainAnalysisRequest):
+            """Inline supply chain analysis endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.supply_chain_agent import SupplyChainAgent
+                agent = SupplyChainAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                analysis = agent.analyze_supply_chain(bom_items)
+                return SupplyChainAnalysisResponse(**analysis)
+            except Exception as e:
+                logger.error(f"Error in supply chain analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/power", response_model=PowerAnalysisResponse)
+        async def inline_analyze_power(request: PowerAnalysisRequest):
+            """Inline power analysis endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.power_calculator_agent import PowerCalculatorAgent
+                agent = PowerCalculatorAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                analysis = agent.calculate_power(bom_items, request.connections)
+                return PowerAnalysisResponse(**analysis)
+            except Exception as e:
+                logger.error(f"Error in power analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/thermal", response_model=ThermalAnalysisResponse)
+        async def inline_analyze_thermal(request: ThermalAnalysisRequest):
+            """Inline thermal analysis endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.thermal_analysis_agent import ThermalAnalysisAgent
+                agent = ThermalAnalysisAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                analysis = agent.analyze_thermal(bom_items, request.connections)
+                return ThermalAnalysisResponse(**analysis)
+            except Exception as e:
+                logger.error(f"Error in thermal analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/signal-integrity", response_model=SignalIntegrityAnalysisResponse)
+        async def inline_analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
+            """Inline signal integrity analysis endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.signal_integrity_agent import SignalIntegrityAgent
+                agent = SignalIntegrityAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
+                analysis = agent.analyze_signal_integrity(bom_items, connections, request.pcb_thickness_mm, request.trace_width_mils)
+                return SignalIntegrityAnalysisResponse(**analysis)
+            except Exception as e:
+                logger.error(f"Error in signal integrity analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/manufacturing-readiness", response_model=ManufacturingReadinessResponse)
+        async def inline_analyze_manufacturing_readiness(request: ManufacturingReadinessRequest):
+            """Inline manufacturing readiness analysis endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+                agent = ManufacturingReadinessAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
+                analysis = agent.analyze_manufacturing_readiness(bom_items, connections)
+                return ManufacturingReadinessResponse(**analysis)
+            except Exception as e:
+                logger.error(f"Error in manufacturing readiness analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/validation", response_model=DesignValidationResponse)
+        async def inline_analyze_validation(request: DesignValidationRequest):
+            """Inline design validation endpoint - fallback registration."""
+            provider = request.provider or "xai"
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.design_validator_agent import DesignValidatorAgent
+                agent = DesignValidatorAgent()
+                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+                connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
+                validation = agent.validate_design(bom_items, connections, request.constraints)
+                return DesignValidationResponse(**validation)
+            except Exception as e:
+                logger.error(f"Error in design validation: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+        if len(analysis_routes) > 0:
+            logger.info(f"[ROUTES] ✓ CRITICAL FALLBACK: Inline route registration successful: {len(analysis_routes)} routes")
+            # Don't set analysis_routes_registered = True here to avoid conflicts
+            # These are backup routes that should always be available
+        else:
+            logger.error("[ROUTES] CRITICAL FALLBACK: Inline registration failed - no routes found")
+    except Exception as e:
+        logger.error(f"[ROUTES] CRITICAL FALLBACK: Inline route registration failed: {e}", exc_info=True)
+        # Even if inline registration fails, log it but don't crash
+        pass
 
 
 def ensure_selected_parts_is_dict(design_state: Dict[str, Any]) -> Dict[str, Any]:

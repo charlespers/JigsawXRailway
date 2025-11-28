@@ -1,12 +1,24 @@
 """
 Part Database Utilities
-Load and query the part database
+Load and query the part database with validation and caching
 """
 
 import json
 import os
+import logging
 from pathlib import Path
 from typing import Dict, List, Any, Optional
+from functools import lru_cache
+
+logger = logging.getLogger(__name__)
+
+# Required fields for a valid part
+REQUIRED_PART_FIELDS = ["id", "mpn", "manufacturer", "category"]
+OPTIONAL_PART_FIELDS = [
+    "description", "supply_voltage_range", "interface_type", "operating_temp_range",
+    "cost_estimate", "availability_status", "lifecycle_status", "datasheet_url",
+    "package_type", "pin_count", "recommended_external_components"
+]
 
 
 def get_database_path() -> Path:
@@ -15,13 +27,57 @@ def get_database_path() -> Path:
     return current_file.parent.parent / "data" / "part_database"
 
 
+def validate_part(part: Dict[str, Any], category: str) -> tuple[bool, Optional[str]]:
+    """
+    Validate a part dictionary has required fields and valid types.
+    
+    Returns:
+        (is_valid, error_message)
+    """
+    # Check required fields
+    for field in REQUIRED_PART_FIELDS:
+        if field not in part:
+            return False, f"Missing required field: {field}"
+    
+    # Validate field types
+    if not isinstance(part["id"], str) or not part["id"]:
+        return False, "Field 'id' must be a non-empty string"
+    if not isinstance(part["mpn"], str) or not part["mpn"]:
+        return False, "Field 'mpn' must be a non-empty string"
+    if not isinstance(part["manufacturer"], str) or not part["manufacturer"]:
+        return False, "Field 'manufacturer' must be a non-empty string"
+    if not isinstance(part["category"], str):
+        return False, "Field 'category' must be a string"
+    
+    # Validate numeric fields if present
+    if "cost_estimate" in part and part["cost_estimate"] is not None:
+        try:
+            float(part["cost_estimate"])
+        except (ValueError, TypeError):
+            return False, "Field 'cost_estimate' must be a number"
+    
+    # Validate voltage range if present
+    if "supply_voltage_range" in part and part["supply_voltage_range"] is not None:
+        vr = part["supply_voltage_range"]
+        if isinstance(vr, dict):
+            if "min" in vr and not isinstance(vr["min"], (int, float)):
+                return False, "supply_voltage_range.min must be a number"
+            if "max" in vr and not isinstance(vr["max"], (int, float)):
+                return False, "supply_voltage_range.max must be a number"
+    
+    return True, None
+
+
+@lru_cache(maxsize=1)
 def load_part_database() -> Dict[str, List[Dict[str, Any]]]:
     """
-    Load all part files from the database.
+    Load all part files from the database with validation.
+    Results are cached to improve performance.
     Returns a dictionary mapping category names to lists of parts.
     """
     db_path = get_database_path()
     database = {}
+    validation_errors = []
     
     # Load each category file
     category_files = {
@@ -39,11 +95,35 @@ def load_part_database() -> Dict[str, List[Dict[str, Any]]]:
     for category, filename in category_files.items():
         file_path = db_path / filename
         if file_path.exists():
-            with open(file_path, 'r') as f:
-                data = json.load(f)
-                database[category] = data.get("parts", [])
+            try:
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+                    parts = data.get("parts", [])
+                    
+                    # Validate each part
+                    valid_parts = []
+                    for i, part in enumerate(parts):
+                        is_valid, error = validate_part(part, category)
+                        if is_valid:
+                            valid_parts.append(part)
+                        else:
+                            validation_errors.append(f"{filename}[{i}]: {error}")
+                            logger.warning(f"[DB_VALIDATION] Invalid part in {filename}[{i}]: {error}")
+                    
+                    database[category] = valid_parts
+                    logger.info(f"[DB] Loaded {len(valid_parts)} valid parts from {filename} (skipped {len(parts) - len(valid_parts)} invalid)")
+            except json.JSONDecodeError as e:
+                logger.error(f"[DB] Invalid JSON in {filename}: {e}")
+                database[category] = []
+            except Exception as e:
+                logger.error(f"[DB] Error loading {filename}: {e}", exc_info=True)
+                database[category] = []
         else:
+            logger.warning(f"[DB] File not found: {filename}")
             database[category] = []
+    
+    if validation_errors:
+        logger.warning(f"[DB_VALIDATION] Found {len(validation_errors)} validation errors (see logs above)")
     
     return database
 
