@@ -27,6 +27,7 @@ import ErrorDisplay from "./components/ErrorDisplay";
 import DesignHealthScore from "./components/DesignHealthScore";
 import DesignComparison from "./components/DesignComparison";
 import DesignTemplates from "./components/DesignTemplates";
+import DesignValidationPanel from "./components/validation/DesignValidationPanel";
 import { useToast } from "./components/Toast";
 import type { PartObject } from "./services/types";
 import { componentAnalysisApi } from "./services";

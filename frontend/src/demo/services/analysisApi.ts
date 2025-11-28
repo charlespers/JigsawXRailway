@@ -338,3 +338,70 @@ export async function validateDesign(
   return response.json();
 }
 
+/**
+ * Analyze manufacturing readiness
+ */
+export async function analyzeManufacturingReadiness(
+  bomItems: any[],
+  connections?: any[]
+): Promise<ManufacturingReadiness> {
+  const response = await fetch(`${API_BASE}/api/analysis/manufacturing-readiness`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      bom_items: bomItems,
+      connections: connections || [],
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to analyze manufacturing readiness: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Analyze signal integrity
+ */
+export async function analyzeSignalIntegrity(
+  bomItems: any[],
+  connections?: any[]
+): Promise<SignalIntegrityAnalysis> {
+  const response = await fetch(`${API_BASE}/api/analysis/signal-integrity`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      bom_items: bomItems,
+      connections: connections || [],
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to analyze signal integrity: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * Analyze thermal characteristics
+ */
+export async function analyzeThermal(
+  bomItems: any[]
+): Promise<ThermalAnalysis> {
+  const response = await fetch(`${API_BASE}/api/analysis/thermal`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      bom_items: bomItems,
+    }),
+  });
+  
+  if (!response.ok) {
+    throw new Error(`Failed to analyze thermal: ${response.statusText}`);
+  }
+  
+  return response.json();
+}
+

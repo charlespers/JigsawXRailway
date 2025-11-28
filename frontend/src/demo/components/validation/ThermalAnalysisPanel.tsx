@@ -156,3 +156,4 @@ export default function ThermalAnalysisPanel({ thermal, parts, onPartAdd }: Ther
   );
 }
 
+

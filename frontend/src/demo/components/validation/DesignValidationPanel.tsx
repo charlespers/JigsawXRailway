@@ -237,23 +237,27 @@ export default function DesignValidationPanel({
                 <div className="space-y-2">
                   {validation.warnings.slice(0, 5).map((warning, idx) => {
                     const warningObj = typeof warning === "string" ? { message: warning } : warning;
+                    const warningMessage = typeof warning === "string" ? warning : warning.message;
+                    const warningComponent = typeof warning === "string" ? undefined : warning.component;
+                    const warningRecommendation = typeof warning === "string" ? undefined : warning.recommendation;
+                    const warningFixable = typeof warning === "string" ? false : warning.fixable;
                     return (
                       <div key={idx} className="p-3 bg-yellow-900/20 border border-yellow-500/50 rounded">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
-                            {warningObj.component && (
+                            {warningComponent && (
                               <div className="text-sm font-medium text-white mb-1">
-                                {warningObj.component}
+                                {warningComponent}
                               </div>
                             )}
-                            <div className="text-sm text-yellow-300">{warningObj.message}</div>
-                            {warningObj.recommendation && (
+                            <div className="text-sm text-yellow-300">{warningMessage}</div>
+                            {warningRecommendation && (
                               <div className="text-xs text-neutral-blue mt-2">
-                                <strong>Recommendation:</strong> {warningObj.recommendation}
+                                <strong>Recommendation:</strong> {warningRecommendation}
                               </div>
                             )}
                           </div>
-                          {warningObj.fixable && onPartAdd && (
+                          {warningFixable && onPartAdd && (
                             <Button
                               size="sm"
                               variant="outline"

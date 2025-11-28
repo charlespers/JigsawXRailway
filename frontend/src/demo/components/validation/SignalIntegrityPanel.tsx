@@ -159,3 +159,4 @@ export default function SignalIntegrityPanel({ signalIntegrity, parts, onPartAdd
   );
 }
 
+

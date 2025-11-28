@@ -189,3 +189,4 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
   );
 }
 
+

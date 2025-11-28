@@ -40,7 +40,13 @@ from agents.query_router_agent import QueryRouterAgent
 from api.data_mapper import part_data_to_part_object
 from api.conversation_manager import ConversationManager
 
-app = FastAPI(title="PCB Design API")
+# Import modular routes
+from routes import api_router
+
+app = FastAPI(title="PCB Design API", version="1.0.0")
+
+# Include API v1 routes
+app.include_router(api_router)
 
 
 def ensure_selected_parts_is_dict(design_state: Dict[str, Any]) -> Dict[str, Any]:

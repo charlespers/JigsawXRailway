@@ -119,20 +119,22 @@ export default function IPCCompliancePanel({ validation, parts, onPartAdd }: IPC
           </div>
           <div className="space-y-2">
             {ipcWarnings.map((warning, idx) => {
-              const wObj = typeof warning === "string" ? { message: warning } : warning;
+              const warningMessage = typeof warning === "string" ? warning : warning.message;
+              const warningComponent = typeof warning === "string" ? undefined : warning.component;
+              const warningRecommendation = typeof warning === "string" ? undefined : warning.recommendation;
               return (
                 <div key={idx} className="p-3 bg-yellow-900/20 border border-yellow-500/50 rounded">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      {wObj.component && (
+                      {warningComponent && (
                         <div className="text-sm font-medium text-white mb-1">
-                          {wObj.component}
+                          {warningComponent}
                         </div>
                       )}
-                      <div className="text-sm text-yellow-300 mb-2">{wObj.message}</div>
-                      {wObj.recommendation && (
+                      <div className="text-sm text-yellow-300 mb-2">{warningMessage}</div>
+                      {warningRecommendation && (
                         <div className="text-xs text-neutral-blue">
-                          <strong>Recommendation:</strong> {wObj.recommendation}
+                          <strong>Recommendation:</strong> {warningRecommendation}
                         </div>
                       )}
                     </div>
@@ -176,4 +178,5 @@ export default function IPCCompliancePanel({ validation, parts, onPartAdd }: IPC
     </div>
   );
 }
+
 

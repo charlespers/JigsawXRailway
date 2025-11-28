@@ -285,14 +285,18 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
             
             {/* Warnings with fix suggestions */}
             {designValidation.warnings.map((warning, idx) => {
+              // Normalize warning to object format
+              const warningObj = typeof warning === "string" ? { message: warning } : warning;
+              const warningText = typeof warning === "string" ? warning : warning.message;
+              
               // Check for fix suggestions related to this warning
               const relatedFix = (designValidation as any).fix_suggestions?.find(
-                (fix: any) => warning.toLowerCase().includes(fix.fix_type?.toLowerCase() || "")
+                (fix: any) => warningText.toLowerCase().includes(fix.fix_type?.toLowerCase() || "")
               );
               
               return (
                 <div key={idx} className="p-3 bg-yellow-900/20 border border-yellow-500/50 rounded">
-                  <div className="text-sm text-yellow-400 mb-2">{warning}</div>
+                  <div className="text-sm text-yellow-400 mb-2">{warningText}</div>
                   
                   {relatedFix && relatedFix.suggested_parts && relatedFix.suggested_parts.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-yellow-500/30">
