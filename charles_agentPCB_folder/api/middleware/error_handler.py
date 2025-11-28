@@ -1,12 +1,15 @@
 """
 Error Handler Middleware
-Standardized error handling and responses
+Standardized error handling and responses with correlation IDs
 """
 
 import logging
+import uuid
+import time
 from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from typing import Dict, Any
 from core.exceptions import (
     PCBDesignException,
     AgentException,
@@ -19,11 +22,17 @@ logger = logging.getLogger(__name__)
 
 
 class ErrorHandlerMiddleware(BaseHTTPMiddleware):
-    """Handle exceptions and return standardized error responses."""
+    """Handle exceptions and return standardized error responses with correlation IDs."""
     
     async def dispatch(self, request: Request, call_next):
+        # Generate correlation ID for request tracking
+        correlation_id = str(uuid.uuid4())
+        request.state.correlation_id = correlation_id
+        
+        # Add correlation ID to response headers
         try:
             response = await call_next(request)
+            response.headers["X-Correlation-ID"] = correlation_id
             return response
         except PartNotFoundException as e:
             logger.error(f"[ERROR] Part not found: {e.part_id}")
@@ -36,15 +45,19 @@ class ErrorHandlerMiddleware(BaseHTTPMiddleware):
                 }
             )
         except CompatibilityException as e:
-            logger.error(f"[ERROR] Compatibility issue: {e}")
+            correlation_id = getattr(request.state, "correlation_id", "unknown")
+            logger.error(f"[ERROR] [{correlation_id}] Compatibility issue: {e}")
             return JSONResponse(
                 status_code=400,
+                headers={"X-Correlation-ID": correlation_id},
                 content={
                     "error": str(e),
                     "code": "COMPATIBILITY_ERROR",
                     "part1": e.part1,
                     "part2": e.part2,
                     "issues": e.issues,
+                    "correlation_id": correlation_id,
+                    "timestamp": time.time()
                 }
             )
         except ValidationException as e:

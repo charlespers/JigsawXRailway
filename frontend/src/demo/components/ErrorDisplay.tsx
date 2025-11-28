@@ -1,113 +1,125 @@
-import { AlertCircle, RefreshCw, X, Info } from "lucide-react";
+/**
+ * ErrorDisplay Component
+ * Enterprise-grade error display with recovery options
+ */
+
+import React from "react";
+import { AlertCircle, RefreshCw, X, Info, AlertTriangle } from "lucide-react";
 import { Button } from "../ui/button";
-import { motion, AnimatePresence } from "motion/react";
 
 export interface ErrorDisplayProps {
-  error: string | Error | null;
+  error: Error | string;
+  title?: string;
   onRetry?: () => void;
   onDismiss?: () => void;
-  variant?: "error" | "warning" | "info";
+  severity?: "error" | "warning" | "info";
   showDetails?: boolean;
-  className?: string;
+  recoveryActions?: Array<{
+    label: string;
+    action: () => void;
+    variant?: "default" | "outline" | "destructive";
+  }>;
 }
 
-/**
- * User-friendly error display component with retry functionality
- */
-export default function ErrorDisplay({
+export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   error,
+  title,
   onRetry,
   onDismiss,
-  variant = "error",
+  severity = "error",
   showDetails = false,
-  className = "",
-}: ErrorDisplayProps) {
-  if (!error) return null;
+  recoveryActions = [],
+}) => {
+  const errorMessage = typeof error === "string" ? error : error.message;
+  const errorStack = typeof error === "string" ? undefined : error.stack;
 
-  const errorMessage =
-    error instanceof Error ? error.message : String(error);
-
-  const variantStyles = {
+  const severityConfig = {
     error: {
-      bg: "bg-red-500/10",
-      border: "border-red-500/50",
-      text: "text-red-400",
       icon: AlertCircle,
+      bgColor: "bg-red-500/20",
+      borderColor: "border-red-500/50",
+      textColor: "text-red-400",
       iconColor: "text-red-400",
     },
     warning: {
-      bg: "bg-yellow-500/10",
-      border: "border-yellow-500/50",
-      text: "text-yellow-400",
-      icon: AlertCircle,
+      icon: AlertTriangle,
+      bgColor: "bg-yellow-500/20",
+      borderColor: "border-yellow-500/50",
+      textColor: "text-yellow-400",
       iconColor: "text-yellow-400",
     },
     info: {
-      bg: "bg-blue-500/10",
-      border: "border-blue-500/50",
-      text: "text-blue-400",
       icon: Info,
+      bgColor: "bg-blue-500/20",
+      borderColor: "border-blue-500/50",
+      textColor: "text-blue-400",
       iconColor: "text-blue-400",
     },
   };
 
-  const styles = variantStyles[variant];
-  const Icon = styles.icon;
+  const config = severityConfig[severity];
+  const Icon = config.icon;
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -10 }}
-        className={`${styles.bg} ${styles.border} border rounded-lg p-4 ${className}`}
-      >
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 mt-0.5">
-            <Icon className={`w-5 h-5 ${styles.iconColor}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className={`text-sm font-medium ${styles.text}`}>
-              {errorMessage}
-            </p>
-            {showDetails && error instanceof Error && error.stack && (
-              <details className="mt-2">
-                <summary className="text-xs text-zinc-500 cursor-pointer hover:text-zinc-400">
-                  Show details
-                </summary>
-                <pre className="mt-2 text-xs text-zinc-500 font-mono bg-zinc-950 p-2 rounded overflow-auto max-h-32">
-                  {error.stack}
-                </pre>
-              </details>
-            )}
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {onRetry && (
-              <Button
-                onClick={onRetry}
-                size="sm"
-                variant="ghost"
-                className={`${styles.text} hover:${styles.bg} h-8 px-2`}
-                title="Retry"
-              >
-                <RefreshCw className="w-4 h-4" />
-              </Button>
-            )}
-            {onDismiss && (
-              <Button
-                onClick={onDismiss}
-                size="sm"
-                variant="ghost"
-                className="text-zinc-500 hover:text-zinc-400 h-8 px-2"
-                title="Dismiss"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            )}
-          </div>
+    <div className={`${config.bgColor} ${config.borderColor} border rounded-lg p-4 space-y-3`}>
+      <div className="flex items-start gap-3">
+        <div className={`flex-shrink-0 w-8 h-8 rounded-full ${config.bgColor} flex items-center justify-center`}>
+          <Icon className={`w-4 h-4 ${config.iconColor}`} />
         </div>
-      </motion.div>
-    </AnimatePresence>
-  );
-}
+        <div className="flex-1 min-w-0">
+          <h3 className={`text-sm font-semibold ${config.textColor} mb-1`}>
+            {title || (severity === "error" ? "Error" : severity === "warning" ? "Warning" : "Information")}
+          </h3>
+          <p className="text-sm text-zinc-300 break-words">{errorMessage}</p>
+          {showDetails && errorStack && (
+            <details className="mt-2">
+              <summary className="text-xs text-zinc-400 cursor-pointer hover:text-zinc-300">
+                Technical Details
+              </summary>
+              <pre className="mt-2 text-xs text-zinc-500 font-mono bg-zinc-950 p-2 rounded overflow-auto max-h-32">
+                {errorStack}
+              </pre>
+            </details>
+          )}
+        </div>
+        {onDismiss && (
+          <button
+            onClick={onDismiss}
+            className="flex-shrink-0 text-zinc-400 hover:text-zinc-300 transition-colors"
+            aria-label="Dismiss error"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
+      {(onRetry || recoveryActions.length > 0) && (
+        <div className="flex gap-2 flex-wrap">
+          {onRetry && (
+            <Button
+              onClick={onRetry}
+              size="sm"
+              className="bg-emerald-600 hover:bg-emerald-500 text-white"
+            >
+              <RefreshCw className="w-3 h-3 mr-1" />
+              Retry
+            </Button>
+          )}
+          {recoveryActions.map((action, idx) => (
+            <Button
+              key={idx}
+              onClick={action.action}
+              size="sm"
+              variant={action.variant || "outline"}
+              className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+            >
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ErrorDisplay;

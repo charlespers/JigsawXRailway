@@ -128,30 +128,68 @@ def load_part_database() -> Dict[str, List[Dict[str, Any]]]:
     return database
 
 
+# Cache for all parts to improve performance
+_all_parts_cache: Optional[List[Dict[str, Any]]] = None
+_parts_index_cache: Optional[Dict[str, Dict[str, Any]]] = None  # Index by part ID
+_category_index_cache: Optional[Dict[str, List[Dict[str, Any]]]] = None  # Index by category
+
 def get_all_parts() -> List[Dict[str, Any]]:
-    """Get all parts from the database as a flat list."""
-    database = load_part_database()
-    all_parts = []
-    for parts_list in database.values():
-        all_parts.extend(parts_list)
-    return all_parts
+    """Get all parts from the database as a flat list (cached)."""
+    global _all_parts_cache
+    if _all_parts_cache is None:
+        database = load_part_database()
+        all_parts = []
+        for parts_list in database.values():
+            all_parts.extend(parts_list)
+        _all_parts_cache = all_parts
+        logger.info(f"[DB_CACHE] Loaded {len(all_parts)} parts into cache")
+    return _all_parts_cache
+
+def _build_indexes():
+    """Build search indexes for faster lookups."""
+    global _parts_index_cache, _category_index_cache
+    if _parts_index_cache is None or _category_index_cache is None:
+        all_parts = get_all_parts()
+        _parts_index_cache = {}
+        _category_index_cache = {}
+        for part in all_parts:
+            part_id = part.get("id", "")
+            if part_id:
+                _parts_index_cache[part_id] = part
+            category = part.get("category", "")
+            if category:
+                if category not in _category_index_cache:
+                    _category_index_cache[category] = []
+                _category_index_cache[category].append(part)
+        logger.info(f"[DB_INDEX] Built indexes: {len(_parts_index_cache)} parts, {len(_category_index_cache)} categories")
 
 
 def get_part_by_id(part_id: str) -> Optional[Dict[str, Any]]:
-    """Get a specific part by its ID."""
-    all_parts = get_all_parts()
-    for part in all_parts:
-        if part.get("id") == part_id:
-            return part
-    return None
+    """Get a specific part by its ID (indexed lookup)."""
+    _build_indexes()
+    return _parts_index_cache.get(part_id) if _parts_index_cache else None
 
+
+# Search result cache with TTL
+from functools import lru_cache
+import hashlib
+import json as json_module
+
+def _cache_key(category: Optional[str], constraints: Optional[Dict[str, Any]]) -> str:
+    """Generate cache key for search query."""
+    key_data = {"category": category, "constraints": constraints}
+    key_str = json_module.dumps(key_data, sort_keys=True)
+    return hashlib.md5(key_str.encode()).hexdigest()
+
+_search_cache: Dict[str, tuple[List[Dict[str, Any]], float]] = {}
+_cache_ttl = 300.0  # 5 minutes
 
 def search_parts(
     category: Optional[str] = None,
     constraints: Optional[Dict[str, Any]] = None
 ) -> List[Dict[str, Any]]:
     """
-    Search for parts matching the given criteria.
+    Search for parts matching the given criteria (with caching and indexing).
     
     Args:
         category: Part category to filter by (e.g., "mcu_wifi", "sensor_temperature")
@@ -165,10 +203,27 @@ def search_parts(
     Returns:
         List of matching parts
     """
-    all_parts = get_all_parts()
+    # Check cache first
+    cache_key = _cache_key(category, constraints)
+    if cache_key in _search_cache:
+        results, timestamp = _search_cache[cache_key]
+        if time.time() - timestamp < _cache_ttl:
+            logger.debug(f"[DB_CACHE] Cache hit for search: {cache_key[:8]}")
+            return results
+    
+    # Use indexed lookup if category is specified
+    if category and _category_index_cache:
+        _build_indexes()
+        parts_to_search = _category_index_cache.get(category, [])
+        if not parts_to_search:
+            # Try partial match
+            parts_to_search = [p for cat, parts in _category_index_cache.items() if category in cat for p in parts]
+    else:
+        parts_to_search = get_all_parts()
+    
     matches = []
     
-    for part in all_parts:
+    for part in parts_to_search:
         # Category filter
         if category:
             part_category = part.get("category", "")

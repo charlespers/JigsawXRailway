@@ -9,6 +9,7 @@ import os
 import sys
 import time
 import logging
+import uuid
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
 from fastapi import FastAPI, Request
@@ -61,6 +62,340 @@ except Exception as e:
         logger.error(f"[ROUTES] Failed to manually register analysis router: {e2}", exc_info=True)
 
 app = FastAPI(title="PCB Design API", version="1.0.0")
+
+# CRITICAL: Register inline analysis routes FIRST, before any other middleware or routes
+# This ensures they're always available even if module imports fail
+logger.info("[ROUTES] Registering inline analysis routes IMMEDIATELY after app creation")
+try:
+    from api.schemas.analysis import (
+        CostAnalysisRequest, CostAnalysisResponse,
+        SupplyChainAnalysisRequest, SupplyChainAnalysisResponse,
+        PowerAnalysisRequest, PowerAnalysisResponse,
+        ThermalAnalysisRequest, ThermalAnalysisResponse,
+        SignalIntegrityAnalysisRequest, SignalIntegrityAnalysisResponse,
+        ManufacturingReadinessRequest, ManufacturingReadinessResponse,
+        DesignValidationRequest, DesignValidationResponse
+    )
+    from fastapi import HTTPException
+    
+    @app.post("/api/v1/analysis/cost", response_model=CostAnalysisResponse, tags=["analysis"])
+    async def inline_analyze_cost(request: CostAnalysisRequest):
+        """Inline cost analysis endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.cost_optimizer_agent import CostOptimizerAgent
+            agent = CostOptimizerAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            analysis = agent.analyze_bom_cost(bom_items)
+            return CostAnalysisResponse(**analysis)
+        except Exception as e:
+            logger.error(f"Error in cost analysis: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    @app.post("/api/v1/analysis/supply-chain", response_model=SupplyChainAnalysisResponse, tags=["analysis"])
+    async def inline_analyze_supply_chain(request: SupplyChainAnalysisRequest):
+        """Inline supply chain analysis endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.supply_chain_agent import SupplyChainAgent
+            agent = SupplyChainAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            analysis = agent.analyze_supply_chain(bom_items)
+            return SupplyChainAnalysisResponse(**analysis)
+        except Exception as e:
+            logger.error(f"Error in supply chain analysis: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    @app.post("/api/v1/analysis/power", response_model=PowerAnalysisResponse, tags=["analysis"])
+    async def inline_analyze_power(request: PowerAnalysisRequest):
+        """Inline power analysis endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.power_calculator_agent import PowerCalculatorAgent
+            agent = PowerCalculatorAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            analysis = agent.calculate_power(bom_items, request.connections)
+            return PowerAnalysisResponse(**analysis)
+        except Exception as e:
+            logger.error(f"Error in power analysis: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    @app.post("/api/v1/analysis/thermal", response_model=ThermalAnalysisResponse, tags=["analysis"])
+    async def inline_analyze_thermal(request: ThermalAnalysisRequest):
+        """Inline thermal analysis endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.thermal_analysis_agent import ThermalAnalysisAgent
+            agent = ThermalAnalysisAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            analysis = agent.analyze_thermal(bom_items, request.connections)
+            return ThermalAnalysisResponse(**analysis)
+        except Exception as e:
+            logger.error(f"Error in thermal analysis: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    @app.post("/api/v1/analysis/signal-integrity", response_model=SignalIntegrityAnalysisResponse, tags=["analysis"])
+    async def inline_analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
+        """Inline signal integrity analysis endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.signal_integrity_agent import SignalIntegrityAgent
+            agent = SignalIntegrityAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
+            analysis = agent.analyze_signal_integrity(bom_items, connections, request.pcb_thickness_mm, request.trace_width_mils)
+            return SignalIntegrityAnalysisResponse(**analysis)
+        except Exception as e:
+            logger.error(f"Error in signal integrity analysis: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    @app.post("/api/v1/analysis/manufacturing-readiness", response_model=ManufacturingReadinessResponse, tags=["analysis"])
+    async def inline_analyze_manufacturing_readiness(request: ManufacturingReadinessRequest):
+        """Inline manufacturing readiness analysis endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+            agent = ManufacturingReadinessAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
+            analysis = agent.analyze_manufacturing_readiness(bom_items, connections)
+            return ManufacturingReadinessResponse(**analysis)
+        except Exception as e:
+            logger.error(f"Error in manufacturing readiness analysis: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    @app.post("/api/v1/analysis/validation", response_model=DesignValidationResponse, tags=["analysis"])
+    async def inline_analyze_validation(request: DesignValidationRequest):
+        """Inline design validation endpoint - always registered."""
+        provider = request.provider or "xai"
+        original_provider = os.environ.get("LLM_PROVIDER", "xai")
+        os.environ["LLM_PROVIDER"] = provider
+        try:
+            from agents.design_validator_agent import DesignValidatorAgent
+            agent = DesignValidatorAgent()
+            bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
+            connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
+            validation = agent.validate_design(bom_items, connections, request.constraints)
+            return DesignValidationResponse(**validation)
+        except Exception as e:
+            logger.error(f"Error in design validation: {e}", exc_info=True)
+            raise HTTPException(status_code=500, detail=str(e))
+        finally:
+            os.environ["LLM_PROVIDER"] = original_provider
+    
+    logger.info("[ROUTES] ✓ Inline analysis routes registered IMMEDIATELY after app creation")
+    # Verify routes were registered
+    analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    logger.info(f"[ROUTES] Verified {len(analysis_routes)} analysis routes registered: {[r.path for r in analysis_routes[:7]]}")
+except Exception as e:
+    logger.error(f"[ROUTES] CRITICAL: Failed to register inline routes with schemas: {e}", exc_info=True)
+    import traceback
+    logger.error(f"[ROUTES] Traceback: {traceback.format_exc()}")
+    
+    # CRITICAL FALLBACK: Register routes WITHOUT schemas if schema import fails
+    # This ensures routes are ALWAYS available, even if Pydantic schemas fail to import
+    logger.error("[ROUTES] Attempting fallback registration WITHOUT schemas...")
+    try:
+        from fastapi import HTTPException, Request as FastAPIRequest
+        from typing import Dict, Any
+        
+        @app.post("/api/v1/analysis/cost", tags=["analysis"])
+        async def fallback_analyze_cost(request: FastAPIRequest):
+            """Fallback cost analysis - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.cost_optimizer_agent import CostOptimizerAgent
+                agent = CostOptimizerAgent()
+                bom_items = data.get("bom_items", [])
+                analysis = agent.analyze_bom_cost(bom_items)
+                return analysis
+            except Exception as e:
+                logger.error(f"Error in cost analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/supply-chain", tags=["analysis"])
+        async def fallback_analyze_supply_chain(request: FastAPIRequest):
+            """Fallback supply chain analysis - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.supply_chain_agent import SupplyChainAgent
+                agent = SupplyChainAgent()
+                bom_items = data.get("bom_items", [])
+                analysis = agent.analyze_supply_chain(bom_items)
+                return analysis
+            except Exception as e:
+                logger.error(f"Error in supply chain analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/power", tags=["analysis"])
+        async def fallback_analyze_power(request: FastAPIRequest):
+            """Fallback power analysis - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.power_calculator_agent import PowerCalculatorAgent
+                agent = PowerCalculatorAgent()
+                bom_items = data.get("bom_items", [])
+                connections = data.get("connections", [])
+                analysis = agent.calculate_power(bom_items, connections)
+                return analysis
+            except Exception as e:
+                logger.error(f"Error in power analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/thermal", tags=["analysis"])
+        async def fallback_analyze_thermal(request: FastAPIRequest):
+            """Fallback thermal analysis - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.thermal_analysis_agent import ThermalAnalysisAgent
+                agent = ThermalAnalysisAgent()
+                bom_items = data.get("bom_items", [])
+                connections = data.get("connections", [])
+                analysis = agent.analyze_thermal(bom_items, connections)
+                return analysis
+            except Exception as e:
+                logger.error(f"Error in thermal analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/signal-integrity", tags=["analysis"])
+        async def fallback_analyze_signal_integrity(request: FastAPIRequest):
+            """Fallback signal integrity analysis - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.signal_integrity_agent import SignalIntegrityAgent
+                agent = SignalIntegrityAgent()
+                bom_items = data.get("bom_items", [])
+                connections = data.get("connections", [])
+                analysis = agent.analyze_signal_integrity(bom_items, connections, data.get("pcb_thickness_mm", 1.6), data.get("trace_width_mils", 5))
+                return analysis
+            except Exception as e:
+                logger.error(f"Error in signal integrity analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/manufacturing-readiness", tags=["analysis"])
+        async def fallback_analyze_manufacturing_readiness(request: FastAPIRequest):
+            """Fallback manufacturing readiness analysis - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+                agent = ManufacturingReadinessAgent()
+                bom_items = data.get("bom_items", [])
+                connections = data.get("connections", [])
+                analysis = agent.analyze_manufacturing_readiness(bom_items, connections)
+                return analysis
+            except Exception as e:
+                logger.error(f"Error in manufacturing readiness analysis: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        @app.post("/api/v1/analysis/validation", tags=["analysis"])
+        async def fallback_analyze_validation(request: FastAPIRequest):
+            """Fallback design validation - no schema validation."""
+            data = await request.json()
+            provider = data.get("provider", "xai")
+            original_provider = os.environ.get("LLM_PROVIDER", "xai")
+            os.environ["LLM_PROVIDER"] = provider
+            try:
+                from agents.design_validator_agent import DesignValidatorAgent
+                agent = DesignValidatorAgent()
+                bom_items = data.get("bom_items", [])
+                connections = data.get("connections", [])
+                constraints = data.get("constraints", {})
+                validation = agent.validate_design(bom_items, connections, constraints)
+                return validation
+            except Exception as e:
+                logger.error(f"Error in design validation: {e}", exc_info=True)
+                raise HTTPException(status_code=500, detail=str(e))
+            finally:
+                os.environ["LLM_PROVIDER"] = original_provider
+        
+        analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+        logger.info(f"[ROUTES] ✓ FALLBACK: Registered {len(analysis_routes)} analysis routes WITHOUT schemas")
+        logger.info(f"[ROUTES] Fallback routes: {[r.path for r in analysis_routes[:7]]}")
+    except Exception as e2:
+        logger.error(f"[ROUTES] CRITICAL: Even fallback registration failed: {e2}", exc_info=True)
+        import traceback
+        logger.error(f"[ROUTES] Fallback traceback: {traceback.format_exc()}")
+        # Last resort: register basic routes that just return errors
+        logger.error("[ROUTES] LAST RESORT: Registering minimal error-returning routes")
+        try:
+            @app.post("/api/v1/analysis/cost", tags=["analysis"])
+            async def minimal_cost(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            @app.post("/api/v1/analysis/supply-chain", tags=["analysis"])
+            async def minimal_supply_chain(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            @app.post("/api/v1/analysis/power", tags=["analysis"])
+            async def minimal_power(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            @app.post("/api/v1/analysis/thermal", tags=["analysis"])
+            async def minimal_thermal(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            @app.post("/api/v1/analysis/signal-integrity", tags=["analysis"])
+            async def minimal_signal_integrity(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            @app.post("/api/v1/analysis/manufacturing-readiness", tags=["analysis"])
+            async def minimal_manufacturing_readiness(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            @app.post("/api/v1/analysis/validation", tags=["analysis"])
+            async def minimal_validation(request: Request):
+                return {"error": "Route registered but agent unavailable", "correlation_id": str(uuid.uuid4())}
+            logger.info("[ROUTES] ✓ LAST RESORT: Minimal routes registered (will return errors but won't 404)")
+        except Exception as e3:
+            logger.error(f"[ROUTES] CRITICAL: Even last resort failed: {e3}")
 
 # Add CORS middleware
 app.add_middleware(
@@ -169,35 +504,62 @@ else:
 # Add startup event to log route registration
 @app.on_event("startup")
 async def startup_event():
-    """Log route registration on startup."""
+    """Log route registration on startup - CRITICAL VERIFICATION."""
     total_routes = len([r for r in app.routes if hasattr(r, 'path')])
     analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    
+    # CRITICAL: Verify all expected routes exist
+    expected_paths = [
+        "/api/v1/analysis/cost",
+        "/api/v1/analysis/supply-chain",
+        "/api/v1/analysis/power",
+        "/api/v1/analysis/thermal",
+        "/api/v1/analysis/signal-integrity",
+        "/api/v1/analysis/manufacturing-readiness",
+        "/api/v1/analysis/validation"
+    ]
+    registered_paths = [r.path for r in analysis_routes]
+    missing_paths = [p for p in expected_paths if p not in registered_paths]
+    
     logger.info(f"[STARTUP] Application started. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
-    if len(analysis_routes) > 0:
-        logger.info(f"[STARTUP] Analysis routes: {[r.path for r in analysis_routes]}")
+    
+    if len(analysis_routes) >= 7 and len(missing_paths) == 0:
+        logger.info(f"[STARTUP] ✓ SUCCESS: All {len(analysis_routes)} analysis routes registered correctly")
+        logger.info(f"[STARTUP] Analysis routes: {registered_paths}")
         # Log methods for each route
         for route in analysis_routes[:10]:
             methods = getattr(route, 'methods', set())
             logger.info(f"[STARTUP] Route {route.path} methods: {methods}")
     else:
-        logger.error("[STARTUP] CRITICAL: No analysis routes registered!")
+        logger.error(f"[STARTUP] CRITICAL: Only {len(analysis_routes)} analysis routes found, expected 7!")
+        if missing_paths:
+            logger.error(f"[STARTUP] Missing routes: {missing_paths}")
+        logger.error(f"[STARTUP] Found routes: {registered_paths}")
         # List all available routes for debugging
         all_routes = [r for r in app.routes if hasattr(r, 'path')]
-        logger.error(f"[STARTUP] Available routes: {[r.path for r in all_routes[:20]]}")
+        logger.error(f"[STARTUP] All available routes: {[r.path for r in all_routes[:30]]}")
 
 # Health check endpoint to verify routes are registered
 @app.get("/health")
 async def health_check():
-    """Health check endpoint."""
+    """Health check endpoint with resource monitoring."""
     total_routes = len([r for r in app.routes if hasattr(r, 'path')])
     analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    
+    # Get resource statistics
+    try:
+        from core.concurrency import get_resource_stats
+        resource_stats = get_resource_stats()
+    except ImportError:
+        resource_stats = None
     
     return {
         "status": "healthy",
         "version": "1.0.0",
         "routes_registered": total_routes,
         "analysis_routes": len(analysis_routes),
-        "analysis_routes_list": [r.path for r in analysis_routes] if len(analysis_routes) <= 10 else [r.path for r in analysis_routes[:10]] + ["..."]
+        "analysis_routes_list": [r.path for r in analysis_routes] if len(analysis_routes) <= 10 else [r.path for r in analysis_routes[:10]] + ["..."],
+        "resource_stats": resource_stats
     }
 
 # Route verification endpoint
@@ -248,165 +610,52 @@ async def test_analysis_route():
         "timestamp": time.time()
     }
 
-# FINAL FALLBACK: Always register analysis routes inline as backup
-# This ensures routes work even if all other registration methods fail on Railway
-# We register inline routes regardless of analysis_routes_registered to ensure they're always available
-try:
-    logger.error("[ROUTES] CRITICAL FALLBACK: Registering analysis routes directly inline in server.py")
-    try:
-        from api.schemas.analysis import (
-            CostAnalysisRequest, CostAnalysisResponse,
-            SupplyChainAnalysisRequest, SupplyChainAnalysisResponse,
-            PowerAnalysisRequest, PowerAnalysisResponse,
-            ThermalAnalysisRequest, ThermalAnalysisResponse,
-            SignalIntegrityAnalysisRequest, SignalIntegrityAnalysisResponse,
-            ManufacturingReadinessRequest, ManufacturingReadinessResponse,
-            DesignValidationRequest, DesignValidationResponse
-        )
-        from core.exceptions import AgentException
-        from fastapi import HTTPException
-        
-        @app.post("/api/v1/analysis/cost", response_model=CostAnalysisResponse)
-        async def inline_analyze_cost(request: CostAnalysisRequest):
-            """Inline cost analysis endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.cost_optimizer_agent import CostOptimizerAgent
-                agent = CostOptimizerAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                analysis = agent.analyze_bom_cost(bom_items)
-                return CostAnalysisResponse(**analysis)
-            except Exception as e:
-                logger.error(f"Error in cost analysis: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        @app.post("/api/v1/analysis/supply-chain", response_model=SupplyChainAnalysisResponse)
-        async def inline_analyze_supply_chain(request: SupplyChainAnalysisRequest):
-            """Inline supply chain analysis endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.supply_chain_agent import SupplyChainAgent
-                agent = SupplyChainAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                analysis = agent.analyze_supply_chain(bom_items)
-                return SupplyChainAnalysisResponse(**analysis)
-            except Exception as e:
-                logger.error(f"Error in supply chain analysis: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        @app.post("/api/v1/analysis/power", response_model=PowerAnalysisResponse)
-        async def inline_analyze_power(request: PowerAnalysisRequest):
-            """Inline power analysis endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.power_calculator_agent import PowerCalculatorAgent
-                agent = PowerCalculatorAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                analysis = agent.calculate_power(bom_items, request.connections)
-                return PowerAnalysisResponse(**analysis)
-            except Exception as e:
-                logger.error(f"Error in power analysis: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        @app.post("/api/v1/analysis/thermal", response_model=ThermalAnalysisResponse)
-        async def inline_analyze_thermal(request: ThermalAnalysisRequest):
-            """Inline thermal analysis endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.thermal_analysis_agent import ThermalAnalysisAgent
-                agent = ThermalAnalysisAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                analysis = agent.analyze_thermal(bom_items, request.connections)
-                return ThermalAnalysisResponse(**analysis)
-            except Exception as e:
-                logger.error(f"Error in thermal analysis: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        @app.post("/api/v1/analysis/signal-integrity", response_model=SignalIntegrityAnalysisResponse)
-        async def inline_analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
-            """Inline signal integrity analysis endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.signal_integrity_agent import SignalIntegrityAgent
-                agent = SignalIntegrityAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
-                analysis = agent.analyze_signal_integrity(bom_items, connections, request.pcb_thickness_mm, request.trace_width_mils)
-                return SignalIntegrityAnalysisResponse(**analysis)
-            except Exception as e:
-                logger.error(f"Error in signal integrity analysis: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        @app.post("/api/v1/analysis/manufacturing-readiness", response_model=ManufacturingReadinessResponse)
-        async def inline_analyze_manufacturing_readiness(request: ManufacturingReadinessRequest):
-            """Inline manufacturing readiness analysis endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
-                agent = ManufacturingReadinessAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
-                analysis = agent.analyze_manufacturing_readiness(bom_items, connections)
-                return ManufacturingReadinessResponse(**analysis)
-            except Exception as e:
-                logger.error(f"Error in manufacturing readiness analysis: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        @app.post("/api/v1/analysis/validation", response_model=DesignValidationResponse)
-        async def inline_analyze_validation(request: DesignValidationRequest):
-            """Inline design validation endpoint - fallback registration."""
-            provider = request.provider or "xai"
-            original_provider = os.environ.get("LLM_PROVIDER", "xai")
-            os.environ["LLM_PROVIDER"] = provider
-            try:
-                from agents.design_validator_agent import DesignValidatorAgent
-                agent = DesignValidatorAgent()
-                bom_items = [{"part_data": item.part_data, "quantity": item.quantity} for item in request.bom_items]
-                connections = [{"net_name": c.net_name, "components": c.components, "pins": c.pins} for c in request.connections]
-                validation = agent.validate_design(bom_items, connections, request.constraints)
-                return DesignValidationResponse(**validation)
-            except Exception as e:
-                logger.error(f"Error in design validation: {e}", exc_info=True)
-                raise HTTPException(status_code=500, detail=str(e))
-            finally:
-                os.environ["LLM_PROVIDER"] = original_provider
-        
-        analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
-        if len(analysis_routes) > 0:
-            logger.info(f"[ROUTES] ✓ CRITICAL FALLBACK: Inline route registration successful: {len(analysis_routes)} routes")
-            # Don't set analysis_routes_registered = True here to avoid conflicts
-            # These are backup routes that should always be available
-        else:
-            logger.error("[ROUTES] CRITICAL FALLBACK: Inline registration failed - no routes found")
-    except Exception as e:
-        logger.error(f"[ROUTES] CRITICAL FALLBACK: Inline route registration failed: {e}", exc_info=True)
-        # Even if inline registration fails, log it but don't crash
-        pass
+# NOTE: Routes are already registered above (lines 68-213) IMMEDIATELY after app creation
+# AND via the modular router (routes/analysis.py) which is included via api_router
+# This duplicate fallback section is REMOVED to prevent triple registration
+# Routes are guaranteed by:
+# 1. Primary inline registration (lines 68-213) - ALWAYS runs first
+# 2. Modular router registration (via api_router) - runs if imports succeed
+# Both ensure routes are available even if one fails
+logger.info("[ROUTES] Skipping duplicate fallback - routes already registered above and via router")
+# Removed duplicate registration block to prevent triple registration
+# Routes are guaranteed by:
+# 1. Primary inline registration (lines 68-213) - ALWAYS runs first
+# 2. Modular router registration (via api_router) - runs if imports succeed
+# Both ensure routes are available even if one fails
 
+# CRITICAL VERIFICATION: Ensure routes are registered (they should be from above)
+analysis_routes_final = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+expected_paths_final = [
+    "/api/v1/analysis/cost",
+    "/api/v1/analysis/supply-chain",
+    "/api/v1/analysis/power",
+    "/api/v1/analysis/thermal",
+    "/api/v1/analysis/signal-integrity",
+    "/api/v1/analysis/manufacturing-readiness",
+    "/api/v1/analysis/validation"
+]
+registered_paths_final = [r.path for r in analysis_routes_final]
+missing_paths_final = [p for p in expected_paths_final if p not in registered_paths_final]
+
+if len(analysis_routes_final) >= 7 and len(missing_paths_final) == 0:
+    logger.info(f"[ROUTES] ✓ VERIFIED: {len(analysis_routes_final)} analysis routes are registered and accessible")
+    logger.info(f"[ROUTES] All routes: {registered_paths_final}")
+else:
+    logger.error(f"[ROUTES] CRITICAL: Only {len(analysis_routes_final)} analysis routes found, expected 7!")
+    if missing_paths_final:
+        logger.error(f"[ROUTES] Missing routes: {missing_paths_final}")
+    logger.error(f"[ROUTES] Found routes: {registered_paths_final}")
+    # Emergency: Register missing routes as basic endpoints
+    for missing_path in missing_paths_final:
+        route_name = missing_path.split("/")[-1].replace("-", "_")
+        logger.error(f"[ROUTES] EMERGENCY: Registering basic endpoint for {missing_path}")
+        try:
+            @app.post(missing_path, tags=["analysis"])
+            async def emergency_route(request: Request):
+                return {"error": "Route available but full implementation unavailable", "path": missing_path, "correlation_id": str(uuid.uuid4())}
+        except Exception as e:
+            logger.error(f"[ROUTES] Failed to register emergency route {missing_path}: {e}")
 
 def ensure_selected_parts_is_dict(design_state: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -622,9 +871,11 @@ async def _process_block_async(
             if provides_power:
                 compat_tasks.append(("power", asyncio.create_task(
                     asyncio.wait_for(
-                        asyncio.to_thread(
-                            orchestrator.compatibility_agent.check_compatibility,
-                            anchor_part, part, "power"
+                        with_llm_limit(
+                            asyncio.to_thread(
+                                orchestrator.compatibility_agent.check_compatibility,
+                                anchor_part, part, "power"
+                            )
                         ),
                         timeout=15.0
                     )
@@ -632,9 +883,11 @@ async def _process_block_async(
             
             compat_tasks.append(("interface", asyncio.create_task(
                 asyncio.wait_for(
-                    asyncio.to_thread(
-                        orchestrator.compatibility_agent.check_compatibility,
-                        anchor_part, part, "interface"
+                    with_llm_limit(
+                        asyncio.to_thread(
+                            orchestrator.compatibility_agent.check_compatibility,
+                            anchor_part, part, "interface"
+                        )
                     ),
                     timeout=15.0
                 )
@@ -669,10 +922,19 @@ async def _process_block_async(
                     logger.info(f"[WORKFLOW] Resolving voltage mismatch for {block_name} (provider={current_provider})")
                     orchestrator.reasoning_agent._ensure_initialized()
                     try:
+                        # Apply concurrency limit for agent operations
+                        try:
+                            from core.concurrency import with_agent_limit
+                        except ImportError:
+                            def with_agent_limit(coro):
+                                return coro
+                        
                         intermediary = await asyncio.wait_for(
-                            asyncio.to_thread(
-                                orchestrator._resolve_voltage_mismatch,
-                                anchor_part, part, "power", power_compat
+                            with_agent_limit(
+                                asyncio.to_thread(
+                                    orchestrator._resolve_voltage_mismatch,
+                                    anchor_part, part, "power", power_compat
+                                )
                             ),
                             timeout=20.0
                         )
@@ -761,8 +1023,17 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
         
         # Wrap synchronous LLM call in async with timeout to prevent hanging
         try:
+            # Apply concurrency limit for LLM calls
+            try:
+                from core.concurrency import with_llm_limit
+            except ImportError:
+                def with_llm_limit(coro):
+                    return coro
+            
             requirements = await asyncio.wait_for(
-                asyncio.to_thread(orchestrator.requirements_agent.extract_requirements, query),
+                with_llm_limit(
+                    asyncio.to_thread(orchestrator.requirements_agent.extract_requirements, query)
+                ),
                 timeout=30.0  # 30 second timeout for requirements extraction
             )
         except asyncio.TimeoutError:
@@ -1133,7 +1404,7 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 
                 hierarchy_level += 1
         
-        # Step 6: Enrich with datasheets (PARALLELIZED)
+        # Step 6: Enrich with datasheets (PARALLELIZED with concurrency limits)
         await queue.put({
             "type": "reasoning",
             "componentId": "enrichment",
