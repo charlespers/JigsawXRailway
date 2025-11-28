@@ -59,10 +59,16 @@ def initialize_llm_config() -> Dict[str, Any]:
     if not api_key:
         provider_name = "XAI" if provider == "xai" else "OpenAI"
         env_provider = os.getenv("LLM_PROVIDER", "not_set")
-        raise ValueError(
-            f"{provider_name}_API_KEY not found. Set environment variable to enable reasoning. "
-            f"(Provider requested: {provider}, LLM_PROVIDER env: {env_provider})"
+        error_msg = (
+            f"{provider_name}_API_KEY not found. "
+            f"Provider requested: '{provider}', LLM_PROVIDER env: '{env_provider}'. "
+            f"Please set {provider_name}_API_KEY environment variable on Railway."
         )
+        # Log for debugging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.error(f"[PROVIDER ERROR] {error_msg}")
+        raise ValueError(error_msg)
     
     # Validate API key format (basic check)
     if provider == "xai" and len(api_key) < 20:

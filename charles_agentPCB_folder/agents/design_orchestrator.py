@@ -482,13 +482,17 @@ class DesignOrchestrator:
         if not voltage_gap:
             return None
         
-        # Find candidate intermediaries
+        # Find candidate intermediaries from database
         candidates = self.intermediary_agent.find_intermediary(
             source_part, target_part, connection_type, voltage_gap
         )
         
         if not candidates:
             return None
+        
+        # CRITICAL: Ensure reasoning agent is initialized before evaluating intermediaries
+        # This must happen before any LLM calls
+        self.reasoning_agent._ensure_initialized()
         
         # Evaluate each candidate
         best_candidate = None

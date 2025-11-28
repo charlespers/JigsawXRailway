@@ -132,6 +132,8 @@ class CompatibilityAgent:
             return rule_result
         
         # Otherwise use LLM for complex cases
+        # Ensure initialized before LLM call
+        self._ensure_initialized()
         llm_result = self._llm_based_check(part_a, part_b, connection_type)
         
         # Cache LLM result

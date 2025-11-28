@@ -48,6 +48,29 @@ app = FastAPI(title="PCB Design API", version="1.0.0")
 # Include API v1 routes
 app.include_router(api_router)
 
+# Health check endpoint to verify routes are registered
+@app.get("/health")
+async def health_check():
+    """Health check endpoint."""
+    return {
+        "status": "healthy",
+        "version": "1.0.0",
+        "routes_registered": len([r for r in app.routes if hasattr(r, 'path')])
+    }
+
+# Route verification endpoint
+@app.get("/api/v1/routes")
+async def list_routes():
+    """List all registered routes for debugging."""
+    routes = []
+    for route in app.routes:
+        if hasattr(route, 'path') and hasattr(route, 'methods'):
+            routes.append({
+                "path": route.path,
+                "methods": list(route.methods) if route.methods else []
+            })
+    return {"routes": sorted(routes, key=lambda x: x["path"])}
+
 
 def ensure_selected_parts_is_dict(design_state: Dict[str, Any]) -> Dict[str, Any]:
     """
@@ -160,12 +183,17 @@ async def _process_block_async(
     })
     
     try:
-        # Part selection with timeout and engineering analysis
+        # Part selection using database - ensures database is searched
+        logger.info(f"[WORKFLOW] Searching database for {block_name} (type: {block_type})")
         try:
             part = await asyncio.wait_for(
                 asyncio.to_thread(orchestrator._select_supporting_part, block, expanded_requirements, requirements),
                 timeout=10.0
             )
+            if part:
+                logger.info(f"[WORKFLOW] Found part from database: {part.get('id', 'unknown')} (MPN: {part.get('mfr_part_number', 'unknown')})")
+            else:
+                logger.warning(f"[WORKFLOW] No part found in database for {block_name}")
         except asyncio.TimeoutError:
             await queue.put({
                 "type": "reasoning",
@@ -300,6 +328,10 @@ async def _process_block_async(
             # Handle voltage mismatch if needed
             if power_compat and not power_compat.get("compatible", False):
                 if orchestrator.compatibility_agent.can_be_resolved_with_intermediary(power_compat):
+                    # CRITICAL: Ensure reasoning agent is initialized before intermediary resolution
+                    current_provider = os.environ.get("LLM_PROVIDER", "not_set")
+                    logger.info(f"[WORKFLOW] Resolving voltage mismatch for {block_name} (provider={current_provider})")
+                    orchestrator.reasoning_agent._ensure_initialized()
                     try:
                         intermediary = await asyncio.wait_for(
                             asyncio.to_thread(
