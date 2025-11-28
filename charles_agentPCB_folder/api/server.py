@@ -88,6 +88,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add enterprise middleware
+try:
+    from api.middleware import LoggingMiddleware, ErrorHandlerMiddleware
+    app.add_middleware(ErrorHandlerMiddleware)
+    app.add_middleware(LoggingMiddleware)
+except ImportError:
+    logger.warning("Enterprise middleware not available, skipping")
+
 
 class StreamingOrchestrator(DesignOrchestrator):
     """Extended orchestrator with streaming callbacks."""
@@ -663,36 +671,73 @@ async def generate_design_stream(query: str, orchestrator: StreamingOrchestrator
                 
                 hierarchy_level += 1
         
-        # Step 6: Enrich with datasheets
+        # Step 6: Enrich with datasheets (PARALLELIZED)
         await queue.put({
             "type": "reasoning",
             "componentId": "enrichment",
             "componentName": "Design Enrichment",
-            "reasoning": "Enriching parts with datasheet data and engineering metadata...",
+            "reasoning": "Enriching parts with datasheet data and engineering metadata in parallel...",
             "hierarchyLevel": 0
         })
-        orchestrator._enrich_parts_with_datasheets()
         
-        # Step 7: Generate outputs
+        # Parallel datasheet enrichment
+        selected_parts = orchestrator.design_state["selected_parts"]
+        if selected_parts:
+            enrichment_tasks = []
+            for block_name, part_data in selected_parts.items():
+                part_id = part_data.get("id", "")
+                if part_id:
+                    task = asyncio.create_task(
+                        asyncio.to_thread(orchestrator.datasheet_agent.enrich_part, part_id)
+                    )
+                    enrichment_tasks.append((block_name, task))
+            
+            # Wait for all enrichments to complete
+            enriched_parts = {}
+            for block_name, part_data in selected_parts.items():
+                enriched_parts[block_name] = part_data  # Default to original
+            
+            for block_name, task in enrichment_tasks:
+                try:
+                    enriched = await asyncio.wait_for(task, timeout=5.0)
+                    if enriched:
+                        enriched_parts[block_name] = enriched
+                except (asyncio.TimeoutError, Exception) as e:
+                    logger.warning(f"Datasheet enrichment timeout/error for {block_name}: {e}")
+                    # Keep original part data on error
+            
+            orchestrator.design_state["selected_parts"] = enriched_parts
+        
+        # Step 7: Generate outputs (PARALLELIZED)
         await queue.put({
             "type": "reasoning",
             "componentId": "output",
             "componentName": "Output Generation",
-            "reasoning": "Generating connections and BOM with engineering analysis...",
+            "reasoning": "Generating connections and BOM in parallel...",
             "hierarchyLevel": 0
         })
         
-        connections = orchestrator.output_generator.generate_connections(
-            orchestrator.design_state["selected_parts"],
-            architecture,
-            orchestrator.design_state.get("intermediaries")
+        # Parallel output generation
+        connections_task = asyncio.create_task(
+            asyncio.to_thread(
+                orchestrator.output_generator.generate_connections,
+                orchestrator.design_state["selected_parts"],
+                architecture,
+                orchestrator.design_state.get("intermediaries")
+            )
         )
-        orchestrator.design_state["connections"] = connections
         
-        bom = orchestrator.output_generator.generate_bom(
-            orchestrator.design_state["selected_parts"],
-            orchestrator.design_state["external_components"]
+        bom_task = asyncio.create_task(
+            asyncio.to_thread(
+                orchestrator.output_generator.generate_bom,
+                orchestrator.design_state["selected_parts"],
+                orchestrator.design_state["external_components"]
+            )
         )
+        
+        # Wait for both to complete
+        connections, bom = await asyncio.gather(connections_task, bom_task)
+        orchestrator.design_state["connections"] = connections
         orchestrator.design_state["bom"] = bom
         
         # Step 8: Comprehensive Engineering Analysis (in parallel where possible)
@@ -1105,8 +1150,14 @@ async def component_analysis(request: Request):
                 "hierarchyLevel": 0
             })
             
-            # Create orchestrator
+            # Create orchestrator with cache manager
+            from core.cache import get_cache_manager
+            cache_manager = get_cache_manager()
             orchestrator = StreamingOrchestrator()
+            # Inject cache manager into orchestrator's agents
+            orchestrator.requirements_agent.cache_manager = cache_manager
+            orchestrator.part_search_agent.cache_manager = cache_manager
+            orchestrator.compatibility_agent.cache_manager = cache_manager
             
             # Route based on intent
             if intent == "new_design":

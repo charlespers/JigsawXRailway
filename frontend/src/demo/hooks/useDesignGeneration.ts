@@ -1,158 +1,84 @@
 /**
- * Custom hook for design generation
- * Extracts design generation logic from JigsawDemo
+ * useDesignGeneration Hook
+ * Handles design generation workflow
  */
 
-import { useCallback, useRef } from 'react';
-import { useDesignStore } from '../store/designStore';
-import { componentAnalysisApi } from '../services';
-import { useToast } from '../components/Toast';
-import type { PartObject } from '../services/types';
+import { useState, useCallback } from "react";
+import { useDesignStore } from "../store/designStore";
+import { componentAnalysisApi } from "../services/componentAnalysisApi";
+import type { PartObject } from "../services/types";
 
 export function useDesignGeneration() {
-  const {
-    setParts,
-    setConnections,
-    setDesignHealth,
-    setIsAnalyzing,
-    setError,
-    setSessionId,
-    setQuery,
-    setProvider,
-    query,
-    provider,
-    sessionId,
-    parts,
-    saveToHistory,
-  } = useDesignStore();
-  
-  const { showToast } = useToast();
-  const abortControllerRef = useRef<AbortController | null>(null);
+  const { setParts, setConnections, setIsAnalyzing, setError } = useDesignStore();
+  const [isGenerating, setIsGenerating] = useState(false);
 
-  const handleQuerySent = useCallback(async (
-    newQuery: string,
-    newProvider: 'openai' | 'xai'
-  ) => {
-    // Cancel any ongoing analysis
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
+  const handleQuerySent = useCallback(
+    async (
+      query: string,
+      provider: "openai" | "xai" = "openai",
+      onUpdate?: (update: any) => void
+    ) => {
+      setIsGenerating(true);
+      setIsAnalyzing(true);
+      setError(null);
 
-    // Create new abort controller
-    const abortController = new AbortController();
-    abortControllerRef.current = abortController;
+      try {
+        const parts: PartObject[] = [];
+        const connections: any[] = [];
 
-    // Update state
-    setQuery(newQuery);
-    setProvider(newProvider);
-    setIsAnalyzing(true);
-    setError(null);
+        await componentAnalysisApi.startAnalysis(
+          query,
+          provider,
+          (update: any) => {
+            onUpdate?.(update);
 
-    // Reset design if it's a completely new query
-    const isNewQuery = newQuery.trim() !== query.trim();
-    if (isNewQuery && parts.length > 0) {
-      setParts([]);
-      setConnections([]);
-      setDesignHealth(null);
-    }
-
-    // Get or create session ID
-    let currentSessionId = sessionId;
-    if (!currentSessionId || isNewQuery) {
-      currentSessionId = `session_${Date.now()}`;
-      setSessionId(currentSessionId);
-    }
-
-    try {
-      // Handle updates from SSE stream
-      const handleUpdate = (event: any) => {
-        if (abortController.signal.aborted) return;
-
-        switch (event.type) {
-          case 'selection':
-            if (event.partData) {
-              const part = event.partData as PartObject;
-              // Check for duplicates before adding
-              const exists = parts.some(p => 
-                p.mpn === part.mpn && 
-                p.manufacturer === part.manufacturer
-              );
-              
-              if (!exists) {
-                setParts([...parts, part]);
-              } else {
-                showToast(`${part.mpn} is already in the BOM`, "warning", 2000);
-              }
+            if (update.type === "selection" && update.partData) {
+              const part: PartObject = {
+                componentId: update.componentId || `part_${parts.length}`,
+                mpn: update.partData.mfr_part_number || update.partData.id || "",
+                manufacturer: update.partData.manufacturer || "",
+                description: update.partData.description || "",
+                price: update.partData.cost_estimate?.value || 0,
+                currency: update.partData.cost_estimate?.currency || "USD",
+                voltage: update.partData.supply_voltage_range
+                  ? `${update.partData.supply_voltage_range.min || ""}V ~ ${update.partData.supply_voltage_range.max || ""}V`
+                  : undefined,
+                package: update.partData.package || "",
+                interfaces: update.partData.interface_type || [],
+                datasheet: update.partData.datasheet_url || "",
+                quantity: 1,
+                category: update.partData.category,
+                footprint: update.partData.footprint,
+                lifecycle_status: update.partData.lifecycle_status,
+                availability_status: update.partData.availability_status,
+              };
+              parts.push(part);
             }
-            break;
 
-          case 'complete':
-            setIsAnalyzing(false);
-            saveToHistory();
-            showToast("Design generation complete!", "success", 3000);
-            break;
-
-          case 'error':
-            setError(event.message || 'An error occurred');
-            setIsAnalyzing(false);
-            showToast(event.message || 'An error occurred', "error", 5000);
-            break;
-
-          case 'reasoning':
-            // Reasoning events are handled by the UI component
-            break;
-        }
-      };
-
-      // Start analysis
-      await componentAnalysisApi.startAnalysis(
-        newQuery,
-        newProvider,
-        handleUpdate,
-        abortController.signal
-      );
-
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        // User cancelled, don't show error
-        return;
+            if (update.type === "complete") {
+              setParts([...parts]);
+              setIsAnalyzing(false);
+            }
+          }
+        );
+      } catch (error: any) {
+        setError(error.message || "Design generation failed");
+        setIsAnalyzing(false);
+      } finally {
+        setIsGenerating(false);
       }
-      
-      const errorMessage = error.message || 'Failed to generate design';
-      setError(errorMessage);
-      setIsAnalyzing(false);
-      showToast(errorMessage, "error", 5000);
-    } finally {
-      abortControllerRef.current = null;
-    }
-  }, [
-    query,
-    provider,
-    sessionId,
-    parts,
-    setParts,
-    setConnections,
-    setDesignHealth,
-    setIsAnalyzing,
-    setError,
-    setSessionId,
-    setQuery,
-    setProvider,
-    saveToHistory,
-    showToast,
-  ]);
+    },
+    [setParts, setConnections, setIsAnalyzing, setError]
+  );
 
   const cancelAnalysis = useCallback(() => {
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-      setIsAnalyzing(false);
-      showToast("Analysis cancelled", "info", 2000);
-    }
-  }, [setIsAnalyzing, showToast]);
+    setIsAnalyzing(false);
+    setIsGenerating(false);
+  }, [setIsAnalyzing]);
 
   return {
     handleQuerySent,
     cancelAnalysis,
+    isGenerating,
   };
 }
-

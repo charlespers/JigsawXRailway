@@ -14,6 +14,9 @@ from utils.part_database import search_parts, get_part_by_id
 class PartSearchAgent:
     """Agent that searches and ranks parts from the database."""
     
+    def __init__(self, cache_manager=None):
+        self.cache_manager = cache_manager
+    
     def search_and_rank(
         self,
         category: Optional[str] = None,
@@ -31,6 +34,21 @@ class PartSearchAgent:
         Returns:
             List of parts with scores, sorted by score (highest first)
         """
+        # Check cache first
+        if self.cache_manager:
+            import hashlib
+            import json
+            cache_key_data = {
+                "category": category,
+                "constraints": constraints,
+                "preferences": preferences,
+            }
+            cache_key_str = json.dumps(cache_key_data, sort_keys=True)
+            cache_key = f"part_search:{hashlib.sha256(cache_key_str.encode()).hexdigest()[:16]}"
+            cached = self.cache_manager.get(cache_key)
+            if cached is not None:
+                return cached
+        
         # Search parts matching constraints
         candidates = search_parts(category=category, constraints=constraints)
         
@@ -45,6 +63,19 @@ class PartSearchAgent:
         
         # Sort by score (highest first)
         scored_parts.sort(key=lambda x: x["score"], reverse=True)
+        
+        # Cache result
+        if self.cache_manager:
+            import hashlib
+            import json
+            cache_key_data = {
+                "category": category,
+                "constraints": constraints,
+                "preferences": preferences,
+            }
+            cache_key_str = json.dumps(cache_key_data, sort_keys=True)
+            cache_key = f"part_search:{hashlib.sha256(cache_key_str.encode()).hexdigest()[:16]}"
+            self.cache_manager.set(cache_key, scored_parts, ttl=7200)  # 2 hours
         
         return scored_parts
     

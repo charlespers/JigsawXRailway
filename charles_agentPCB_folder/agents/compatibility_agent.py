@@ -23,7 +23,8 @@ except ImportError:
 class CompatibilityAgent:
     """Agent that checks compatibility between parts."""
     
-    def __init__(self):
+    def __init__(self, cache_manager=None):
+        self.cache_manager = cache_manager
         if load_config:
             try:
                 config = load_config()
@@ -91,15 +92,39 @@ class CompatibilityAgent:
                 "warnings": List[str]
             }
         """
+        # Check cache first
+        if self.cache_manager:
+            part_a_id = part_a.get("id", "")
+            part_b_id = part_b.get("id", "")
+            cache_key = f"compatibility:{part_a_id}:{part_b_id}:{connection_type}"
+            cached = self.cache_manager.get(cache_key)
+            if cached is not None:
+                return cached
+        
         # Rule-based checks first
         rule_result = self._rule_based_check(part_a, part_b, connection_type)
         
-        # If rule-based check is conclusive, return it
+        # If rule-based check is conclusive, cache and return it
         if rule_result["compatible"] is not None:
+            # Cache result
+            if self.cache_manager:
+                part_a_id = part_a.get("id", "")
+                part_b_id = part_b.get("id", "")
+                cache_key = f"compatibility:{part_a_id}:{part_b_id}:{connection_type}"
+                self.cache_manager.set(cache_key, rule_result, ttl=86400)  # 24 hours
             return rule_result
         
         # Otherwise use LLM for complex cases
-        return self._llm_based_check(part_a, part_b, connection_type)
+        llm_result = self._llm_based_check(part_a, part_b, connection_type)
+        
+        # Cache LLM result
+        if self.cache_manager:
+            part_a_id = part_a.get("id", "")
+            part_b_id = part_b.get("id", "")
+            cache_key = f"compatibility:{part_a_id}:{part_b_id}:{connection_type}"
+            self.cache_manager.set(cache_key, llm_result, ttl=86400)  # 24 hours
+        
+        return llm_result
     
     def _rule_based_check(
         self,

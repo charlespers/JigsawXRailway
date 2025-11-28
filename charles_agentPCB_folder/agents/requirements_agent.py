@@ -22,7 +22,8 @@ except ImportError:
 class RequirementsAgent:
     """Agent that extracts structured requirements from natural language queries."""
     
-    def __init__(self):
+    def __init__(self, cache_manager=None):
+        self.cache_manager = cache_manager
         if load_config:
             try:
                 config = load_config()
@@ -90,6 +91,14 @@ class RequirementsAgent:
                 "preferences": {...}
             }
         """
+        # Check cache first
+        if self.cache_manager:
+            import hashlib
+            cache_key = f"requirements:{hashlib.sha256(query.encode()).hexdigest()[:16]}"
+            cached = self.cache_manager.get(cache_key)
+            if cached is not None:
+                return cached
+        
         prompt = f"""
 You are a PCB design requirements extraction agent. Analyze the following user query and extract structured technical requirements.
 
@@ -160,7 +169,15 @@ Return ONLY valid JSON, no additional text.
             
             # Extract JSON from response
             json_str = self._extract_json(content)
-            return json.loads(json_str)
+            result = json.loads(json_str)
+            
+            # Cache result
+            if self.cache_manager:
+                import hashlib
+                cache_key = f"requirements:{hashlib.sha256(query.encode()).hexdigest()[:16]}"
+                self.cache_manager.set(cache_key, result, ttl=3600)  # Cache for 1 hour
+            
+            return result
         except requests.exceptions.HTTPError as e:
             error_detail = str(e)
             status_code = "Unknown"

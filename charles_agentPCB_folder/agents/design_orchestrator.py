@@ -23,11 +23,19 @@ from utils.part_database import get_recommended_external_components
 class DesignOrchestrator:
     """Orchestrates the complete design generation process."""
     
-    def __init__(self):
-        self.requirements_agent = RequirementsAgent()
+    def __init__(self, cache_manager=None):
+        # Initialize cache manager if not provided
+        if cache_manager is None:
+            try:
+                from core.cache import get_cache_manager
+                cache_manager = get_cache_manager()
+            except ImportError:
+                cache_manager = None
+        
+        self.requirements_agent = RequirementsAgent(cache_manager=cache_manager)
         self.architecture_agent = ArchitectureAgent()
-        self.part_search_agent = PartSearchAgent()
-        self.compatibility_agent = CompatibilityAgent()
+        self.part_search_agent = PartSearchAgent(cache_manager=cache_manager)
+        self.compatibility_agent = CompatibilityAgent(cache_manager=cache_manager)
         self.datasheet_agent = DatasheetAgent()
         self.output_generator = OutputGenerator()
         self.intermediary_agent = IntermediaryAgent()

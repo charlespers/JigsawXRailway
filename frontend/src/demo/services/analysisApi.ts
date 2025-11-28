@@ -1,11 +1,20 @@
 /**
  * Analysis API Service
  * Handles calls to analysis endpoints (cost, supply chain, power, validation, etc.)
+ * Updated to use /api/v1/ endpoints
  */
 
+import apiClient from "./apiClient";
 import configService from "./config";
-
-const API_BASE = configService.getBackendUrl();
+import type {
+  CostAnalysis,
+  SupplyChainAnalysis,
+  PowerAnalysis,
+  DesignValidation,
+  ManufacturingReadiness,
+  SignalIntegrityAnalysis,
+  ThermalAnalysis,
+} from "./typesBackend";
 
 export interface PartComparisonResult {
   parts: any[];
@@ -26,160 +35,16 @@ export interface AlternativePart {
   lifecycle_status?: string;
 }
 
-export interface CostAnalysis {
-  total_cost: number;
-  cost_by_category: Record<string, number>;
-  high_cost_items: Array<{
-    part_id: string;
-    name: string;
-    unit_cost: number;
-    quantity: number;
-    total_cost: number;
-  }>;
-  optimization_opportunities: Array<{
-    part_id: string;
-    part_name: string;
-    current_cost: number;
-    alternative: {
-      id: string;
-      name: string;
-      cost: number;
-    };
-    savings_per_unit: number;
-    total_savings: number;
-  }>;
-}
-
-export interface SupplyChainAnalysis {
-  risks: Array<{
-    part_id: string;
-    part_name: string;
-    risks: string[];
-    risk_score: number;
-    quantity: number;
-  }>;
-  warnings: string[];
-  risk_score: number;
-  recommendations: string[];
-}
-
-export interface PowerAnalysis {
-  total_power: number;
-  power_by_rail: Record<string, number>;
-  power_by_component: Array<{
-    part_id: string;
-    name: string;
-    voltage: number;
-    current: number;
-    power: number;
-    quantity: number;
-    duty_cycle: number;
-  }>;
-  battery_life?: {
-    battery_capacity_mah: number;
-    battery_voltage: number;
-    battery_energy_wh: number;
-    total_power_w: number;
-    estimated_hours: number;
-    estimated_days: number;
-  };
-}
-
-export interface DesignValidation {
-  valid: boolean;
-  issues: Array<{
-    type: string;
-    severity: "error" | "warning";
-    component?: string | null;
-    message: string;
-    current?: string | null;
-    required?: string | null;
-    recommendation?: string;
-    fixable?: boolean;
-    category?: string;
-  }>;
-  warnings: Array<string | {
-    type: string;
-    severity: "error" | "warning";
-    component?: string | null;
-    message: string;
-    current?: string | null;
-    required?: string | null;
-    recommendation?: string;
-    fixable?: boolean;
-    category?: string;
-  }>;
-  compliance: {
-    ipc_2221: boolean;
-    ipc_7351: boolean;
-    rohs: boolean;
-    power_budget: boolean;
-  };
-  summary?: {
-    error_count: number;
-    warning_count: number;
-    compliance_score: number;
-  };
-}
-
-export interface ManufacturingReadiness {
-  dfm_checks: Record<string, any>;
-  assembly_complexity: {
-    complexity_score: number;
-    factors: string[];
-  };
-  test_point_coverage: {
-    coverage_percentage: number;
-    recommendations: string[];
-  };
-  panelization_recommendations: string[];
-  overall_readiness: "ready" | "needs_review" | "not_ready";
-  recommendations: string[];
-}
-
-export interface SignalIntegrityAnalysis {
-  high_speed_signals: Array<{
-    part_id: string;
-    name: string;
-    interface: string;
-    calculated_impedance_ohms: number;
-    required_impedance_ohms: number;
-    impedance_ok: boolean;
-    recommendation: string;
-  }>;
-  impedance_recommendations: Array<{
-    interface: string;
-    part: string;
-    current_impedance: number;
-    required_impedance: number;
-    recommendation: string;
-  }>;
-  emi_emc_recommendations: string[];
-  routing_recommendations: string[];
-  decoupling_analysis: {
-    adequate: boolean;
-    recommendations: string[];
-  };
-}
-
-export interface ThermalAnalysis {
-  component_thermal: Record<string, {
-    power_dissipation_w: number;
-    junction_temp_c: number;
-    max_temp_c: number;
-    thermal_ok: boolean;
-  }>;
-  thermal_issues: Array<{
-    part_id: string;
-    junction_temp_c: number;
-    max_temp_c: number;
-    power_dissipation_w: number;
-    issue: string;
-  }>;
-  total_thermal_issues: number;
-  total_power_dissipation_w: number;
-  recommendations: string[];
-}
+// Re-export types from typesBackend for backward compatibility
+export type {
+  CostAnalysis,
+  SupplyChainAnalysis,
+  PowerAnalysis,
+  DesignValidation,
+  ManufacturingReadiness,
+  SignalIntegrityAnalysis,
+  ThermalAnalysis,
+} from "./typesBackend";
 
 export interface DesignHealthScore {
   design_health_score: number;
@@ -219,6 +84,14 @@ export interface DesignHealthScore {
  * Compare multiple parts
  */
 export async function compareParts(partIds: string[]): Promise<PartComparisonResult> {
+  return apiClient.post<PartComparisonResult>("/api/v1/parts/compare", {
+    part_ids: partIds,
+  });
+}
+
+// Legacy function for backward compatibility
+export async function comparePartsLegacy(partIds: string[]): Promise<PartComparisonResult> {
+  const API_BASE = configService.getBackendUrl();
   const response = await fetch(`${API_BASE}/api/parts/compare`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -243,6 +116,21 @@ export async function findAlternatives(
   if (options?.sameFootprint) params.append('same_footprint', 'true');
   if (options?.lowerCost) params.append('lower_cost', 'true');
   
+  return apiClient.get<{ alternatives: AlternativePart[] }>(
+    `/api/v1/parts/alternatives/${partId}?${params.toString()}`
+  );
+}
+
+// Legacy function for backward compatibility
+export async function findAlternativesLegacy(
+  partId: string,
+  options?: { sameFootprint?: boolean; lowerCost?: boolean }
+): Promise<{ alternatives: AlternativePart[] }> {
+  const API_BASE = configService.getBackendUrl();
+  const params = new URLSearchParams();
+  if (options?.sameFootprint) params.append('same_footprint', 'true');
+  if (options?.lowerCost) params.append('lower_cost', 'true');
+  
   const response = await fetch(`${API_BASE}/api/parts/alternatives/${partId}?${params}`);
   
   if (!response.ok) {
@@ -256,34 +144,24 @@ export async function findAlternatives(
  * Analyze BOM cost
  */
 export async function analyzeCost(bomItems: any[]): Promise<CostAnalysis> {
-  const response = await fetch(`${API_BASE}/api/analysis/cost`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ bom_items: bomItems }),
+  return apiClient.post<CostAnalysis>("/api/v1/analysis/cost", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to analyze cost: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 
 /**
  * Analyze supply chain risks
  */
 export async function analyzeSupplyChain(bomItems: any[]): Promise<SupplyChainAnalysis> {
-  const response = await fetch(`${API_BASE}/api/analysis/supply-chain`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ bom_items: bomItems }),
+  return apiClient.post<SupplyChainAnalysis>("/api/v1/analysis/supply-chain", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to analyze supply chain: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 
 /**
@@ -297,22 +175,15 @@ export async function calculatePower(
     batteryVoltage?: number;
   }
 ): Promise<PowerAnalysis> {
-  const response = await fetch(`${API_BASE}/api/analysis/power`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bom_items: bomItems,
-      operating_modes: options?.operatingModes,
-      battery_capacity_mah: options?.batteryCapacityMah,
-      battery_voltage: options?.batteryVoltage,
-    }),
+  return apiClient.post<PowerAnalysis>("/api/v1/analysis/power", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
+    operating_modes: options?.operatingModes,
+    battery_capacity_mah: options?.batteryCapacityMah,
+    battery_voltage: options?.batteryVoltage,
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to calculate power: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 
 /**
@@ -322,20 +193,18 @@ export async function validateDesign(
   bomItems: any[],
   connections?: any[]
 ): Promise<DesignValidation> {
-  const response = await fetch(`${API_BASE}/api/validation/design`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bom_items: bomItems,
-      connections: connections || [],
-    }),
+  return apiClient.post<DesignValidation>("/api/v1/analysis/validation", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
+    connections: (connections || []).map(conn => ({
+      net_name: conn.net_name || conn.name,
+      components: conn.components || [],
+      pins: conn.pins || [],
+      signal_type: conn.signal_type || conn.signalType,
+    })),
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to validate design: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 
 /**
@@ -345,20 +214,17 @@ export async function analyzeManufacturingReadiness(
   bomItems: any[],
   connections?: any[]
 ): Promise<ManufacturingReadiness> {
-  const response = await fetch(`${API_BASE}/api/analysis/manufacturing-readiness`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bom_items: bomItems,
-      connections: connections || [],
-    }),
+  return apiClient.post<ManufacturingReadiness>("/api/v1/analysis/manufacturing-readiness", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
+    connections: (connections || []).map(conn => ({
+      net_name: conn.net_name || conn.name,
+      components: conn.components || [],
+      pins: conn.pins || [],
+    })),
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to analyze manufacturing readiness: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 
 /**
@@ -366,42 +232,40 @@ export async function analyzeManufacturingReadiness(
  */
 export async function analyzeSignalIntegrity(
   bomItems: any[],
-  connections?: any[]
+  connections?: any[],
+  pcbThicknessMm?: number,
+  traceWidthMils?: number
 ): Promise<SignalIntegrityAnalysis> {
-  const response = await fetch(`${API_BASE}/api/analysis/signal-integrity`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bom_items: bomItems,
-      connections: connections || [],
-    }),
+  return apiClient.post<SignalIntegrityAnalysis>("/api/v1/analysis/signal-integrity", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
+    connections: (connections || []).map(conn => ({
+      net_name: conn.net_name || conn.name,
+      components: conn.components || [],
+      pins: conn.pins || [],
+    })),
+    pcb_thickness_mm: pcbThicknessMm,
+    trace_width_mils: traceWidthMils,
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to analyze signal integrity: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 
 /**
  * Analyze thermal characteristics
  */
 export async function analyzeThermal(
-  bomItems: any[]
+  bomItems: any[],
+  ambientTemp?: number,
+  pcbAreaCm2?: number
 ): Promise<ThermalAnalysis> {
-  const response = await fetch(`${API_BASE}/api/analysis/thermal`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      bom_items: bomItems,
-    }),
+  return apiClient.post<ThermalAnalysis>("/api/v1/analysis/thermal", {
+    bom_items: bomItems.map(item => ({
+      part_data: item.part_data || item,
+      quantity: item.quantity || 1,
+    })),
+    ambient_temp: ambientTemp,
+    pcb_area_cm2: pcbAreaCm2,
   });
-  
-  if (!response.ok) {
-    throw new Error(`Failed to analyze thermal: ${response.statusText}`);
-  }
-  
-  return response.json();
 }
 

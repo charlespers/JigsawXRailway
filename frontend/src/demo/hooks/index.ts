@@ -1,8 +1,7 @@
 /**
- * Custom hooks barrel export
+ * Custom Hooks Barrel Export
  */
 
-export { useDesignGeneration } from './useDesignGeneration';
-export { useBOMManagement } from './useBOMManagement';
-export { useAnalysis } from './useAnalysis';
-
+export { useDesignGeneration } from "./useDesignGeneration";
+export { useBOMManagement } from "./useBOMManagement";
+export { useAnalysis } from "./useAnalysis";
