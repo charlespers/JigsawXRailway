@@ -32,7 +32,11 @@ from core.exceptions import AgentException
 
 logger = logging.getLogger(__name__)
 
+# Create router with explicit prefix - this will be combined with /api/v1 from parent
 router = APIRouter(prefix="/analysis", tags=["analysis"])
+
+# Log router creation for debugging
+logger.info(f"[ANALYSIS_ROUTER] Router created with prefix='/analysis'. Router ID: {id(router)}")
 
 
 @router.post("/cost", response_model=CostAnalysisResponse)

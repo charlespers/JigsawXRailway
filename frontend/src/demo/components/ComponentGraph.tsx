@@ -88,8 +88,10 @@ export default function ComponentGraph({
       // Stop processing when paused or no query
       setIsProcessing(false);
       isAnalysisRunningRef.current = false;
-      // Abort any ongoing analysis only if we're actually stopping (not just pausing)
-      if (abortControllerRef.current && !isAnalyzing) {
+      // Abort any ongoing analysis only if we're actually stopping AND analysis is still running
+      // Don't abort if analysis already completed (abortControllerRef will be null)
+      if (abortControllerRef.current && !isAnalyzing && isAnalysisRunningRef.current) {
+        console.log("[ComponentGraph] Aborting analysis due to isAnalyzing=false");
         abortControllerRef.current.abort();
         abortControllerRef.current = null;
         componentAnalysisApi.cancelAnalysis();
@@ -242,6 +244,8 @@ export default function ComponentGraph({
       } else if (update.type === "complete") {
         setIsProcessing(false);
         isAnalysisRunningRef.current = false;
+        // Mark as completed - don't abort after completion
+        abortControllerRef.current = null;
         if (onAnalysisComplete) {
           onAnalysisComplete();
         }
@@ -272,17 +276,27 @@ export default function ComponentGraph({
         isAnalysisRunningRef.current = false;
         pausedForContextRef.current = false;
         contextQueryIdRef.current = null;
+        // Clear abort controller to prevent cancellation after completion
+        abortControllerRef.current = null;
       })
       .catch((error: any) => {
-        // Only log if it's not a cancellation
-        if (!error.message?.includes("cancelled") && !error.message?.includes("AbortError")) {
+        // Only log if it's not a cancellation and not after completion
+        const isCancellation = error.message?.includes("cancelled") || 
+                              error.message?.includes("AbortError") ||
+                              error.name === "AbortError";
+        
+        if (!isCancellation) {
           console.error("Analysis failed:", error);
           setError(error.message || "Analysis failed. Please try again.");
+        } else if (isAnalysisRunningRef.current) {
+          // Only show cancellation if we were actually running
+          console.log("[ComponentGraph] Analysis was cancelled");
         }
         setIsProcessing(false);
         isAnalysisRunningRef.current = false;
         pausedForContextRef.current = false;
         contextQueryIdRef.current = null;
+        abortControllerRef.current = null;
       });
 
     return () => {

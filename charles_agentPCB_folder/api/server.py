@@ -62,37 +62,105 @@ except Exception as e:
 
 app = FastAPI(title="PCB Design API", version="1.0.0")
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify exact origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Add metrics middleware
+try:
+    from api.middleware.metrics import MetricsMiddleware
+    app.add_middleware(MetricsMiddleware)
+    logger.info("[MIDDLEWARE] Metrics middleware added")
+except Exception as e:
+    logger.warning(f"[MIDDLEWARE] Failed to add metrics middleware: {e}")
+
+# Add error handler middleware
+try:
+    from api.middleware.error_handler import ErrorHandlerMiddleware
+    app.add_middleware(ErrorHandlerMiddleware)
+    logger.info("[MIDDLEWARE] Error handler middleware added")
+except Exception as e:
+    logger.warning(f"[MIDDLEWARE] Failed to add error handler middleware: {e}")
+
 # Include API v1 routes with error handling
+# CRITICAL: Register routes in multiple ways to ensure they work on Railway
+analysis_routes_registered = False
+
 try:
     if api_router:
         app.include_router(api_router)
         total_routes = len([r for r in app.routes if hasattr(r, 'path')])
         analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
         logger.info(f"[ROUTES] Successfully included api_router. Total routes: {total_routes}, Analysis routes: {len(analysis_routes)}")
-        if len(analysis_routes) == 0:
-            logger.error("[ROUTES] WARNING: No analysis routes found! Attempting direct registration...")
-            # Try direct registration as last resort
-            try:
-                from routes.analysis import router as analysis_router
-                app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
-                logger.info("[ROUTES] Directly registered analysis router as fallback")
-                analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
-                logger.info(f"[ROUTES] After direct registration: {len(analysis_routes)} analysis routes")
-            except Exception as e3:
-                logger.error(f"[ROUTES] Direct registration also failed: {e3}", exc_info=True)
+        
+        if len(analysis_routes) > 0:
+            analysis_routes_registered = True
+            logger.info(f"[ROUTES] ✓ Analysis routes registered via api_router: {[r.path for r in analysis_routes[:5]]}...")
         else:
-            logger.info(f"[ROUTES] Analysis routes registered: {[r.path for r in analysis_routes[:3]]}...")
-    else:
-        logger.error("[ROUTES] api_router is None! Cannot include routes.")
+            logger.warning("[ROUTES] No analysis routes found in api_router, attempting direct registration...")
 except Exception as e:
     logger.error(f"[ROUTES] Failed to include api_router: {e}", exc_info=True)
-    # Last resort: try direct registration
+
+# Emergency fallback: Directly register analysis router if not already registered
+if not analysis_routes_registered:
+    logger.warning("[ROUTES] Attempting emergency direct registration of analysis routes...")
     try:
+        # Try absolute import
         from routes.analysis import router as analysis_router
         app.include_router(analysis_router, prefix="/api/v1", tags=["analysis"])
-        logger.info("[ROUTES] Directly registered analysis router as last resort")
-    except Exception as e4:
-        logger.error(f"[ROUTES] Last resort registration failed: {e4}", exc_info=True)
+        analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+        if len(analysis_routes) > 0:
+            analysis_routes_registered = True
+            logger.info(f"[ROUTES] ✓ Emergency registration successful: {len(analysis_routes)} analysis routes")
+        else:
+            logger.error("[ROUTES] Emergency registration added router but no routes found!")
+    except Exception as e:
+        logger.error(f"[ROUTES] Emergency registration failed: {e}", exc_info=True)
+        # Try alternative import path
+        try:
+            import importlib.util
+            from pathlib import Path
+            routes_dir = Path(__file__).parent.parent / "routes"
+            analysis_file = routes_dir / "analysis.py"
+            if analysis_file.exists():
+                spec = importlib.util.spec_from_file_location("analysis", analysis_file)
+                if spec and spec.loader:
+                    analysis_module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(analysis_module)
+                    app.include_router(analysis_module.router, prefix="/api/v1", tags=["analysis"])
+                    analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+                    if len(analysis_routes) > 0:
+                        analysis_routes_registered = True
+                        logger.info(f"[ROUTES] ✓ File-based import successful: {len(analysis_routes)} analysis routes")
+        except Exception as e2:
+            logger.error(f"[ROUTES] File-based import also failed: {e2}", exc_info=True)
+
+# Final verification
+if not analysis_routes_registered:
+    logger.error("[ROUTES] CRITICAL: All registration attempts failed! Analysis endpoints will return 404.")
+    logger.error("[ROUTES] Available routes: " + ", ".join([r.path for r in app.routes if hasattr(r, 'path')][:10]))
+else:
+    # Verify all expected routes exist
+    expected_paths = [
+        "/api/v1/analysis/cost",
+        "/api/v1/analysis/supply-chain",
+        "/api/v1/analysis/power",
+        "/api/v1/analysis/thermal",
+        "/api/v1/analysis/signal-integrity",
+        "/api/v1/analysis/manufacturing-readiness",
+        "/api/v1/analysis/validation"
+    ]
+    registered_paths = [r.path for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    missing_paths = [p for p in expected_paths if p not in registered_paths]
+    if missing_paths:
+        logger.warning(f"[ROUTES] Some expected paths missing: {missing_paths}")
+    else:
+        logger.info(f"[ROUTES] ✓ All expected analysis routes registered: {len(registered_paths)} routes")
 
 # Add startup event to log route registration
 @app.on_event("startup")
@@ -110,10 +178,15 @@ async def startup_event():
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
+    total_routes = len([r for r in app.routes if hasattr(r, 'path')])
+    analysis_routes = [r for r in app.routes if hasattr(r, 'path') and '/analysis' in r.path]
+    
     return {
         "status": "healthy",
         "version": "1.0.0",
-        "routes_registered": len([r for r in app.routes if hasattr(r, 'path')])
+        "routes_registered": total_routes,
+        "analysis_routes": len(analysis_routes),
+        "analysis_routes_list": [r.path for r in analysis_routes] if len(analysis_routes) <= 10 else [r.path for r in analysis_routes[:10]] + ["..."]
     }
 
 # Route verification endpoint
@@ -1428,8 +1501,10 @@ async def component_analysis(request: Request):
         
         try:
             last_heartbeat = time.time()
-            heartbeat_interval = 15.0  # Send heartbeat every 15 seconds
+            heartbeat_interval = 10.0  # Send heartbeat every 10 seconds
             complete_sent = False  # Track if complete event was sent
+            last_progress_time = time.time()
+            progress_interval = 5.0  # Send progress update every 5 seconds
             
             while True:
                 try:
@@ -1454,17 +1529,27 @@ async def component_analysis(request: Request):
                     
                     if event.get("type") == "complete":
                         complete_sent = True
+                        logger.info("[STREAM] Complete event received, ending stream")
                         break
                     
                     # Reset heartbeat timer on any event
                     last_heartbeat = time.time()
+                    last_progress_time = time.time()
                         
                 except asyncio.TimeoutError:
-                    # Send heartbeat to keep connection alive
                     current_time = time.time()
+                    
+                    # Send heartbeat to keep connection alive
                     if current_time - last_heartbeat >= heartbeat_interval:
                         yield f"data: {json.dumps({'type': 'heartbeat', 'message': 'Processing...'})}\n\n"
                         last_heartbeat = current_time
+                        if hasattr(sys.stdout, 'flush'):
+                            sys.stdout.flush()
+                    
+                    # Send progress update if task is still running
+                    if current_time - last_progress_time >= progress_interval and not task.done():
+                        yield f"data: {json.dumps({'type': 'reasoning', 'componentId': 'system', 'componentName': 'System', 'reasoning': 'Still processing...', 'hierarchyLevel': 0})}\n\n"
+                        last_progress_time = current_time
                     
                     # Check if task is done
                     if task.done():
@@ -1476,12 +1561,16 @@ async def component_analysis(request: Request):
                                 logger.warning("[STREAM] Task completed but no complete event received. Sending completion.")
                                 yield f"data: {json.dumps({'type': 'complete', 'message': 'Design generation completed.'})}\n\n"
                                 complete_sent = True
+                                if hasattr(sys.stdout, 'flush'):
+                                    sys.stdout.flush()
                             except Exception as e:
                                 # Task completed with exception
                                 logger.error(f"[STREAM] Task completed with exception: {str(e)}")
                                 yield f"data: {json.dumps({'type': 'error', 'message': f'Task error: {str(e)}'})}\n\n"
                                 yield f"data: {json.dumps({'type': 'complete', 'message': f'Design generation completed with errors: {str(e)}'})}\n\n"
                                 complete_sent = True
+                                if hasattr(sys.stdout, 'flush'):
+                                    sys.stdout.flush()
                         break
                     # Continue waiting for events
                     continue
@@ -1492,13 +1581,22 @@ async def component_analysis(request: Request):
                 yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
                 yield f"data: {json.dumps({'type': 'complete', 'message': f'Stream ended with error: {str(e)}'})}\n\n"
                 complete_sent = True
+                if hasattr(sys.stdout, 'flush'):
+                    sys.stdout.flush()
         finally:
+            # Ensure complete is always sent
+            if not complete_sent:
+                logger.warning("[STREAM] Stream ending without complete event - sending final complete")
+                yield f"data: {json.dumps({'type': 'complete', 'message': 'Stream ended'})}\n\n"
+                if hasattr(sys.stdout, 'flush'):
+                    sys.stdout.flush()
+            
             # Cleanup: cancel task if still running
             if not task.done():
                 task.cancel()
                 try:
-                    await task
-                except asyncio.CancelledError:
+                    await asyncio.wait_for(task, timeout=2.0)
+                except (asyncio.CancelledError, asyncio.TimeoutError):
                     pass
             # Restore original provider
             os.environ["LLM_PROVIDER"] = original_provider

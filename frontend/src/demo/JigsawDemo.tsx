@@ -60,6 +60,7 @@ export default function JigsawDemo({
   }, [backendUrl]);
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
   const [analysisQuery, setAnalysisQuery] = useState<string>(initialQuery);
   const [provider, setProvider] = useState<"xai">("xai");
   const [parts, setParts] = useState<PartObject[]>([]);
@@ -499,6 +500,7 @@ export default function JigsawDemo({
 
   const handleAnalysisComplete = useCallback(() => {
     setIsAnalyzing(false);
+    setIsCompleted(true);
     // Show success message with part count - use current parts state
     // Use setTimeout to ensure parts state is updated after all selection events
     setTimeout(() => {
@@ -602,8 +604,16 @@ export default function JigsawDemo({
             <DesignChat
               backendUrl={backendUrl}
               isAnalyzing={isAnalyzing}
-              onQuerySent={handleQuerySent}
-              onQueryKilled={handleQueryKilled}
+              isCompleted={isCompleted}
+              partsCount={parts.length}
+              onQuerySent={(query, provider) => {
+                setIsCompleted(false);
+                handleQuerySent(query, provider);
+              }}
+              onQueryKilled={() => {
+                setIsCompleted(false);
+                handleQueryKilled();
+              }}
             />
           </div>
         </motion.div>

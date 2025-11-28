@@ -7,7 +7,7 @@ import { ScrollArea } from "../ui/scroll-area";
 import { Badge } from "../ui/badge";
 import JigsawIcon from "./JigsawIcon";
 
-type ChatState = "idle" | "waiting" | "error";
+type ChatState = "idle" | "waiting" | "error" | "completed";
 type Provider = "xai";
 
 interface Message {
@@ -22,6 +22,10 @@ interface DesignChatProps {
   backendUrl?: string;
   /** Whether analysis is currently running */
   isAnalyzing?: boolean;
+  /** Whether analysis has completed successfully */
+  isCompleted?: boolean;
+  /** Number of parts selected (for completion message) */
+  partsCount?: number;
   /** Callback when user sends a query (triggers component analysis) */
   onQuerySent?: (query: string, provider: Provider) => void;
   /** Callback to reset/clear everything */
@@ -31,6 +35,8 @@ interface DesignChatProps {
 export default function DesignChat({
   backendUrl: _backendUrl,
   isAnalyzing = false,
+  isCompleted = false,
+  partsCount = 0,
   onQuerySent,
   onQueryKilled,
 }: DesignChatProps) {
@@ -41,8 +47,18 @@ export default function DesignChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Update state based on isAnalyzing prop
-  const state: ChatState = isAnalyzing ? "waiting" : error ? "error" : "idle";
+  // Update state based on props
+  const state: ChatState = isAnalyzing ? "waiting" : error ? "error" : isCompleted ? "completed" : "idle";
+  
+  // Add completion message when analysis completes
+  useEffect(() => {
+    if (isCompleted && !isAnalyzing && !messages.some(m => m.content.includes("Analysis complete") || m.content.includes("✓"))) {
+      const completionMessage = partsCount > 0 
+        ? `✓ Analysis complete! ${partsCount} part(s) selected and ready for design.`
+        : "✓ Analysis complete. Review the results above.";
+      addMessage("assistant", completionMessage);
+    }
+  }, [isCompleted, isAnalyzing, partsCount]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -99,8 +115,16 @@ export default function DesignChat({
       <div className="px-4 py-3 border-b border-zinc-800/50 bg-zinc-900/40 backdrop-blur-sm flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
-            <div className="absolute inset-0 w-2 h-2 rounded-full bg-emerald-400/30 animate-ping"></div>
+            {state === "completed" ? (
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+            ) : state === "waiting" ? (
+              <>
+                <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+                <div className="absolute inset-0 w-2 h-2 rounded-full bg-blue-400/30 animate-ping"></div>
+              </>
+            ) : (
+              <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+            )}
           </div>
           <h3 className="text-sm font-semibold text-zinc-200 tracking-wide">
             Component Analysis
@@ -111,9 +135,12 @@ export default function DesignChat({
               className={`text-[10px] ${
                 state === "waiting"
                   ? "border-blue-500/50 text-blue-400 bg-blue-500/10"
+                  : state === "completed"
+                  ? "border-emerald-500/50 text-emerald-400 bg-emerald-500/10"
                   : "border-red-500/50 text-red-400 bg-red-500/10"
               }`}>
               {state === "waiting" && "Analyzing"}
+              {state === "completed" && "Complete"}
               {state === "error" && "Error"}
             </Badge>
           )}
