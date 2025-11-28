@@ -12,7 +12,8 @@ export interface ErrorDisplayProps {
   title?: string;
   onRetry?: () => void;
   onDismiss?: () => void;
-  severity?: "error" | "warning" | "info";
+  variant?: "error" | "warning" | "info";
+  severity?: "error" | "warning" | "info"; // Alias for variant
   showDetails?: boolean;
   recoveryActions?: Array<{
     label: string;
@@ -21,15 +22,18 @@ export interface ErrorDisplayProps {
   }>;
 }
 
-export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
+const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
   error,
   title,
   onRetry,
   onDismiss,
-  severity = "error",
+  variant,
+  severity,
   showDetails = false,
   recoveryActions = [],
 }) => {
+  // Support both variant and severity props (variant takes precedence)
+  const effectiveSeverity = variant || severity || "error";
   const errorMessage = typeof error === "string" ? error : error.message;
   const errorStack = typeof error === "string" ? undefined : error.stack;
 
@@ -57,7 +61,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
     },
   };
 
-  const config = severityConfig[severity];
+  const config = severityConfig[effectiveSeverity];
   const Icon = config.icon;
 
   return (
@@ -68,7 +72,7 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
         </div>
         <div className="flex-1 min-w-0">
           <h3 className={`text-sm font-semibold ${config.textColor} mb-1`}>
-            {title || (severity === "error" ? "Error" : severity === "warning" ? "Warning" : "Information")}
+            {title || (effectiveSeverity === "error" ? "Error" : effectiveSeverity === "warning" ? "Warning" : "Information")}
           </h3>
           <p className="text-sm text-zinc-300 break-words">{errorMessage}</p>
           {showDetails && errorStack && (
@@ -123,3 +127,4 @@ export const ErrorDisplay: React.FC<ErrorDisplayProps> = ({
 };
 
 export default ErrorDisplay;
+export { ErrorDisplay };

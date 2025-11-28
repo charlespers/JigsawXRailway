@@ -82,9 +82,34 @@ try:
 except Exception as e:
     logger.warning(f"[ROUTES] Failed to import/include export router: {e}")
 
+# 5. Streaming routes (SSE endpoints) - Note: These are registered at app level, not api_router level
+# because they use /mcp/ prefix which is outside /api/v1
+# This is handled in server.py directly
+
+# 6. EDA routes
+try:
+    from routes.eda import router as eda_router
+    # EDA router has prefix="/eda", so with api_router prefix="/api/v1" it becomes /api/v1/eda/*
+    api_router.include_router(eda_router, tags=["eda"])
+    _imported_routers.append("eda")
+    logger.info("[ROUTES] ✓ EDA router included successfully")
+except Exception as e:
+    logger.warning(f"[ROUTES] Failed to import/include EDA router: {e}")
+
+# 7. Forecast routes
+try:
+    from routes.forecast import router as forecast_router
+    # Forecast router has prefix="/forecast", so with api_router prefix="/api/v1" it becomes /api/v1/forecast/*
+    api_router.include_router(forecast_router, tags=["forecast"])
+    _imported_routers.append("forecast")
+    logger.info("[ROUTES] ✓ Forecast router included successfully")
+except Exception as e:
+    logger.warning(f"[ROUTES] Failed to import/include forecast router: {e}")
+
 # Log final route count and verify
 analysis_routes = [r for r in api_router.routes if hasattr(r, 'path') and '/analysis' in r.path]
-logger.info(f"[ROUTES] Summary: {len(_imported_routers)} routers imported, {len(analysis_routes)} analysis routes registered")
+total_routes = len([r for r in api_router.routes if hasattr(r, 'path')])
+logger.info(f"[ROUTES] Summary: {len(_imported_routers)} routers imported, {total_routes} total routes, {len(analysis_routes)} analysis routes")
 if len(analysis_routes) == 0:
     logger.error("[ROUTES] CRITICAL: No analysis routes found! Routes will return 404.")
 else:
