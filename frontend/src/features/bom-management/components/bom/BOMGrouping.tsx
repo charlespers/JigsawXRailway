@@ -4,9 +4,9 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { Card } from "../../ui/card";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
+import { Card } from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
 import {
   Folder,
   FolderOpen,
@@ -15,7 +15,7 @@ import {
   Building2,
   Tag,
 } from "lucide-react";
-import type { PartObject } from "../../services/types";
+import type { PartObject } from "../../shared/services/types";
 import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMGroupingProps {

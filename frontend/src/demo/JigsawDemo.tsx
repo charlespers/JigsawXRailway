@@ -283,6 +283,75 @@ export default function JigsawDemo({
     reader.readAsText(file);
   }, [showToast, saveToHistory, calculateComponentPosition]);
 
+  // Layout system for organized PCB placement (supports demo's component IDs)
+  // Calculate component position function - must be defined before handleLoadDesign uses it
+  const calculateComponentPosition = (
+    componentId: string,
+    existingComponents: Array<{
+      id: string;
+      position: { x: number; y: number };
+      size?: { w: number; h: number };
+    }>,
+    _hierarchyLevel: number
+  ): { x: number; y: number } => {
+    const componentTypes: Record<string, { row: number; col: number }> = {
+      // Main components (demo naming)
+      anchor: { row: 1, col: 2 }, // Anchor/MCU component
+      mcu: { row: 1, col: 2 },
+      power: { row: 0, col: 2 },
+      connector: { row: 0, col: 1 },
+      sensor: { row: 1, col: 0 },
+      regulator: { row: 0, col: 3 },
+      interface: { row: 2, col: 1 },
+      memory: { row: 2, col: 2 },
+      clock: { row: 2, col: 0 },
+      protection: { row: 1, col: 3 },
+      filter: { row: 0, col: 0 },
+      amplifier: { row: 2, col: 3 },
+    };
+
+    // Try to get predefined position from component type
+    const componentType = componentId.toLowerCase().split("_")[0];
+    const typeConfig = componentTypes[componentType];
+    
+    if (typeConfig) {
+      const baseX = typeConfig.col * 200;
+      const baseY = typeConfig.row * 150;
+      
+      // Check for collisions and adjust
+      let adjustedX = baseX;
+      let adjustedY = baseY;
+      let attempts = 0;
+      const maxAttempts = 10;
+      
+      while (
+        attempts < maxAttempts &&
+        existingComponents.some(
+          (c) =>
+            Math.abs(c.position.x - adjustedX) < 100 &&
+            Math.abs(c.position.y - adjustedY) < 100
+        )
+      ) {
+        adjustedX += 50;
+        adjustedY += 50;
+        attempts++;
+      }
+      
+      return { x: adjustedX, y: adjustedY };
+    }
+    
+    // Fallback: grid layout based on hierarchy level
+    const gridCols = 4;
+    const col = _hierarchyLevel % gridCols;
+    const row = Math.floor(_hierarchyLevel / gridCols);
+    const spacing = 200;
+    
+    return {
+      x: col * spacing + 100,
+      y: row * spacing + 100,
+    };
+  };
+
   // Update query when initialQuery changes and auto-start analysis
   useEffect(() => {
     if (
@@ -346,6 +415,7 @@ export default function JigsawDemo({
   };
 
   // Layout system for organized PCB placement (supports demo's component IDs)
+  // Calculate component position function
   const calculateComponentPosition = (
     componentId: string,
     existingComponents: Array<{

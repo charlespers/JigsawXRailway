@@ -4,9 +4,9 @@
  */
 
 import React, { useState } from "react";
-import { Card } from "../../ui/card";
-import { Button } from "../../ui/button";
-import { Badge } from "../../ui/badge";
+import { Card } from "../../shared/components/ui/card";
+import { Button } from "../../shared/components/ui/button";
+import { Badge } from "../../shared/components/ui/badge";
 import {
   Share2,
   Copy,

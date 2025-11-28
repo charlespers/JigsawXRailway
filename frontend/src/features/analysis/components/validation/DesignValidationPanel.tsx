@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Card } from "../../ui/card";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
+import { Card } from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -22,7 +22,7 @@ import DFMPanel from "./DFMPanel";
 import SignalIntegrityPanel from "./SignalIntegrityPanel";
 import ThermalAnalysisPanel from "./ThermalAnalysisPanel";
 import SupplyChainPanel from "./SupplyChainPanel";
-import type { PartObject } from "../../services/types";
+import type { PartObject } from "../../shared/services/types";
 import {
   validateDesign,
   analyzeManufacturingReadiness,
@@ -34,7 +34,7 @@ import {
   type SignalIntegrityAnalysis,
   type ThermalAnalysis,
   type SupplyChainAnalysis,
-} from "../../services/analysisApi";
+} from "../../shared/services/analysisApi";
 
 interface DesignValidationPanelProps {
   parts: PartObject[];

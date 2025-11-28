@@ -30,7 +30,7 @@ export interface DesignApiConfig {
   timeout?: number;
 }
 
-import configService from "./config";
+import configService from "../../shared/services/config";
 
 const defaultConfig: DesignApiConfig = {
   baseUrl: configService.getBackendUrl(),

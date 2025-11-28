@@ -4,7 +4,7 @@
  */
 
 import { create } from "zustand";
-import type { PartObject } from "../services/types";
+import type { PartObject } from "../../shared/services/types";
 
 interface DesignState {
   // Design data

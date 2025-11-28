@@ -7,7 +7,7 @@
 export { default as ComponentGraph } from "../features/design-generation/components/ComponentGraph";
 export { default as DesignChat } from "../features/design-generation/components/DesignChat";
 export { default as PCBViewer } from "../features/design-generation/components/PCBViewer";
-export { default as useDesignGeneration } from "../features/design-generation/hooks/useDesignGeneration";
+export { default as useDesignGeneration, useDesignGeneration as useDesignGenerationNamed } from "../features/design-generation/hooks/useDesignGeneration";
 export * from "../features/design-generation/services/componentAnalysisApi";
 export * from "../features/design-generation/services/designApi";
 export * from "../features/design-generation/store/designStore";
@@ -16,13 +16,13 @@ export * from "../features/design-generation/store/designStore";
 export { default as PartsList } from "../features/bom-management/components/PartsList";
 export { default as BOMInsights } from "../features/bom-management/components/BOMInsights";
 export * from "../features/bom-management/components/bom";
-export { default as useBOMManagement } from "../features/bom-management/hooks/useBOMManagement";
+export { default as useBOMManagement, useBOMManagement as useBOMManagementNamed } from "../features/bom-management/hooks/useBOMManagement";
 export * from "../features/bom-management/utils/partNormalizer";
 
 // Analysis
 export * from "../features/analysis/components/analysis";
 export * from "../features/analysis/components/validation";
-export { default as useAnalysis } from "../features/analysis/hooks/useAnalysis";
+export { default as useAnalysis, useAnalysis as useAnalysisNamed } from "../features/analysis/hooks/useAnalysis";
 export * from "../features/analysis/services/analysisApi";
 
 // Design tools

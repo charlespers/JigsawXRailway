@@ -1,6 +1,6 @@
 import React from "react";
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
+import { Card } from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
 import { Activity, CheckCircle2, AlertTriangle, XCircle, TrendingUp } from "lucide-react";
 
 interface HealthBreakdown {

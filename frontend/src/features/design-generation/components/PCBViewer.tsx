@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ZoomIn, ZoomOut, Maximize2 } from "lucide-react";
-import { Button } from "../ui/button";
-import type { PartObject } from "../services/types";
+import { Button } from "../../shared/components/ui/button";
+import type { PartObject } from "../../shared/services/types";
 
 interface PCBComponent {
   id: string;

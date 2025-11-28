@@ -7,5 +7,5 @@ export { default as ErrorDisplay } from "./ErrorDisplay";
 export { default as Toast } from "./Toast";
 
 // Re-export UI components
-export * from "./ui";
+export * from "./ui/index";
 

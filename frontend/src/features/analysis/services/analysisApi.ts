@@ -4,8 +4,8 @@
  * Updated to use /api/v1/ endpoints
  */
 
-import apiClient from "./apiClient";
-import configService from "./config";
+import apiClient from "../../shared/services/apiClient";
+import configService from "../../shared/services/config";
 import type {
   CostAnalysis,
   SupplyChainAnalysis,
@@ -14,7 +14,7 @@ import type {
   ManufacturingReadiness,
   SignalIntegrityAnalysis,
   ThermalAnalysis,
-} from "./typesBackend";
+} from "../../shared/services/types";
 
 export interface PartComparisonResult {
   parts: any[];

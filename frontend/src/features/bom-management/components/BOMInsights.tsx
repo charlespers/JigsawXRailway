@@ -3,10 +3,10 @@ import {
   DollarSign, AlertTriangle, CheckCircle2, Zap, 
   TrendingDown, Shield, Activity, Wrench, Plus
 } from "lucide-react";
-import { Card } from "../ui/card";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
-import type { PartObject } from "../services/types";
+import { Card } from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
+import type { PartObject } from "../../shared/services/types";
 import {
   analyzeCost,
   analyzeSupplyChain,
@@ -16,7 +16,7 @@ import {
   type SupplyChainAnalysis,
   type PowerAnalysis,
   type DesignValidation,
-} from "../services/analysisApi";
+} from "../../shared/services/analysisApi";
 import { normalizePrice } from "../utils/partNormalizer";
 
 // Helper function to convert backend part data to PartObject

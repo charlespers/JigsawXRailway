@@ -4,9 +4,9 @@
  */
 
 import React from "react";
-import { Card } from "../../ui/card";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
+import { Card } from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
 import {
   AlertTriangle,
   CheckCircle2,

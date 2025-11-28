@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Package, Download, CheckCircle2, Zap, Cpu, ExternalLink, Building2, Layers, AlertTriangle, Info, TestTube, Target, Plus, Minus, Trash2, Edit2, Search, Upload } from "lucide-react";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
-import { Separator } from "../ui/separator";
-import { Card } from "../ui/card";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import type { PartObject } from "../services/types";
+import { Button } from "../../shared/components/ui/button";
+import { Badge } from "../../shared/components/ui/badge";
+import { Separator } from "../../shared/components/ui/separator";
+import { Card } from "../../shared/components/ui/card";
+import { Input } from "../../shared/components/ui/input";
+import { Textarea } from "../../shared/components/ui/textarea";
+import type { PartObject } from "../../shared/services/types";
 import { normalizePrice, normalizeQuantity } from "../utils/partNormalizer";
 
 interface PartsListProps {

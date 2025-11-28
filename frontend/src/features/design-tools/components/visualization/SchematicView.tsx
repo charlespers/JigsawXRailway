@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Card } from "../../ui/card";
-import { Button } from "../../ui/button";
-import { Badge } from "../../ui/badge";
+import { Card } from "../../shared/components/ui/card";
+import { Button } from "../../shared/components/ui/button";
+import { Badge } from "../../shared/components/ui/badge";
 import {
   ZoomIn,
   ZoomOut,
@@ -15,7 +15,7 @@ import {
   Layers,
   Settings,
 } from "lucide-react";
-import type { PartObject } from "../../services/types";
+import type { PartObject } from "../../shared/services/types";
 
 interface SchematicViewProps {
   parts: PartObject[];

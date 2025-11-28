@@ -1,9 +1,9 @@
-import { Card } from "../../ui/card";
-import { Badge } from "../../ui/badge";
-import { Button } from "../../ui/button";
+import { Card } from "../../shared/components/ui/card";
+import { Badge } from "../../shared/components/ui/badge";
+import { Button } from "../../shared/components/ui/button";
 import { Shield, CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
-import type { PartObject } from "../../services/types";
-import type { DesignValidation } from "../../services/analysisApi";
+import type { PartObject } from "../../shared/services/types";
+import type { DesignValidation } from "../../shared/services/analysisApi";
 
 interface IPCCompliancePanelProps {
   validation: DesignValidation | null;

@@ -1,11 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Send, X, Loader2, AlertCircle, CheckCircle2, Cpu } from "lucide-react";
-import { Button } from "../ui/button";
-import { Textarea } from "../ui/textarea";
-import { ScrollArea } from "../ui/scroll-area";
-import { Badge } from "../ui/badge";
-import JigsawIcon from "./JigsawIcon";
+import { Button } from "../../shared/components/ui/button";
+import { Textarea } from "../../shared/components/ui/textarea";
+import { ScrollArea } from "../../shared/components/ui/scroll-area";
+import { Badge } from "../../shared/components/ui/badge";
+import JigsawIcon from "../../../demo/components/JigsawIcon";
 
 type ChatState = "idle" | "waiting" | "error" | "completed";
 type Provider = "xai";

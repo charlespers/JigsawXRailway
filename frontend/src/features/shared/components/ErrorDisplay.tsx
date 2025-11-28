@@ -5,7 +5,7 @@
 
 import React from "react";
 import { AlertCircle, RefreshCw, X, Info, AlertTriangle } from "lucide-react";
-import { Button } from "../ui/button";
+import { Button } from "../../shared/components/ui/button";
 
 export interface ErrorDisplayProps {
   error: Error | string;

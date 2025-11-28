@@ -4,11 +4,11 @@
  */
 
 import { useState, useCallback } from "react";
-import { useDesignStore } from "../store/designStore";
-import { componentAnalysisApi } from "../services/componentAnalysisApi";
-import type { PartObject } from "../services/types";
+import { useDesignStore } from "../../design-generation/store/designStore";
+import { componentAnalysisApi } from "../../shared/services/componentAnalysisApi";
+import type { PartObject } from "../../shared/services/types";
 
-export function useDesignGeneration() {
+function useDesignGeneration() {
   const { setParts, setConnections, setIsAnalyzing, setError } = useDesignStore();
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -82,3 +82,6 @@ export function useDesignGeneration() {
     isGenerating,
   };
 }
+
+export default useDesignGeneration;
+export { useDesignGeneration };

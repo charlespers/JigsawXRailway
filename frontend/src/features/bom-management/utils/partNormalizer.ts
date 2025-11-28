@@ -3,7 +3,7 @@
  * Ensures part data is always in the correct format to prevent runtime errors
  */
 
-import type { PartObject } from "../services/types";
+import type { PartObject } from "../../shared/services/types";
 
 /**
  * Normalize price to always be a number

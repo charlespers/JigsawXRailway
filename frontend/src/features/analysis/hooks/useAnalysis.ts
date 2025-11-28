@@ -4,7 +4,7 @@
  */
 
 import { useState, useCallback, useEffect } from "react";
-import { useDesignStore } from "../store/designStore";
+import { useDesignStore } from "../../design-generation/store/designStore";
 import {
   analyzeCost,
   analyzeSupplyChain,
@@ -25,7 +25,7 @@ interface AnalysisResults {
   thermal: any;
 }
 
-export function useAnalysis() {
+function useAnalysis() {
   const { parts, connections } = useDesignStore();
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<AnalysisResults>({
@@ -92,3 +92,6 @@ export function useAnalysis() {
     runAllAnalyses,
   };
 }
+
+export default useAnalysis;
+export { useAnalysis };

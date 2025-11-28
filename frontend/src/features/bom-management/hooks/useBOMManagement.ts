@@ -4,10 +4,10 @@
  */
 
 import { useCallback } from "react";
-import { useDesignStore } from "../store/designStore";
-import type { PartObject } from "../services/types";
+import { useDesignStore } from "../../design-generation/store/designStore";
+import type { PartObject } from "../../shared/services/types";
 
-export function useBOMManagement() {
+function useBOMManagement() {
   const { parts, setParts } = useDesignStore();
 
   const addPartToBOM = useCallback(
@@ -78,3 +78,6 @@ export function useBOMManagement() {
     bulkUpdateParts,
   };
 }
+
+export default useBOMManagement;
+export { useBOMManagement };

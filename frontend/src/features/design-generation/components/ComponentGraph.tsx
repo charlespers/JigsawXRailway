@@ -10,12 +10,12 @@ import {
   AlertTriangle,
   RefreshCw,
 } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { Badge } from "../../shared/components/ui/badge";
 import {
   componentAnalysisApi,
   type ComponentAnalysisResponse,
 } from "../services";
-import ErrorDisplay from "./ErrorDisplay";
+import { ErrorDisplay } from "../../shared/components";
 
 interface ComponentGraphProps {
   onComponentSelected?: (componentId: string, partData: any, position?: { x: number; y: number }, hierarchyOffset?: number) => void;

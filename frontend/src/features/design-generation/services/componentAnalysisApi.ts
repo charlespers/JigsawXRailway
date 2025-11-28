@@ -1,4 +1,5 @@
-import type { PartObject } from "./types";
+import type { PartObject } from "../../shared/services/types";
+import configService from "../../shared/services/config";
 
 export interface ComponentReasoning {
   componentId: string;
@@ -36,8 +37,6 @@ export interface ComponentAnalysisConfig {
   analysisEndpoint: string;
   timeout?: number;
 }
-
-import configService from "./config";
 
 const defaultConfig: ComponentAnalysisConfig = {
   baseUrl: configService.getBackendUrl(),
