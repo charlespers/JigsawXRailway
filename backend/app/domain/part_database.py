@@ -15,41 +15,50 @@ class PartDatabase:
     """Part database with caching and search"""
     
     def __init__(self):
-        # Resolve path relative to app directory
-        # __file__ is app/domain/part_database.py, so:
-        # parent = app/domain
-        # parent.parent = app/
-        # parent.parent.parent = backend/
-        app_dir = Path(__file__).parent.parent.parent
+        # Resolve path - handle both local dev and Railway deployment
+        # In Railway: __file__ = /app/app/domain/part_database.py
+        # In local: __file__ = backend/app/domain/part_database.py
+        current_file = Path(__file__)
+        app_dir = current_file.parent.parent.parent  # backend/ or /app
+        
         db_path_str = settings.PARTS_DATABASE_PATH
         
-        # Handle both relative and absolute paths
-        if db_path_str.startswith("/"):
-            # Absolute path
-            self.db_path = Path(db_path_str)
-        elif db_path_str.startswith("app/"):
-            # Relative to backend root: app/data/parts
-            self.db_path = app_dir / db_path_str.replace("app/", "")
-        else:
-            # Relative path, assume it's relative to backend root
-            self.db_path = app_dir / db_path_str
+        # Build list of paths to try (in order of preference)
+        paths_to_try = []
         
-        # Fallback: try multiple possible locations
-        if not self.db_path.exists():
-            # Try relative to backend root: app/data/parts
-            fallback1 = app_dir / "app" / "data" / "parts"
-            # Try absolute: /app/data/parts (Railway deployment)
-            fallback2 = Path("/app/data/parts")
-            # Try relative to current file: ../../data/parts
-            fallback3 = Path(__file__).parent.parent.parent / "app" / "data" / "parts"
-            
-            for fallback in [fallback1, fallback2, fallback3]:
-                if fallback.exists():
-                    logger.info(f"Using fallback path: {fallback}")
-                    self.db_path = fallback
-                    break
-            else:
-                logger.warning(f"Parts database path not found. Tried: {self.db_path}, {fallback1}, {fallback2}, {fallback3}")
+        # 1. Absolute path (if provided)
+        if db_path_str.startswith("/"):
+            paths_to_try.append(Path(db_path_str))
+        
+        # 2. Relative to app directory: app/data/parts -> app_dir/app/data/parts
+        if db_path_str.startswith("app/"):
+            paths_to_try.append(app_dir / db_path_str)
+            # Also try without "app/" prefix
+            paths_to_try.append(app_dir / db_path_str.replace("app/", ""))
+        
+        # 3. Relative to current file location
+        paths_to_try.append(current_file.parent.parent / "data" / "parts")
+        
+        # 4. Fallback locations (Railway-specific paths first)
+        paths_to_try.extend([
+            Path("/app/app/data/parts"),  # Railway: code at /app/app, data at /app/app/data/parts
+            app_dir / "app" / "data" / "parts",  # Local: backend/app/data/parts or Railway: /app/app/data/parts
+            Path("/app/data/parts"),  # Railway alternative (if code structure differs)
+            app_dir / "data" / "parts",  # backend/data/parts
+        ])
+        
+        # Try each path until we find one that exists
+        self.db_path = None
+        for path in paths_to_try:
+            if path.exists() and path.is_dir():
+                self.db_path = path
+                logger.info(f"Found parts database at: {path}")
+                break
+        
+        if not self.db_path:
+            # Use first path as default (will log warning in _load_database)
+            self.db_path = paths_to_try[0] if paths_to_try else Path(db_path_str)
+            logger.warning(f"Parts database path not found. Will try: {self.db_path}")
         
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._load_database()
