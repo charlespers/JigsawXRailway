@@ -14,17 +14,13 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     
     # CORS Configuration - store as string to avoid JSON parsing issues
-    # pydantic_settings will read CORS_ORIGINS env var and map it to this field
-    # We use a different field name to avoid List[str] type parsing
-    CORS_ORIGINS_STR: str = "*"
+    # Read directly from os.getenv to avoid pydantic_settings trying to parse as JSON
+    # This bypasses pydantic_settings' automatic JSON parsing for List types
+    CORS_ORIGINS_STR: str = os.getenv("CORS_ORIGINS", "*")
     
     class Config:
         env_file = ".env"
         case_sensitive = True
-        # Map CORS_ORIGINS env var to CORS_ORIGINS_STR field
-        fields = {
-            "CORS_ORIGINS_STR": {"env": "CORS_ORIGINS"}
-        }
     
     @computed_field
     @property
