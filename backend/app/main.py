@@ -8,7 +8,6 @@ from fastapi.responses import Response
 import uvicorn
 
 from app.api.routes import router, mcp_router
-from app.core.config import settings
 from app.core.logging import setup_logging
 
 # Setup logging
@@ -23,45 +22,19 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS Configuration - Use FastAPI's built-in middleware ONLY
-# This handles OPTIONS automatically
-try:
-    cors_origins = settings.CORS_ORIGINS
-    logger.info(f"CORS origins configured: {cors_origins}")
-    
-    if cors_origins == ["*"]:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=False,
-            allow_methods=["*"],
-            allow_headers=["*"],
-            expose_headers=["*"],
-            max_age=3600,
-        )
-        logger.info("CORS configured with wildcard origin")
-    else:
-        app.add_middleware(
-            CORSMiddleware,
-            allow_origins=cors_origins,
-            allow_credentials=True,
-            allow_methods=["*"],
-            allow_headers=["*"],
-            expose_headers=["*"],
-            max_age=3600,
-        )
-        logger.info(f"CORS configured with specific origins: {cors_origins}")
-except Exception as e:
-    logger.error(f"CORS configuration error: {e}", exc_info=True)
-    # Fallback: allow all
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=["*"],
-        allow_credentials=False,
-        allow_methods=["*"],
-        allow_headers=["*"],
-        max_age=3600,
-    )
+# CORS configuration: specific origins, credentials enabled
+origins = [
+    "https://jigsawxrailway-frontend.up.railway.app",
+    "http://localhost:5173",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Include routes
 app.include_router(router)
@@ -77,34 +50,6 @@ async def health_check():
 async def root():
     """Root endpoint"""
     return {"status": "ok", "message": "PCB Design BOM Generator API", "version": "2.0.0"}
-
-# Explicit OPTIONS handler for /mcp/component-analysis as backup
-@app.options("/mcp/component-analysis")
-async def options_mcp():
-    """Explicit OPTIONS handler for MCP endpoint"""
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "3600",
-        }
-    )
-
-# Catch-all OPTIONS handler as final backup
-@app.options("/{path:path}")
-async def options_catchall(path: str):
-    """Catch-all OPTIONS handler"""
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "3600",
-        }
-    )
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8000))
