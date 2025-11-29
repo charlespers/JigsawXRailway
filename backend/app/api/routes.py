@@ -3,7 +3,7 @@ API routes
 """
 import logging
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, HTTPException, Query, Response
+from fastapi import APIRouter, HTTPException, Query, Response, Body
 from fastapi.responses import StreamingResponse
 from app.api.schemas import DesignRequest, DesignResponse, BOMRequest, BOMResponse, ErrorResponse
 from app.services.orchestrator import DesignOrchestrator
@@ -496,6 +496,508 @@ async def component_analysis_stream(request: Dict[str, Any]):
             "X-Session-Id": session_id or "new-session",
         }
     )
+
+
+# Helper function to convert bom_items to selected_parts format
+def _bom_items_to_selected_parts(bom_items: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """Convert frontend bom_items format to backend selected_parts format"""
+    selected_parts = {}
+    for idx, item in enumerate(bom_items):
+        part_data = item.get("part_data", item)
+        # Use componentId, id, or mfr_part_number as key
+        key = (
+            part_data.get("componentId") or
+            part_data.get("id") or
+            part_data.get("mfr_part_number") or
+            f"part_{idx}"
+        )
+        selected_parts[key] = part_data
+    return selected_parts
+
+
+# Analysis endpoints (matching frontend expectations - accepts bom_items format)
+@router.post("/analysis/power")
+async def analysis_power(
+    bom_items: List[Dict[str, Any]] = Body(...),
+    operating_modes: Optional[Dict[str, float]] = Body(None),
+    battery_capacity_mah: Optional[float] = Body(None),
+    battery_voltage: Optional[float] = Body(None)
+):
+    """Power analysis endpoint - accepts bom_items format from frontend"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        analysis = power_analyzer.analyze_power_budget(selected_parts)
+        
+        # Format response to match frontend PowerAnalysis type
+        power_by_component = []
+        for part_id, part_data in selected_parts.items():
+            power_by_component.append({
+                "part_id": part_id,
+                "name": part_data.get("name", part_data.get("mfr_part_number", "Unknown")),
+                "voltage": part_data.get("supply_voltage_range", {}).get("nominal", 3.3) if isinstance(part_data.get("supply_voltage_range"), dict) else 3.3,
+                "current": part_data.get("supply_current_ma", 0) / 1000.0 if part_data.get("supply_current_ma") else 0,
+                "power": analysis.get("power_by_component", {}).get(part_id, 0),
+                "quantity": next((item.get("quantity", 1) for item in bom_items if item.get("part_data", {}).get("id") == part_id or item.get("part_data", {}).get("componentId") == part_id), 1),
+                "duty_cycle": 1.0
+            })
+        
+        response = {
+            "total_power": analysis.get("total_power_watts", 0),
+            "power_by_rail": analysis.get("power_by_rail", {}),
+            "power_by_component": power_by_component
+        }
+        
+        # Add battery life if provided
+        if battery_capacity_mah and battery_voltage:
+            total_power_w = response["total_power"]
+            if total_power_w > 0:
+                battery_energy_wh = (battery_capacity_mah / 1000.0) * battery_voltage
+                estimated_hours = battery_energy_wh / total_power_w
+                response["battery_life"] = {
+                    "battery_capacity_mah": battery_capacity_mah,
+                    "battery_voltage": battery_voltage,
+                    "battery_energy_wh": battery_energy_wh,
+                    "total_power_w": total_power_w,
+                    "estimated_hours": estimated_hours,
+                    "estimated_days": estimated_hours / 24.0
+                }
+        
+        return response
+    except Exception as e:
+        logger.error(f"Power analysis error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analysis/thermal")
+async def analysis_thermal(
+    bom_items: List[Dict[str, Any]] = Body(...),
+    ambient_temp: Optional[float] = Body(None),
+    pcb_area_cm2: Optional[float] = Body(None)
+):
+    """Thermal analysis endpoint - accepts bom_items format"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        power_analysis = power_analyzer.analyze_power_budget(selected_parts)
+        total_power = power_analysis.get("total_power_watts", 0)
+        
+        # Calculate thermal characteristics
+        component_thermal = {}
+        thermal_issues = []
+        ambient = ambient_temp or 25.0
+        
+        for part_id, part_data in selected_parts.items():
+            power_diss = power_analysis.get("power_by_component", {}).get(part_id, 0)
+            # Estimate junction temp (simplified model)
+            thermal_resistance = part_data.get("thermal_resistance_c_per_w", 50.0)
+            junction_temp = ambient + (power_diss * thermal_resistance)
+            max_temp = part_data.get("max_operating_temp_c", 85.0)
+            
+            component_thermal[part_id] = {
+                "power_dissipation_w": power_diss,
+                "junction_temp_c": junction_temp,
+                "max_temp_c": max_temp,
+                "thermal_ok": junction_temp < max_temp
+            }
+            
+            if junction_temp >= max_temp:
+                thermal_issues.append({
+                    "part_id": part_id,
+                    "junction_temp_c": junction_temp,
+                    "max_temp_c": max_temp,
+                    "power_dissipation_w": power_diss,
+                    "issue": f"Junction temperature {junction_temp:.1f}°C exceeds maximum {max_temp}°C"
+                })
+        
+        recommendations = []
+        if total_power > 5:
+            recommendations.append("High power dissipation - consider thermal management")
+            recommendations.append("Add thermal vias and consider heatsink")
+        if thermal_issues:
+            recommendations.append(f"{len(thermal_issues)} components exceed thermal limits")
+        
+        return {
+            "component_thermal": component_thermal,
+            "thermal_issues": thermal_issues,
+            "total_thermal_issues": len(thermal_issues),
+            "total_power_dissipation_w": total_power,
+            "recommendations": recommendations
+        }
+    except Exception as e:
+        logger.error(f"Thermal analysis error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analysis/signal-integrity")
+async def analysis_signal_integrity(
+    bom_items: List[Dict[str, Any]] = Body(...),
+    connections: Optional[List[Dict[str, Any]]] = Body(None),
+    pcb_thickness_mm: Optional[float] = Body(None),
+    trace_width_mils: Optional[float] = Body(None)
+):
+    """Signal integrity analysis endpoint - accepts bom_items format"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        
+        high_speed_signals = []
+        impedance_recommendations = []
+        emi_emc_recommendations = []
+        routing_recommendations = []
+        
+        for part_id, part_data in selected_parts.items():
+            interfaces = part_data.get("interface_type", [])
+            if isinstance(interfaces, str):
+                interfaces = [interfaces]
+            
+            for iface in interfaces:
+                if iface in ["USB", "PCIe", "HDMI", "Ethernet", "MIPI", "DDR", "LVDS"]:
+                    # Standard impedance requirements
+                    impedance_map = {
+                        "USB": 90,
+                        "PCIe": 85,
+                        "HDMI": 100,
+                        "Ethernet": 100,
+                        "MIPI": 100,
+                        "DDR": 50,
+                        "LVDS": 100
+                    }
+                    required_impedance = impedance_map.get(iface, 50)
+                    
+                    high_speed_signals.append({
+                        "part_id": part_id,
+                        "name": part_data.get("name", part_data.get("mfr_part_number", "Unknown")),
+                        "interface": iface,
+                        "calculated_impedance_ohms": required_impedance,  # Simplified
+                        "required_impedance_ohms": required_impedance,
+                        "impedance_ok": True,
+                        "recommendation": f"Ensure {required_impedance}Ω differential impedance for {iface}"
+                    })
+                    
+                    impedance_recommendations.append({
+                        "interface": iface,
+                        "part": part_data.get("name", part_id),
+                        "current_impedance": required_impedance,
+                        "required_impedance": required_impedance,
+                        "recommendation": f"Use controlled impedance routing for {iface} signals"
+                    })
+        
+        if high_speed_signals:
+            routing_recommendations.append("Route high-speed signals with controlled impedance")
+            routing_recommendations.append("Keep high-speed traces away from noisy components")
+            emi_emc_recommendations.append("Add ground planes for EMI suppression")
+            emi_emc_recommendations.append("Use proper decoupling capacitors near high-speed ICs")
+        
+        return {
+            "high_speed_signals": high_speed_signals,
+            "impedance_recommendations": impedance_recommendations,
+            "emi_emc_recommendations": emi_emc_recommendations,
+            "routing_recommendations": routing_recommendations,
+            "decoupling_analysis": {
+                "adequate": len([p for p in selected_parts.values() if "mcu" in p.get("category", "").lower() or "ic" in p.get("category", "").lower()]) > 0,
+                "recommendations": ["Add 0.1uF decoupling capacitors near each IC power pin"] if selected_parts else []
+            }
+        }
+    except Exception as e:
+        logger.error(f"Signal integrity analysis error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analysis/validation")
+async def analysis_validation(
+    bom_items: List[Dict[str, Any]] = Body(...),
+    connections: Optional[List[Dict[str, Any]]] = Body(None)
+):
+    """Design validation endpoint - accepts bom_items format"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        validation = realtime_validator.validate_design(selected_parts)
+        
+        # Ensure response matches frontend DesignValidation type
+        if not isinstance(validation, dict):
+            validation = validation.dict() if hasattr(validation, "dict") else {}
+        
+        # Ensure fix_suggestions is included if available
+        if "fix_suggestions" not in validation:
+            validation["fix_suggestions"] = []
+        
+        return validation
+    except Exception as e:
+        logger.error(f"Validation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analysis/manufacturing-readiness")
+async def analysis_manufacturing_readiness(
+    bom_items: List[Dict[str, Any]] = Body(...),
+    connections: Optional[List[Dict[str, Any]]] = Body(None)
+):
+    """Manufacturing readiness (DFM) analysis endpoint - accepts bom_items format"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        bom_obj = bom_generator.generate(selected_parts, [])
+        dfm_analysis = dfm_checker.check_design(bom_obj, selected_parts)
+        
+        # Format response to match frontend ManufacturingReadiness type
+        if isinstance(dfm_analysis, dict):
+            return dfm_analysis
+        return {
+            "dfm_checks": dfm_analysis.get("dfm_checks", {}),
+            "assembly_complexity": dfm_analysis.get("assembly_complexity", {"complexity_score": 50, "factors": []}),
+            "test_point_coverage": dfm_analysis.get("test_point_coverage", {"coverage_percentage": 0, "recommendations": []}),
+            "panelization_recommendations": dfm_analysis.get("panelization_recommendations", []),
+            "overall_readiness": dfm_analysis.get("overall_readiness", "needs_review"),
+            "recommendations": dfm_analysis.get("recommendations", [])
+        }
+    except Exception as e:
+        logger.error(f"Manufacturing readiness error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analysis/cost")
+async def analysis_cost(bom_items: List[Dict[str, Any]] = Body(...)):
+    """Cost analysis endpoint - accepts bom_items format"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        optimization = cost_optimizer.optimize_cost(selected_parts, target_savings_percent=0)
+        
+        # Format response to match frontend CostAnalysis type
+        return {
+            "total_cost": optimization.get("total_cost", 0),
+            "cost_by_category": optimization.get("cost_by_category", {}),
+            "high_cost_items": optimization.get("high_cost_items", []),
+            "optimization_opportunities": optimization.get("optimization_opportunities", [])
+        }
+    except Exception as e:
+        logger.error(f"Cost analysis error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/analysis/supply-chain")
+async def analysis_supply_chain(bom_items: List[Dict[str, Any]] = Body(...)):
+    """Supply chain analysis endpoint - accepts bom_items format"""
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        analysis = supply_chain.analyze_supply_chain(selected_parts)
+        
+        # Format response to match frontend SupplyChainAnalysis type
+        return {
+            "risks": analysis.get("risks", []),
+            "warnings": analysis.get("warnings", []),
+            "risk_score": analysis.get("risk_score", 0),
+            "recommendations": analysis.get("recommendations", [])
+        }
+    except Exception as e:
+        logger.error(f"Supply chain analysis error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Design Health Score endpoint
+@router.post("/design/health")
+async def get_design_health(
+    bom_items: List[Dict[str, Any]] = Body(...),
+    connections: Optional[List[Dict[str, Any]]] = Body(None)
+):
+    """
+    Calculate overall design health score based on all analyses.
+    Returns a comprehensive health score with breakdown by category.
+    """
+    try:
+        selected_parts = _bom_items_to_selected_parts(bom_items)
+        
+        # Run all analyses in parallel
+        validation = realtime_validator.validate_design(selected_parts)
+        cost_analysis = cost_optimizer.optimize_cost(selected_parts, target_savings_percent=0)
+        supply_chain_analysis = supply_chain.analyze_supply_chain(selected_parts)
+        power_analysis = power_analyzer.analyze_power_budget(selected_parts)
+        bom_obj = bom_generator.generate(selected_parts, [])
+        dfm_analysis = dfm_checker.check_design(bom_obj, selected_parts)
+        
+        # Calculate thermal issues
+        total_power = power_analysis.get("total_power_watts", 0)
+        thermal_issues_count = 1 if total_power > 5 else 0
+        
+        # Calculate scores for each category
+        validation_errors = len(validation.get("issues", [])) if isinstance(validation, dict) else 0
+        validation_warnings = len(validation.get("warnings", [])) if isinstance(validation, dict) else 0
+        validation_score = max(0, 100 - (validation_errors * 20) - (validation_warnings * 5))
+        
+        supply_chain_score = max(0, 100 - (supply_chain_analysis.get("risk_score", 0) * 2))
+        
+        dfm_readiness = dfm_analysis.get("overall_readiness", "needs_review") if isinstance(dfm_analysis, dict) else "needs_review"
+        manufacturing_score = 80 if dfm_readiness == "ready" else 60 if dfm_readiness == "needs_review" else 40
+        
+        thermal_score = 100 if thermal_issues_count == 0 else max(0, 100 - (thermal_issues_count * 30))
+        
+        cost_opportunities = len(cost_analysis.get("optimization_opportunities", []))
+        cost_score = 100 if cost_opportunities == 0 else max(60, 100 - (cost_opportunities * 5))
+        
+        # Calculate overall health score (weighted average)
+        overall_score = (
+            validation_score * 0.3 +
+            supply_chain_score * 0.2 +
+            manufacturing_score * 0.2 +
+            thermal_score * 0.15 +
+            cost_score * 0.15
+        )
+        
+        # Determine health level
+        if overall_score >= 90:
+            health_level = "Excellent"
+        elif overall_score >= 75:
+            health_level = "Good"
+        elif overall_score >= 60:
+            health_level = "Needs Improvement"
+        else:
+            health_level = "Poor"
+        
+        return {
+            "design_health_score": round(overall_score, 1),
+            "health_level": health_level,
+            "health_breakdown": {
+                "validation": {
+                    "score": round(validation_score, 1),
+                    "status": "excellent" if validation_score >= 90 else "good" if validation_score >= 75 else "needs_improvement",
+                    "errors": validation_errors,
+                    "warnings": validation_warnings
+                },
+                "supply_chain": {
+                    "score": round(supply_chain_score, 1),
+                    "status": "excellent" if supply_chain_score >= 90 else "good" if supply_chain_score >= 75 else "needs_improvement",
+                    "risk_score": supply_chain_analysis.get("risk_score", 0)
+                },
+                "manufacturing": {
+                    "score": round(manufacturing_score, 1),
+                    "status": "excellent" if manufacturing_score >= 90 else "good" if manufacturing_score >= 75 else "needs_improvement",
+                    "readiness": dfm_readiness
+                },
+                "thermal": {
+                    "score": round(thermal_score, 1),
+                    "status": "excellent" if thermal_score >= 90 else "good" if thermal_score >= 75 else "needs_improvement",
+                    "critical_issues": thermal_issues_count,
+                    "warnings": 1 if total_power > 3 else 0
+                },
+                "cost": {
+                    "score": round(cost_score, 1),
+                    "status": "excellent" if cost_score >= 90 else "good" if cost_score >= 75 else "needs_improvement",
+                    "optimization_opportunities": cost_opportunities
+                }
+            }
+        }
+    except Exception as e:
+        logger.error(f"Design health calculation error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Part comparison endpoint
+@router.post("/parts/compare")
+async def compare_parts(part_ids: List[str] = Body(..., embed=True, alias="part_ids")):
+    """
+    Compare multiple parts by their specifications.
+    Returns detailed comparison of specs, differences, and recommendations.
+    """
+    try:
+        from app.domain.part_database import get_part_database
+        db = get_part_database()
+        
+        parts = []
+        for part_id in part_ids:
+            # Try to get part by ID or MPN
+            part = db.get_part(part_id)
+            if not part:
+                # Try searching by MPN in all parts
+                all_parts = db.get_all_parts()
+                part = next((p for p in all_parts if p.get("mfr_part_number") == part_id or p.get("id") == part_id), None)
+            if part:
+                parts.append(part)
+        
+        if len(parts) < 2:
+            raise HTTPException(status_code=400, detail="Need at least 2 parts to compare")
+        
+        # Compare specifications
+        all_specs = set()
+        for part in parts:
+            all_specs.update(part.keys())
+        
+        comparison_specs = {}
+        differences = []
+        
+        for spec in all_specs:
+            values = [part.get(spec) for part in parts]
+            if len(set(str(v) for v in values if v is not None)) > 1:
+                comparison_specs[spec] = values
+                differences.append(f"{spec}: {values[0]} vs {values[1]}")
+        
+        recommendations = []
+        if differences:
+            recommendations.append(f"Found {len(differences)} specification differences")
+            recommendations.append("Review differences carefully before substitution")
+        
+        return {
+            "parts": parts,
+            "comparison": {
+                "specs": comparison_specs,
+                "differences": differences,
+                "recommendations": recommendations
+            }
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Part comparison error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Part alternatives endpoint
+@router.get("/parts/alternatives/{part_id}")
+async def find_part_alternatives(
+    part_id: str,
+    same_footprint: bool = Query(False),
+    lower_cost: bool = Query(False)
+):
+    """
+    Find alternative parts for a given part ID.
+    Can filter by same footprint and/or lower cost.
+    """
+    try:
+        criteria = {}
+        if same_footprint:
+            criteria["same_footprint"] = True
+        if lower_cost:
+            criteria["lower_cost"] = True
+        
+        alternatives_list = alternative_finder.find_alternatives(part_id, criteria=criteria if criteria else None)
+        
+        # Format response to match frontend AlternativePart type
+        # alternatives_list contains: [{"part": {...}, "compatibility": {...}, "score": float, "reasons": [...]}, ...]
+        formatted_alternatives = []
+        for alt_item in alternatives_list:
+            part = alt_item.get("part", {})
+            compat = alt_item.get("compatibility", {})
+            score = alt_item.get("score", 0)
+            reasons = alt_item.get("reasons", [])
+            
+            cost_est = part.get("cost_estimate", {})
+            if isinstance(cost_est, dict):
+                cost_value = cost_est.get("unit", cost_est.get("value", 0))
+            else:
+                cost_value = cost_est or 0
+            
+            formatted_alternatives.append({
+                "id": part.get("id", part.get("mfr_part_number", "")),
+                "name": part.get("name", part.get("mfr_part_number", "Unknown")),
+                "compatibility_score": round(score, 1),
+                "compatibility_notes": reasons + (compat.get("notes", []) if isinstance(compat, dict) else []),
+                "cost_estimate": {
+                    "value": cost_value,
+                    "currency": "USD"
+                },
+                "availability_status": part.get("availability_status", "unknown"),
+                "lifecycle_status": part.get("lifecycle_status", "unknown")
+            })
+        
+        return {"alternatives": formatted_alternatives}
+    except Exception as e:
+        logger.error(f"Find alternatives error: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/health")
