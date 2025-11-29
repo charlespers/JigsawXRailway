@@ -9,7 +9,7 @@ Complete step-by-step guide for deploying the PCB Design Agent System to Railway
 1. In Railway dashboard, click on your service (even if it shows an error)
 2. Go to **"Settings"** tab
 3. Scroll down to **"Root Directory"** field
-4. For **Backend**: Type `charles_agentPCB_folder` and press Enter
+4. For **Backend**: Type `backend` and press Enter
 5. For **Frontend**: Type `frontend` and press Enter
 6. Click **"Redeploy"** button
 7. Railway will now detect the project type correctly!
@@ -22,7 +22,7 @@ Complete step-by-step guide for deploying the PCB Design Agent System to Railway
 
 Railway will host both:
 
-1. **Backend**: Python FastAPI server (`charles_agentPCB_folder/api/server.py`)
+1. **Backend**: Python FastAPI server (`backend/api/server.py`)
 2. **Frontend**: React/Vite application (`frontend/`)
 
 ## Prerequisites
@@ -53,15 +53,15 @@ Railway will host both:
 
 1. Click on the service to open settings
 2. Go to **"Settings"** tab
-3. **Set Root Directory**: `charles_agentPCB_folder`
-   - This tells Railway to look in the `charles_agentPCB_folder` directory for the Python project
+3. **Set Root Directory**: `backend`
+   - This tells Railway to look in the `backend` directory for the Python project
    - Railway will then detect `requirements.txt` and recognize it as a Python project
 4. Go to **"Deploy"** tab
-5. Set **Start Command** (IMPORTANT: Since Root Directory is `charles_agentPCB_folder`, use relative path):
+5. Set **Start Command** (IMPORTANT: Since Root Directory is `backend`, use relative path):
    ```
    cd api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT
    ```
-   - **DO NOT** use `cd charles_agentPCB_folder/api` - the Root Directory is already `charles_agentPCB_folder`
+   - **DO NOT** use `cd backend/api` - the Root Directory is already `backend`
    - Railway may auto-detect this from the `nixpacks.toml` file
 6. Click **"Redeploy"** or Railway will auto-deploy after you save settings
 
@@ -147,7 +147,7 @@ Railway will host both:
 
 ## Step 4: Update Backend CORS (If Needed)
 
-The backend should already allow all origins (`allow_origins=["*"]`), but verify in `charles_agentPCB_folder/api/server.py`:
+The backend should already allow all origins (`allow_origins=["*"]`), but verify in `backend/api/server.py`:
 
 ```python
 app.add_middleware(
@@ -201,10 +201,10 @@ curl https://your-backend-production.up.railway.app/health
 
 1. **Check Logs**: Railway dashboard → Service → **"Deployments"** → Click latest deployment → **"View Logs"**
 2. **Common Issues**:
-   - **"No such file or directory" error for `cd charles_agentPCB_folder/api`**:
+   - **"No such file or directory" error for `cd backend/api`**:
      - Go to **"Settings"** → **"Deploy"** tab
      - Check **"Start Command"** - it should be: `cd api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT`
-     - **NOT**: `cd charles_agentPCB_folder/api && ...` (since Root Directory is already set to `charles_agentPCB_folder`)
+     - **NOT**: `cd backend/api && ...` (since Root Directory is already set to `backend`)
      - After fixing, click **"Redeploy"**
    - Missing environment variables → Check **"Variables"** tab
    - Python version mismatch → Railway auto-detects, but you can specify in `runtime.txt`:
@@ -267,7 +267,7 @@ curl https://your-backend-production.up.railway.app/health
    - Check logs for specific errors
 
 2. **Backend Build Fails**:
-   - Verify `requirements.txt` is in `charles_agentPCB_folder/`
+   - Verify `requirements.txt` is in `backend/`
    - Check Python version compatibility
    - Review error logs
 
@@ -300,7 +300,7 @@ Create `railway.json` in project root:
 
 ### Optional: `runtime.txt` (for Python version)
 
-Create `charles_agentPCB_folder/runtime.txt`:
+Create `backend/runtime.txt`:
 
 ```
 python-3.11

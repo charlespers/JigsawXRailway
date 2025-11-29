@@ -19,7 +19,7 @@ This means the XAI API key in your `.env` file is invalid or expired.
 
 2. **Update your `.env` file:**
    ```bash
-   cd charles_agentPCB_folder
+   cd backend
    # Edit .env file and replace XAI_API_KEY with your new key
    XAI_API_KEY=your_new_key_here
    ```
@@ -61,7 +61,7 @@ The provider dropdown in the chat interface allows you to select between:
 ## Common Issues
 
 ### 1. "API key not found" error
-- Check that `.env` file exists in `charles_agentPCB_folder/`
+- Check that `.env` file exists in `backend/`
 - Verify the environment variable names are correct (no typos)
 - Restart the backend server after changing `.env`
 

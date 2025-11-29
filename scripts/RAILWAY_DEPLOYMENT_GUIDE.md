@@ -29,7 +29,7 @@ OPENAI_TEMPERATURE=0.3
 ### 2. Verify Deployment Structure
 
 Ensure your Railway deployment includes:
-- ✅ All files in `charles_agentPCB_folder/`
+- ✅ All files in `backend/`
 - ✅ All files in `data/part_database/` (all JSON files)
 - ✅ `routes/` directory with all route modules
 - ✅ `agents/` directory with all agent files

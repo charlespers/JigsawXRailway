@@ -37,7 +37,7 @@ XAI_TEMPERATURE = 0.3
 
 Your `Procfile` should contain:
 ```
-web: cd charles_agentPCB_folder/api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT
+web: cd backend/api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT
 ```
 
 ✅ This looks correct in your setup.
@@ -47,7 +47,7 @@ web: cd charles_agentPCB_folder/api && python -m uvicorn server:app --host 0.0.0
 Railway needs to know where your project root is. Make sure:
 - Your `Procfile` is in the **root** of your repository (where Railway is looking)
 - Your `railway.json` is in the root
-- The path `charles_agentPCB_folder/api/server.py` exists from the root
+- The path `backend/api/server.py` exists from the root
 
 ### Step 4: Verify Deployment
 
@@ -93,7 +93,7 @@ In Railway dashboard:
    - Check that `app.include_router(api_router)` is executing
 
 2. **Wrong working directory**:
-   - Your Procfile uses `cd charles_agentPCB_folder/api`
+   - Your Procfile uses `cd backend/api`
    - Make sure Railway is running from the repo root
    - Check Railway service settings → **Root Directory** (should be repo root)
 
@@ -117,7 +117,7 @@ Railway needs to know where to run from. Check your Railway service settings:
 1. Go to your Railway service → **Settings**
 2. Check **Root Directory**:
    - If Railway is connected to the **repo root** (where `Procfile` is): Root Directory should be **empty** or **`.`**
-   - If Railway is connected to `charles_agentPCB_folder`: Root Directory should be **`charles_agentPCB_folder`**
+   - If Railway is connected to `backend`: Root Directory should be **`backend`**
 
 **Most likely**: Railway is connected to repo root, so Root Directory should be empty.
 
@@ -172,9 +172,9 @@ And when a request comes in:
 
 2. **Verify File Structure**:
    - `Procfile` in root ✅
-   - `charles_agentPCB_folder/api/server.py` exists ✅
-   - `charles_agentPCB_folder/routes/` exists ✅
-   - `charles_agentPCB_folder/data/part_database/` exists ✅
+   - `backend/api/server.py` exists ✅
+   - `backend/routes/` exists ✅
+   - `backend/data/part_database/` exists ✅
 
 3. **Check Build Logs**:
    - Look for Python installation
@@ -183,7 +183,7 @@ And when a request comes in:
 
 4. **Test Locally First**:
    ```bash
-   cd charles_agentPCB_folder/api
+   cd backend/api
    python -m uvicorn server:app --host 0.0.0.0 --port 3001
    ```
    Then test: `curl http://localhost:3001/health`

@@ -34,7 +34,7 @@
 
 **New Structure:**
 ```
-charles_agentPCB_folder/
+backend/
 ├── src/                          # New organized structure
 │   ├── api/                      # API layer (FastAPI)
 │   │   ├── middleware/

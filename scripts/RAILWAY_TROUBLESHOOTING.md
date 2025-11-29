@@ -77,7 +77,7 @@ Railway should have these files:
 /
 ├── Procfile
 ├── railway.json
-└── charles_agentPCB_folder/
+└── backend/
     ├── api/
     │   └── server.py
     ├── routes/

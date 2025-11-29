@@ -6,7 +6,7 @@
 
 ```bash
 # Navigate to backend directory
-cd charles_agentPCB_folder
+cd backend
 
 # Create virtual environment (if not exists)
 python3 -m venv venv
@@ -52,7 +52,7 @@ Frontend will run on: `http://localhost:5173` (or similar Vite port)
 
 ## Environment Variables
 
-### Backend (.env in charles_agentPCB_folder/)
+### Backend (.env in backend/)
 - `LLM_PROVIDER`: `openai` or `xai` (default: `openai`)
 - `OPENAI_API_KEY`: Your OpenAI API key
 - `XAI_API_KEY`: Your XAI API key

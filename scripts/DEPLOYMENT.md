@@ -40,7 +40,7 @@ This application consists of:
 1. Go to [railway.app](https://railway.app)
 2. Click "New Project" → "Deploy from GitHub repo"
 3. Select your repository
-4. Set root directory to `charles_agentPCB_folder`
+4. Set root directory to `backend`
 5. Add environment variables:
    ```
    OPENAI_API_KEY=your_openai_key
@@ -59,7 +59,7 @@ This application consists of:
 2. Click "New" → "Web Service"
 3. Connect GitHub repository
 4. Configure:
-   - **Root Directory**: `charles_agentPCB_folder`
+   - **Root Directory**: `backend`
    - **Environment**: Python 3
    - **Build Command**: `pip install -r requirements.txt`
    - **Start Command**: `cd api && uvicorn server:app --host 0.0.0.0 --port $PORT`
@@ -95,7 +95,7 @@ For local development, run both servers:
 **Terminal 1 - Backend:**
 
 ```bash
-cd charles_agentPCB_folder
+cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt

@@ -224,7 +224,7 @@ frontend/src/demo/
     ├── apiClient.ts       # Enterprise API client
     └── typesBackend.ts    # Backend type definitions
 
-charles_agentPCB_folder/
+backend/
 ├── core/
 │   ├── cache.py           # Cache manager
 │   └── exceptions.py     # Custom exceptions

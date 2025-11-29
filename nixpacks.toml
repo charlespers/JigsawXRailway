@@ -4,11 +4,11 @@ nixPkgs = ["python311Full"]
 
 [phases.install]
 # Use python -m pip to ensure we’re using the interpreter from nixPkgs
-cmds = ["cd charles_agentPCB_folder && python -m pip install -r requirements.txt"]
+cmds = ["cd backend && python -m pip install -r requirements.txt"]
 
 [phases.build]
 cmds = ["echo 'Build complete'"]
 
 [start]
-cmd = "cd charles_agentPCB_folder/api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT"
+cmd = "cd backend/api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT"
 
