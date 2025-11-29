@@ -1,8 +1,10 @@
 [phases.setup]
-nixPkgs = ["python311", "pip"]
+# Use full Python distribution so pip and stdlib tooling are available
+nixPkgs = ["python311Full"]
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
+# Install backend dependencies from this directory
+cmds = ["python -m pip install -r requirements.txt"]
 
 [phases.build]
 cmds = ["echo 'Build phase complete'"]
