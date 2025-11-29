@@ -428,20 +428,23 @@ async def component_analysis_stream(request: Dict[str, Any]):
                     # Convert part dict to proper format
                     part_dict = part if isinstance(part, dict) else part.model_dump() if hasattr(part, 'model_dump') else {}
                     
-                    yield f"data: {json.dumps({
+                    # Build reasoning event
+                    reasoning_data = {
                         'type': 'reasoning',
                         'componentId': role,
                         'componentName': part_dict.get('name', role),
                         'reasoning': f'Selected {part_dict.get("name", role)} for {role}',
                         'hierarchyLevel': 0
-                    })}\n\n"
+                    }
+                    yield f"data: {json.dumps(reasoning_data)}\n\n"
                     await asyncio.sleep(0.1)
                     
                     # Extract cost
                     cost_est = part_dict.get('cost_estimate', {})
                     cost = cost_est.get('unit', 0) if isinstance(cost_est, dict) else (cost_est if cost_est else 0)
                     
-                    yield f"data: {json.dumps({
+                    # Build selection event
+                    selection_data = {
                         'type': 'selection',
                         'componentId': role,
                         'componentName': part_dict.get('name', role),
@@ -452,21 +455,24 @@ async def component_analysis_stream(request: Dict[str, Any]):
                             'cost': cost
                         },
                         'status': 'selected'
-                    })}\n\n"
+                    }
+                    yield f"data: {json.dumps(selection_data)}\n\n"
                     await asyncio.sleep(0.1)
             
             # Send completion
-            yield f"data: {json.dumps({
+            complete_data = {
                 'type': 'complete',
                 'message': 'Component analysis complete'
-            })}\n\n"
+            }
+            yield f"data: {json.dumps(complete_data)}\n\n"
             
         except Exception as e:
             logger.error(f"Component analysis error: {e}", exc_info=True)
-            yield f"data: {json.dumps({
+            error_data = {
                 'type': 'error',
                 'message': str(e)
-            })}\n\n"
+            }
+            yield f"data: {json.dumps(error_data)}\n\n"
     
     return StreamingResponse(
         generate_stream(),
