@@ -3,7 +3,7 @@ API routes
 """
 import logging
 from typing import Optional, Dict, Any, List
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
 from app.api.schemas import DesignRequest, DesignResponse, BOMRequest, BOMResponse, ErrorResponse
 from app.services.orchestrator import DesignOrchestrator
@@ -401,10 +401,21 @@ async def analyze_supply_chain(
 
 @mcp_router.options("/mcp/component-analysis")
 async def component_analysis_options():
-    """Handle CORS preflight for component analysis"""
-    return {
-        "status": "ok"
-    }
+    """Handle CORS preflight for component analysis - CORS middleware should handle this, but explicit handler for safety"""
+    try:
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
+                "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+                "Access-Control-Max-Age": "3600",
+            }
+        )
+    except Exception as e:
+        logger.error(f"OPTIONS handler error: {e}", exc_info=True)
+        # Fallback response
+        return Response(status_code=200)
 
 
 @mcp_router.post("/mcp/component-analysis")

@@ -25,14 +25,43 @@ app = FastAPI(
 )
 
 # CORS middleware - must be added before routes
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=settings.CORS_CREDENTIALS,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
-    allow_headers=["*"],
-    expose_headers=["*"],
-)
+# Handle both "*" and specific origins
+try:
+    cors_origins = settings.CORS_ORIGINS
+    logger.info(f"CORS origins configured: {cors_origins}")
+    
+    if cors_origins == ["*"]:
+        # When using "*", credentials must be False
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=["*"],
+            allow_credentials=False,
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+            allow_headers=["*"],
+            expose_headers=["*"],
+        )
+        logger.info("CORS configured with wildcard origin")
+    else:
+        # Specific origins can use credentials
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=cors_origins,
+            allow_credentials=True,
+            allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD"],
+            allow_headers=["*"],
+            expose_headers=["*"],
+        )
+        logger.info(f"CORS configured with specific origins: {cors_origins}")
+except Exception as e:
+    logger.error(f"CORS configuration error: {e}", exc_info=True)
+    # Fallback: allow all
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 # Include routes
 app.include_router(router)
@@ -40,8 +69,13 @@ app.include_router(mcp_router)  # MCP endpoints (no prefix)
 
 @app.get("/health")
 async def health_check():
-    """Health check endpoint"""
+    """Health check endpoint for Railway"""
     return {"status": "ok", "version": "2.0.0"}
+
+@app.get("/")
+async def root():
+    """Root endpoint"""
+    return {"status": "ok", "message": "PCB Design BOM Generator API", "version": "2.0.0"}
 
 
 if __name__ == "__main__":
