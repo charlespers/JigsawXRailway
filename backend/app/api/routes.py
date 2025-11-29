@@ -411,6 +411,13 @@ async def component_analysis_options():
     return Response(status_code=200)
 
 
+from uuid import uuid4
+
+# In-memory session store for MCP component analysis
+# Maps session_id -> {"selected_parts": Dict[str, Any]}
+MCP_SESSIONS: Dict[str, Dict[str, Any]] = {}
+
+
 @mcp_router.post("/mcp/component-analysis")
 async def component_analysis_stream(request: Dict[str, Any]):
     """
@@ -420,10 +427,13 @@ async def component_analysis_stream(request: Dict[str, Any]):
     """
     query = request.get("query", "")
     provider = request.get("provider", "xai")
-    session_id = request.get("sessionId")
+    client_session_id = request.get("sessionId")
     
     if not query:
         raise HTTPException(status_code=400, detail="Query is required")
+
+    # Determine effective session id (use client session if provided, else create new)
+    session_id = client_session_id or str(uuid4())
     
     async def generate_stream():
         try:
@@ -433,14 +443,33 @@ async def component_analysis_stream(request: Dict[str, Any]):
             
             # Generate design using orchestrator (takes string query)
             design = orchestrator.generate_design(query)
-            
-            # Stream component selections
-            if design.selected_parts:
-                for idx, (role, part) in enumerate(design.selected_parts.items()):
+
+            # Merge with existing session parts to support multi-step design
+            existing_session = MCP_SESSIONS.get(session_id, {})
+            accumulated_parts: Dict[str, Dict[str, Any]] = dict(existing_session.get("selected_parts", {}))
+
+            # New parts from this design
+            new_parts = design.selected_parts or {}
+            for role, part in new_parts.items():
+                role_key = role
+                # Avoid overwriting existing roles; if conflict, append index
+                if role_key in accumulated_parts:
+                    suffix = 2
+                    while f"{role_key}_{suffix}" in accumulated_parts:
+                        suffix += 1
+                    role_key = f"{role_key}_{suffix}"
+                accumulated_parts[role_key] = part
+
+            # Persist updated session state
+            MCP_SESSIONS[session_id] = {"selected_parts": accumulated_parts}
+
+            # Stream component selections for ALL accumulated parts in this session
+            if accumulated_parts:
+                for idx, (role, part) in enumerate(accumulated_parts.items()):
                     # Convert part dict to proper format
                     part_dict = part if isinstance(part, dict) else part.model_dump() if hasattr(part, 'model_dump') else {}
                     
-                    # Build reasoning event
+                    # Build reasoning event per component
                     reasoning_data = {
                         'type': 'reasoning',
                         'componentId': role,
@@ -523,7 +552,7 @@ async def component_analysis_stream(request: Dict[str, Any]):
                 'message': str(e)
             }
             yield f"data: {json.dumps(error_data)}\n\n"
-    
+
     return StreamingResponse(
         generate_stream(),
         media_type="text/event-stream",
@@ -531,7 +560,8 @@ async def component_analysis_stream(request: Dict[str, Any]):
             # Only non-CORS headers here; CORS is handled globally
             "Cache-Control": "no-cache",
             "Connection": "keep-alive",
-            "X-Session-Id": session_id or "new-session",
+            # Echo back the effective session id so the frontend can persist it
+            "X-Session-Id": session_id,
         }
     )
 
