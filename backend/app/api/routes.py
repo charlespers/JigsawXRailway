@@ -528,14 +528,22 @@ def _extract_bom_items(request_body: Dict[str, Any]) -> List[Dict[str, Any]]:
 
 # Analysis endpoints (matching frontend expectations - accepts bom_items format)
 @router.post("/analysis/power")
-async def analysis_power(
-    bom_items: List[Dict[str, Any]] = Body(...),
-    operating_modes: Optional[Dict[str, float]] = Body(None),
-    battery_capacity_mah: Optional[float] = Body(None),
-    battery_voltage: Optional[float] = Body(None)
-):
+async def analysis_power(request_body: Dict[str, Any] = Body(...)):
     """Power analysis endpoint - accepts bom_items format from frontend"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        operating_modes = request_body.get("operating_modes")
+        battery_capacity_mah = request_body.get("battery_capacity_mah")
+        battery_voltage = request_body.get("battery_voltage")
+        
+        if not bom_items:
+            logger.warning("No bom_items provided in power analysis request")
+            return {
+                "total_power": 0,
+                "power_by_rail": {},
+                "power_by_component": []
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         analysis = power_analyzer.analyze_power_budget(selected_parts)
         
@@ -580,13 +588,23 @@ async def analysis_power(
 
 
 @router.post("/analysis/thermal")
-async def analysis_thermal(
-    bom_items: List[Dict[str, Any]] = Body(...),
-    ambient_temp: Optional[float] = Body(None),
-    pcb_area_cm2: Optional[float] = Body(None)
-):
+async def analysis_thermal(request_body: Dict[str, Any] = Body(...)):
     """Thermal analysis endpoint - accepts bom_items format"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        ambient_temp = request_body.get("ambient_temp")
+        pcb_area_cm2 = request_body.get("pcb_area_cm2")
+        
+        if not bom_items:
+            logger.warning("No bom_items provided in thermal analysis request")
+            return {
+                "component_thermal": {},
+                "thermal_issues": [],
+                "total_thermal_issues": 0,
+                "total_power_dissipation_w": 0,
+                "recommendations": []
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         power_analysis = power_analyzer.analyze_power_budget(selected_parts)
         total_power = power_analysis.get("total_power_watts", 0)
@@ -639,14 +657,27 @@ async def analysis_thermal(
 
 
 @router.post("/analysis/signal-integrity")
-async def analysis_signal_integrity(
-    bom_items: List[Dict[str, Any]] = Body(...),
-    connections: Optional[List[Dict[str, Any]]] = Body(None),
-    pcb_thickness_mm: Optional[float] = Body(None),
-    trace_width_mils: Optional[float] = Body(None)
-):
+async def analysis_signal_integrity(request_body: Dict[str, Any] = Body(...)):
     """Signal integrity analysis endpoint - accepts bom_items format"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        connections = request_body.get("connections")
+        pcb_thickness_mm = request_body.get("pcb_thickness_mm")
+        trace_width_mils = request_body.get("trace_width_mils")
+        
+        if not bom_items:
+            logger.warning("No bom_items provided in signal integrity analysis request")
+            return {
+                "high_speed_signals": [],
+                "impedance_recommendations": [],
+                "emi_emc_recommendations": [],
+                "routing_recommendations": [],
+                "decoupling_analysis": {
+                    "adequate": False,
+                    "recommendations": []
+                }
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         
         high_speed_signals = []
@@ -713,12 +744,32 @@ async def analysis_signal_integrity(
 
 
 @router.post("/analysis/validation")
-async def analysis_validation(
-    bom_items: List[Dict[str, Any]] = Body(...),
-    connections: Optional[List[Dict[str, Any]]] = Body(None)
-):
+async def analysis_validation(request_body: Dict[str, Any] = Body(...)):
     """Design validation endpoint - accepts bom_items format"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        connections = request_body.get("connections")
+        
+        if not bom_items:
+            logger.warning("No bom_items provided in validation request")
+            return {
+                "valid": True,
+                "issues": [],
+                "warnings": [],
+                "compliance": {
+                    "ipc_2221": True,
+                    "ipc_7351": True,
+                    "rohs": True,
+                    "power_budget": True
+                },
+                "summary": {
+                    "error_count": 0,
+                    "warning_count": 0,
+                    "compliance_score": 100
+                },
+                "fix_suggestions": []
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         validation = realtime_validator.validate_design(selected_parts, connections)
         
@@ -747,12 +798,23 @@ async def analysis_validation(
 
 
 @router.post("/analysis/manufacturing-readiness")
-async def analysis_manufacturing_readiness(
-    bom_items: List[Dict[str, Any]] = Body(...),
-    connections: Optional[List[Dict[str, Any]]] = Body(None)
-):
+async def analysis_manufacturing_readiness(request_body: Dict[str, Any] = Body(...)):
     """Manufacturing readiness (DFM) analysis endpoint - accepts bom_items format"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        connections = request_body.get("connections")
+        
+        if not bom_items:
+            logger.warning("No bom_items provided in manufacturing readiness request")
+            return {
+                "dfm_checks": {},
+                "assembly_complexity": {"complexity_score": 0, "factors": []},
+                "test_point_coverage": {"coverage_percentage": 0, "recommendations": []},
+                "panelization_recommendations": [],
+                "overall_readiness": "needs_review",
+                "recommendations": []
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         bom_obj = bom_generator.generate(selected_parts, [])
         dfm_analysis = dfm_checker.check_design(bom_obj, selected_parts)
@@ -774,9 +836,19 @@ async def analysis_manufacturing_readiness(
 
 
 @router.post("/analysis/cost")
-async def analysis_cost(bom_items: List[Dict[str, Any]] = Body(...)):
-    """Cost analysis endpoint - accepts bom_items format"""
+async def analysis_cost(request_body: Dict[str, Any] = Body(...)):
+    """Cost analysis endpoint - accepts bom_items format (wrapped or unwrapped)"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        if not bom_items:
+            logger.warning("No bom_items provided in cost analysis request")
+            return {
+                "total_cost": 0,
+                "cost_by_category": {},
+                "high_cost_items": [],
+                "optimization_opportunities": []
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         optimization = cost_optimizer.optimize_cost(selected_parts, target_savings_percent=0)
         
@@ -793,9 +865,19 @@ async def analysis_cost(bom_items: List[Dict[str, Any]] = Body(...)):
 
 
 @router.post("/analysis/supply-chain")
-async def analysis_supply_chain(bom_items: List[Dict[str, Any]] = Body(...)):
-    """Supply chain analysis endpoint - accepts bom_items format"""
+async def analysis_supply_chain(request_body: Dict[str, Any] = Body(...)):
+    """Supply chain analysis endpoint - accepts bom_items format (wrapped or unwrapped)"""
     try:
+        bom_items = _extract_bom_items(request_body)
+        if not bom_items:
+            logger.warning("No bom_items provided in supply chain analysis request")
+            return {
+                "risks": [],
+                "warnings": [],
+                "risk_score": 0,
+                "recommendations": []
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         analysis = supply_chain.analyze_supply_chain(selected_parts)
         
@@ -813,15 +895,29 @@ async def analysis_supply_chain(bom_items: List[Dict[str, Any]] = Body(...)):
 
 # Design Health Score endpoint
 @router.post("/design/health")
-async def get_design_health(
-    bom_items: List[Dict[str, Any]] = Body(...),
-    connections: Optional[List[Dict[str, Any]]] = Body(None)
-):
+async def get_design_health(request_body: Dict[str, Any] = Body(...)):
     """
     Calculate overall design health score based on all analyses.
     Returns a comprehensive health score with breakdown by category.
     """
     try:
+        bom_items = _extract_bom_items(request_body)
+        connections = request_body.get("connections")
+        
+        if not bom_items:
+            logger.warning("No bom_items provided in design health request")
+            return {
+                "design_health_score": 0,
+                "health_level": "Poor",
+                "health_breakdown": {
+                    "validation": {"score": 0, "status": "poor", "errors": 0, "warnings": 0},
+                    "supply_chain": {"score": 0, "status": "poor", "risk_score": 100},
+                    "manufacturing": {"score": 0, "status": "poor", "readiness": "not_ready"},
+                    "thermal": {"score": 0, "status": "poor", "critical_issues": 0, "warnings": 0},
+                    "cost": {"score": 0, "status": "poor", "optimization_opportunities": 0}
+                }
+            }
+        
         selected_parts = _bom_items_to_selected_parts(bom_items)
         
         # Run all analyses in parallel
