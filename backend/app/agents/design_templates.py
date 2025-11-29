@@ -3,7 +3,7 @@ Design Templates Agent
 Pre-built design patterns for common applications
 """
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from app.domain.part_database import get_part_database
 from app.agents.intelligent_matcher import IntelligentMatcherAgent
 

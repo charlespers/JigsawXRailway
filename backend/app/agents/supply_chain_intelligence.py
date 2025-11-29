@@ -3,7 +3,7 @@ Supply Chain Intelligence Agent
 Warns about availability, lead times, obsolescence risks
 """
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
