@@ -30,12 +30,31 @@ app = FastAPI(
 class CORSHeaderMiddleware(BaseHTTPMiddleware):
     """Add CORS headers to all responses - ensures headers are always present"""
     async def dispatch(self, request: Request, call_next):
+        # Get origin from request
+        origin = request.headers.get("Origin", "*")
+        
+        # Handle OPTIONS requests immediately - don't even call the app
+        if request.method == "OPTIONS":
+            # Use specific origin if configured, otherwise *
+            cors_origin = origin if origin and origin in settings.CORS_ORIGINS else "*"
+            return Response(
+                status_code=200,
+                headers={
+                    "Access-Control-Allow-Origin": cors_origin if cors_origin != "*" else "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                    "Access-Control-Allow-Headers": "*",
+                    "Access-Control-Allow-Credentials": "true" if cors_origin != "*" else "false",
+                    "Access-Control-Max-Age": "3600",
+                }
+            )
+        
+        # For all other requests, add CORS headers to response
         response = await call_next(request)
-        # Add CORS headers to every response
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        cors_origin = origin if origin and origin in settings.CORS_ORIGINS else "*"
+        response.headers["Access-Control-Allow-Origin"] = cors_origin if cors_origin != "*" else "*"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
         response.headers["Access-Control-Allow-Headers"] = "*"
-        response.headers["Access-Control-Allow-Credentials"] = "false"
+        response.headers["Access-Control-Allow-Credentials"] = "true" if cors_origin != "*" else "false"
         response.headers["Access-Control-Max-Age"] = "3600"
         return response
 
