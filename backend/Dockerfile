@@ -1,9 +1,9 @@
 FROM python:3.11-slim
 
-# Work inside /app (this will be the /backend root when Railway root is set to /backend)
+# Work inside /app (this corresponds to the backend service root)
 WORKDIR /app
 
-# Copy backend code (everything under /backend in your repo)
+# Copy the backend service (Railway project root should be this backend folder)
 COPY . /app
 
 # Install Python dependencies for the backend
