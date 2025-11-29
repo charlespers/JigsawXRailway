@@ -22,7 +22,7 @@ from app.agents.smart_recommender import SmartRecommenderAgent
 from app.agents.realtime_validator import RealtimeValidatorAgent
 from app.agents.cost_optimizer import CostOptimizerAgent
 from app.agents.supply_chain_intelligence import SupplyChainIntelligenceAgent
-from app.domain.models import NetConnection, ComponentCategory
+from app.domain.models import NetConnection, ComponentCategory, BOM
 from app.core.exceptions import PCBDesignException
 
 logger = logging.getLogger(__name__)
