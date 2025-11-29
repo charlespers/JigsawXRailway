@@ -21,10 +21,8 @@ try:
     from agents.design.design_comparison_agent import DesignComparisonAgent
     from agents.design.design_reuse_agent import DesignReuseAgent
 except ImportError:
-    # Fall back to old structure
-    from agents.design_review_agent import DesignReviewAgent
-    from agents.design_comparison_agent import DesignComparisonAgent
-    from agents.design_reuse_agent import DesignReuseAgent
+    # If new structure import fails, raise the error (no fallback)
+    raise
 from core.exceptions import AgentException
 
 logger = logging.getLogger(__name__)

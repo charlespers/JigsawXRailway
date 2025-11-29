@@ -4,7 +4,7 @@ Analyzes BOM costs and suggests optimizations
 """
 
 from typing import List, Dict, Any, Optional
-from agents.alternative_finder_agent import AlternativeFinderAgent
+from agents.parts.alternative_finder_agent import AlternativeFinderAgent
 
 
 class CostOptimizerAgent:

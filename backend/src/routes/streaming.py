@@ -17,8 +17,8 @@ from fastapi.responses import StreamingResponse
 try:
     from agents.core.query_router_agent import QueryRouterAgent
 except ImportError:
-    # Fall back to old structure
-    from agents.query_router_agent import QueryRouterAgent
+    # If new structure import fails, raise the error (no fallback)
+    raise
 from services.streaming_service import (
     StreamingOrchestrator,
     generate_design_stream,

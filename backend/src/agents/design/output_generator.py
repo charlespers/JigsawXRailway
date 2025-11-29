@@ -9,8 +9,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from agents.testpoint_fiducial_agent import TestPointFiducialAgent
-from agents.eda_asset_agent import EDAAssetAgent
+from agents.utilities.testpoint_fiducial_agent import TestPointFiducialAgent
+from agents.utilities.eda_asset_agent import EDAAssetAgent
 from utils.cost_utils import safe_extract_cost, safe_extract_quantity
 
 

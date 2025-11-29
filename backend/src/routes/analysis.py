@@ -46,17 +46,8 @@ try:
     from agents.utilities.compliance_agent import ComplianceAgent
     from agents.utilities.auto_fix_agent import AutoFixAgent
 except ImportError:
-    # Fall back to old structure
-    from agents.cost_optimizer_agent import CostOptimizerAgent
-    from agents.supply_chain_agent import SupplyChainAgent
-    from agents.power_calculator_agent import PowerCalculatorAgent
-    from agents.thermal_analysis_agent import ThermalAnalysisAgent
-    from agents.signal_integrity_agent import SignalIntegrityAgent
-    from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
-    from agents.design_validator_agent import DesignValidatorAgent
-    from agents.bom_insights_agent import BOMInsightsAgent
-    from agents.compliance_agent import ComplianceAgent
-    from agents.auto_fix_agent import AutoFixAgent
+    # If new structure import fails, raise the error (no fallback)
+    raise
 
 logger = logging.getLogger(__name__)
 
@@ -104,7 +95,7 @@ async def analyze_cost(request: CostAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.cost_optimizer_agent import CostOptimizerAgent
+        from agents.analysis.cost_optimizer_agent import CostOptimizerAgent
         
         agent = CostOptimizerAgent()
         bom_items = [
@@ -140,7 +131,7 @@ async def analyze_supply_chain(request: SupplyChainAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.supply_chain_agent import SupplyChainAgent
+        from agents.analysis.supply_chain_agent import SupplyChainAgent
         
         agent = SupplyChainAgent()
         bom_items = [
@@ -172,7 +163,7 @@ async def analyze_power(request: PowerAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.power_calculator_agent import PowerCalculatorAgent
+        from agents.analysis.power_calculator_agent import PowerCalculatorAgent
         
         calculator = PowerCalculatorAgent()
         bom_items = [
@@ -231,7 +222,7 @@ async def analyze_thermal(request: ThermalAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.thermal_analysis_agent import ThermalAnalysisAgent
+        from agents.analysis.thermal_analysis_agent import ThermalAnalysisAgent
         
         agent = ThermalAnalysisAgent()
         bom_items = [
@@ -264,7 +255,7 @@ async def analyze_signal_integrity(request: SignalIntegrityAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.signal_integrity_agent import SignalIntegrityAgent
+        from agents.analysis.signal_integrity_agent import SignalIntegrityAgent
         
         agent = SignalIntegrityAgent()
         bom_items = [
@@ -306,7 +297,7 @@ async def analyze_manufacturing_readiness(request: ManufacturingReadinessRequest
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+        from agents.analysis.manufacturing_readiness_agent import ManufacturingReadinessAgent
         
         agent = ManufacturingReadinessAgent()
         bom_items = [
@@ -343,8 +334,8 @@ async def validate_design(request: DesignValidationRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.design_validator_agent import DesignValidatorAgent
-        from agents.auto_fix_agent import AutoFixAgent
+        from agents.analysis.design_validator_agent import DesignValidatorAgent
+        from agents.utilities.auto_fix_agent import AutoFixAgent
         
         validator = DesignValidatorAgent()
         bom_items = [
@@ -394,7 +385,7 @@ async def analyze_bom_insights(request: BOMInsightsRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.bom_insights_agent import BOMInsightsAgent
+        from agents.utilities.bom_insights_agent import BOMInsightsAgent
         
         agent = BOMInsightsAgent()
         bom_items = [
@@ -426,7 +417,7 @@ async def analyze_compliance(request: ComplianceAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.compliance_agent import ComplianceAgent
+        from agents.utilities.compliance_agent import ComplianceAgent
         
         agent = ComplianceAgent()
         bom_items = [
@@ -459,13 +450,13 @@ async def batch_analysis(request: BatchAnalysisRequest):
     os.environ["LLM_PROVIDER"] = provider
     
     try:
-        from agents.cost_optimizer_agent import CostOptimizerAgent
-        from agents.supply_chain_agent import SupplyChainAgent
-        from agents.power_calculator_agent import PowerCalculatorAgent
-        from agents.thermal_analysis_agent import ThermalAnalysisAgent
-        from agents.signal_integrity_agent import SignalIntegrityAgent
-        from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
-        from agents.design_validator_agent import DesignValidatorAgent
+        from agents.analysis.cost_optimizer_agent import CostOptimizerAgent
+        from agents.analysis.supply_chain_agent import SupplyChainAgent
+        from agents.analysis.power_calculator_agent import PowerCalculatorAgent
+        from agents.analysis.thermal_analysis_agent import ThermalAnalysisAgent
+        from agents.analysis.signal_integrity_agent import SignalIntegrityAgent
+        from agents.analysis.manufacturing_readiness_agent import ManufacturingReadinessAgent
+        from agents.analysis.design_validator_agent import DesignValidatorAgent
         
         bom_items = [
             {"part_data": item.part_data, "quantity": item.quantity}

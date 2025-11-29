@@ -39,7 +39,7 @@ class ThermalAnalysisAgent:
         total_power_dissipation = 0.0
         
         from utils.cost_utils import safe_extract_quantity
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         
         for item in bom_items:
             part = item.get("part_data", {})
@@ -211,7 +211,7 @@ class ThermalAnalysisAgent:
                 return (vin - vout) * iout
         
         # Import safe_float_extract
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         
         # For other components, use supply voltage * current - use safe extraction
         supply_range = part.get("supply_voltage_range", {})

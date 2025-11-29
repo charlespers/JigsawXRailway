@@ -21,8 +21,8 @@ from api.schemas.parts import (
 try:
     from agents.utilities.eda_asset_agent import EDAAssetAgent
 except ImportError:
-    # Fall back to old structure
-    from agents.eda_asset_agent import EDAAssetAgent
+    # If new structure import fails, raise the error (no fallback)
+    raise
 from utils.part_database import get_part_by_id
 from core.exceptions import AgentException
 

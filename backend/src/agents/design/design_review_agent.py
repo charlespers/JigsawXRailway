@@ -5,11 +5,11 @@ Executive-level design review with maturity scoring, risk assessment, and approv
 
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from agents.design_validator_agent import DesignValidatorAgent
-from agents.supply_chain_agent import SupplyChainAgent
-from agents.cost_optimizer_agent import CostOptimizerAgent
-from agents.thermal_analysis_agent import ThermalAnalysisAgent
-from agents.manufacturing_readiness_agent import ManufacturingReadinessAgent
+from agents.analysis.design_validator_agent import DesignValidatorAgent
+from agents.analysis.supply_chain_agent import SupplyChainAgent
+from agents.analysis.cost_optimizer_agent import CostOptimizerAgent
+from agents.analysis.thermal_analysis_agent import ThermalAnalysisAgent
+from agents.analysis.manufacturing_readiness_agent import ManufacturingReadinessAgent
 
 
 class DesignReviewAgent:
@@ -150,7 +150,7 @@ class DesignReviewAgent:
         score -= (validation_errors * 10) + (validation_warnings * 2)
         
         # Supply chain (20% weight) - use safe extraction
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         supply_chain_risk_raw = supply_chain.get("risk_score") or supply_chain.get("overall_risk_score", 0)
         supply_chain_risk = safe_float_extract(supply_chain_risk_raw, default=0.0, context="supply_chain_risk_score")
         score -= supply_chain_risk * 2
@@ -206,7 +206,7 @@ class DesignReviewAgent:
             risk_score += 25
         
         # Supply chain risks - use safe extraction
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         supply_chain_risk_raw = supply_chain.get("risk_score") or supply_chain.get("overall_risk_score", 0)
         supply_chain_risk = safe_float_extract(supply_chain_risk_raw, default=0.0, context="supply_chain_risk_score")
         if supply_chain_risk > 50:
@@ -318,7 +318,7 @@ class DesignReviewAgent:
             recommendations.append(f"Address {thermal_critical} critical thermal issue(s)")
         
         # Medium priority: Supply chain - use safe extraction
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         supply_risk_raw = supply_chain.get("risk_score") or supply_chain.get("overall_risk_score", 0)
         supply_risk = safe_float_extract(supply_risk_raw, default=0.0, context="supply_chain_risk_score")
         if supply_risk > 50:
@@ -355,7 +355,7 @@ class DesignReviewAgent:
         health -= validation_errors * 5  # -5 points per error
         
         # Adjust for supply chain risks - use safe extraction
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         supply_risk_raw = supply_chain.get("risk_score") or supply_chain.get("overall_risk_score", 0)
         supply_risk = safe_float_extract(supply_risk_raw, default=0.0, context="supply_chain_risk_score")
         if supply_risk > 70:
@@ -413,7 +413,7 @@ class DesignReviewAgent:
         }
         
         # Supply chain health (0-100) - use safe extraction
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         supply_risk_raw = supply_chain.get("risk_score") or supply_chain.get("overall_risk_score", 0)
         supply_risk = safe_float_extract(supply_risk_raw, default=0.0, context="supply_chain_risk_score")
         supply_score = max(0, 100 - supply_risk)

@@ -37,7 +37,7 @@ class PowerCalculatorAgent:
         operating_modes = operating_modes or {}
         
         from utils.cost_utils import safe_extract_quantity
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         from utils.cost_utils import safe_extract_quantity
         
         for item in bom_items:

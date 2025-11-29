@@ -65,7 +65,7 @@ class DesignValidatorAgent:
                 has_protection = True
             
             # Import safe_float_extract
-            from agents.design_analyzer import safe_float_extract
+            from agents.design.design_analyzer import safe_float_extract
             
             # Power consumption estimate - use safe extraction
             current_max = part.get("current_max", {})
@@ -128,7 +128,7 @@ class DesignValidatorAgent:
         # Check power budget
         if power_components:
             for regulator in power_components:
-                from agents.design_analyzer import safe_float_extract
+                from agents.design.design_analyzer import safe_float_extract
                 reg_current = regulator.get("current_max", {})
                 reg_max_current = safe_float_extract(
                     reg_current.get("max") if isinstance(reg_current, dict) else reg_current,

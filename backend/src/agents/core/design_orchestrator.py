@@ -8,15 +8,15 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from agents.requirements_agent import RequirementsAgent
-from agents.architecture_agent import ArchitectureAgent
-from agents.part_search_agent import PartSearchAgent
-from agents.compatibility_agent import CompatibilityAgent
-from agents.datasheet_agent import DatasheetAgent
-from agents.output_generator import OutputGenerator
-from agents.intermediary_agent import IntermediaryAgent
-from agents.reasoning_agent import ReasoningAgent
-from agents.design_analyzer import DesignAnalyzer
+from agents.core.requirements_agent import RequirementsAgent
+from agents.core.architecture_agent import ArchitectureAgent
+from agents.parts.part_search_agent import PartSearchAgent
+from agents.parts.compatibility_agent import CompatibilityAgent
+from agents.parts.datasheet_agent import DatasheetAgent
+from agents.design.output_generator import OutputGenerator
+from agents.parts.intermediary_agent import IntermediaryAgent
+from agents.utilities.reasoning_agent import ReasoningAgent
+from agents.design.design_analyzer import DesignAnalyzer
 from utils.part_database import get_recommended_external_components
 
 
@@ -399,7 +399,7 @@ class DesignOrchestrator:
                 score -= 10
             
             # 3. Power efficiency (lower power is better for battery applications)
-            from agents.design_analyzer import safe_float_extract
+            from agents.design.design_analyzer import safe_float_extract
             voltage_range = part.get("supply_voltage_range", {})
             current_max = part.get("current_max", {})
             voltage = safe_float_extract(

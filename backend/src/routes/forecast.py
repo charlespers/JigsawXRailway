@@ -18,9 +18,8 @@ try:
     from agents.utilities.obsolescence_forecast_agent import ObsolescenceForecastAgent
     from agents.analysis.cost_forecast_agent import CostForecastAgent
 except ImportError:
-    # Fall back to old structure
-    from agents.obsolescence_forecast_agent import ObsolescenceForecastAgent
-    from agents.cost_forecast_agent import CostForecastAgent
+    # If new structure import fails, raise the error (no fallback)
+    raise
 from core.exceptions import AgentException
 
 logger = logging.getLogger(__name__)

@@ -47,7 +47,7 @@ async def get_alternatives(
 ):
     """Find alternative parts for a given part."""
     try:
-        from agents.alternative_finder_agent import AlternativeFinderAgent
+        from agents.parts.alternative_finder_agent import AlternativeFinderAgent
         
         finder = AlternativeFinderAgent()
         criteria = {
