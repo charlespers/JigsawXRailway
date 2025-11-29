@@ -2,5 +2,7 @@
  * BOM management hooks exports
  */
 
-export { default as useBOMManagement, useBOMManagement } from "./useBOMManagement";
+import useBOMManagement from "./useBOMManagement";
+export default useBOMManagement;
+export { useBOMManagement };
 
