@@ -1,19 +1,11 @@
 [phases.setup]
-# Install Python and pip from nixpkgs
-# python311 gives us the interpreter, python311Packages.pip provides the pip binary
 nixPkgs = ["python311", "python311Packages.pip"]
 
 [phases.install]
-# Use the pip binary provided by nixpkgs.
-# IMPORTANT: Do NOT upgrade pip itself; Nix marks this environment as externally-managed (PEP 668),
-# so trying to upgrade pip will fail. Installing our own dependencies is allowed.
-cmds = [
-  "pip install -r requirements.txt"
-]
+cmds = ["pip install --no-cache-dir -r requirements.txt"]
 
 [phases.build]
-cmds = ["echo 'Build phase complete'"]
+cmds = ["echo 'Build complete'"]
 
 [start]
-cmd = "cd api && python -m uvicorn server:app --host 0.0.0.0 --port $PORT"
-
+cmd = "python -m app.main"
