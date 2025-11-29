@@ -163,21 +163,91 @@ class BOMGenerator:
         return perks
     
     def _generate_design_notes(self, selected_parts: Dict[str, Dict[str, Any]], items: List[BOMItem]) -> List[str]:
-        """Generate helpful design notes"""
+        """Generate helpful design notes with engineering insights"""
         notes = []
         
-        # Power supply notes
+        # Power supply notes with engineering insights
         power_parts = [p for p in selected_parts.values() if "power" in p.get("category", "").lower()]
         if power_parts:
-            notes.append("Power supply components included - verify voltage compatibility")
+            notes.append("Power supply components included - verify voltage compatibility and current capacity")
+            # Check if power parts match voltage requirements
+            for power_part in power_parts:
+                voltage_range = power_part.get("supply_voltage_range", {})
+                if isinstance(voltage_range, dict) and voltage_range.get("max"):
+                    notes.append(f"Power part {power_part.get('mfr_part_number', 'unknown')} supports up to {voltage_range['max']}V")
+        else:
+            # Check if MCUs/ICs need power management
+            ics = [p for p in selected_parts.values() if "mcu" in p.get("category", "").lower() or "ic" in p.get("category", "").lower()]
+            if ics:
+                notes.append("⚠️ No power management components detected - consider adding voltage regulator for MCU/IC power supply")
         
-        # Interface notes
+        # Calculate and note power consumption
+        total_power_mw = 0
+        for part in selected_parts.values():
+            current_ma = part.get("supply_current_ma", 0)
+            voltage_range = part.get("supply_voltage_range", {})
+            if isinstance(voltage_range, dict):
+                voltage = voltage_range.get("nominal") or voltage_range.get("max", 3.3)
+            else:
+                voltage = 3.3
+            if current_ma:
+                power_mw = (current_ma / 1000.0) * voltage * 1000  # Convert to mW
+                total_power_mw += power_mw
+        
+        if total_power_mw > 0:
+            notes.append(f"📊 Estimated total power consumption: {total_power_mw:.1f}mW ({total_power_mw/1000:.2f}W)")
+            if total_power_mw > 5000:  # > 5W
+                notes.append("⚠️ High power consumption detected - consider thermal management and adequate power supply")
+        
+        # Interface notes with compatibility checks
+        interface_parts = {}
         for part_name, part in selected_parts.items():
             interfaces = part.get("interface_type", [])
             if isinstance(interfaces, str):
                 interfaces = [interfaces]
             if interfaces:
                 notes.append(f"{part_name} uses {', '.join(interfaces)} - ensure proper termination")
+                for iface in interfaces:
+                    if iface not in interface_parts:
+                        interface_parts[iface] = []
+                    interface_parts[iface].append(part_name)
+        
+        # Check for interface compatibility
+        for iface, parts_list in interface_parts.items():
+            if len(parts_list) > 1:
+                notes.append(f"✅ Multiple parts support {iface}: {', '.join(parts_list)} - verify signal compatibility")
+        
+        # Check for missing passives based on selected ICs
+        ics = [p for p in selected_parts.values() if "mcu" in p.get("category", "").lower() or "ic" in p.get("category", "").lower()]
+        passive_count = len([p for p in selected_parts.values() if "passive" in p.get("category", "").lower()])
+        if ics and passive_count == 0:
+            notes.append("💡 Consider adding decoupling capacitors (0.1uF ceramic) near each IC power pin for noise suppression")
+        
+        # Check for IPC compliance
+        all_have_footprints = all(item.footprint and item.footprint != "N/A" for item in items)
+        if all_have_footprints:
+            notes.append("✅ All parts have IPC-7351 compliant footprints")
+        else:
+            notes.append("⚠️ Some parts missing footprints - verify IPC-7351 compliance")
+        
+        # Check package diversity for manufacturability
+        packages = set(item.package for item in items if item.package)
+        if len(packages) <= 3:
+            notes.append(f"✅ Good package diversity ({len(packages)} package types) - manufacturing-friendly")
+        elif len(packages) > 8:
+            notes.append(f"⚠️ High package diversity ({len(packages)} types) - may increase assembly complexity")
+        
+        # Thermal considerations
+        high_power_parts = [p for p in selected_parts.values() 
+                           if p.get("power_rating", 0) > 1.0 or 
+                           (p.get("supply_current_ma", 0) > 500 and p.get("supply_voltage_range", {}).get("nominal", 0) > 3)]
+        if high_power_parts:
+            notes.append(f"⚠️ High-power components detected - ensure adequate thermal management (thermal vias, heatsinks if needed)")
+        
+        # Cost optimization suggestions
+        high_cost_items = [item for item in items if item.unit_cost > 5.0]
+        if high_cost_items:
+            notes.append(f"💰 {len(high_cost_items)} high-cost items (>$5) - consider cost optimization alternatives")
         
         # MSL notes
         msl_parts = [item for item in items if item.msl_level and item.msl_level > 3]
@@ -276,12 +346,12 @@ class BOMGenerator:
         """Extract cost from part data, handling multiple formats"""
         cost_data = part.get("cost_estimate", {})
         
-        # Try different cost field names
+        # Try different cost field names - prioritize 'value' as it's the standard in our JSON
         if isinstance(cost_data, dict):
-            # Try: unit, value, price, cost
+            # Try: value (standard), unit, price, cost
             unit_cost = (
-                cost_data.get("unit") or
                 cost_data.get("value") or
+                cost_data.get("unit") or
                 cost_data.get("price") or
                 cost_data.get("cost") or
                 0.0
@@ -298,7 +368,10 @@ class BOMGenerator:
         # Convert to float and ensure non-negative
         try:
             unit_cost = float(unit_cost) if unit_cost else 0.0
-            return max(0.0, unit_cost)
+            result = max(0.0, unit_cost)
+            if result == 0.0:
+                logger.warning(f"Cost is 0.0 for part {part.get('mfr_part_number', part.get('id', 'unknown'))}. Cost data: {cost_data}")
+            return result
         except (ValueError, TypeError):
             logger.warning(f"Could not parse cost for part {part.get('mfr_part_number', 'unknown')}: {cost_data}")
             return 0.0

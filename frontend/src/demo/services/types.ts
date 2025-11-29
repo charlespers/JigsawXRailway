@@ -38,4 +38,50 @@ export interface PartObject {
   distributor_part_numbers?: Record<string, string>;
   temperature_rating?: number | string; // Can be number (C) or string
   availability_status?: string;
+  
+  // Engineering specifications (from partData)
+  supply_voltage_range?: {
+    min?: number;
+    max?: number;
+    nominal?: number;
+    unit?: string;
+  };
+  operating_temp_range?: {
+    min?: number;
+    max?: number;
+    unit?: string;
+  };
+  current_max?: {
+    output?: number;
+    input?: number;
+    unit?: string;
+  };
+  pinout?: Record<string, string>; // Pin name -> description mapping
+  interface_type?: string[]; // Array of supported interfaces (I2C, SPI, USB, etc.)
+  datasheet_url?: string; // Full URL to datasheet
+  cost_estimate?: {
+    value?: number;
+    unit?: number;
+    currency?: string;
+    quantity?: number;
+  };
+  partData?: {
+    // Nested partData structure from MCP endpoint
+    mpn?: string;
+    name?: string;
+    manufacturer?: string;
+    description?: string;
+    voltage?: string;
+    supply_voltage_range?: any;
+    operating_temp_range?: any;
+    current_max?: any;
+    pinout?: Record<string, string>;
+    interface_type?: string[];
+    footprint?: string;
+    package?: string;
+    datasheet_url?: string;
+    cost_estimate?: any;
+    price?: number;
+    cost?: number;
+  };
 }

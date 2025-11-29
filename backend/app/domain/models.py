@@ -78,6 +78,7 @@ class Requirements(BaseModel):
     interface_requirements: List[str] = Field(default_factory=list)
     environmental_requirements: Dict[str, Any] = Field(default_factory=dict)
     constraints: Dict[str, Any] = Field(default_factory=dict)
+    component_count: Optional[int] = Field(default=None, description="Number of distinct components requested (e.g., '3 components' -> 3)")
 
 
 class Architecture(BaseModel):

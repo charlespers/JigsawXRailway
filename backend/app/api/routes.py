@@ -451,11 +451,28 @@ async def component_analysis_stream(request: Dict[str, Any]):
                     yield f"data: {json.dumps(reasoning_data)}\n\n"
                     await asyncio.sleep(0.1)
                     
-                    # Extract cost
+                    # Extract cost - prioritize 'value' over 'unit' to match JSON structure
                     cost_est = part_dict.get('cost_estimate', {})
-                    cost = cost_est.get('unit', 0) if isinstance(cost_est, dict) else (cost_est if cost_est else 0)
+                    if isinstance(cost_est, dict):
+                        unit_cost = cost_est.get('value') or cost_est.get('unit') or cost_est.get('price') or cost_est.get('cost') or 0.0
+                        currency = cost_est.get('currency', 'USD')
+                    elif isinstance(cost_est, (int, float)):
+                        unit_cost = float(cost_est)
+                        currency = 'USD'
+                    else:
+                        unit_cost = 0.0
+                        currency = 'USD'
                     
-                    # Build selection event
+                    # Extract all engineering specs for comprehensive part data
+                    supply_voltage_range = part_dict.get('supply_voltage_range', {})
+                    voltage_str = None
+                    if isinstance(supply_voltage_range, dict):
+                        if supply_voltage_range.get('nominal'):
+                            voltage_str = f"{supply_voltage_range['nominal']}V"
+                        elif supply_voltage_range.get('min') and supply_voltage_range.get('max'):
+                            voltage_str = f"{supply_voltage_range['min']}-{supply_voltage_range['max']}V"
+                    
+                    # Build comprehensive selection event with all engineering specs
                     selection_data = {
                         'type': 'selection',
                         'componentId': role,
@@ -463,8 +480,29 @@ async def component_analysis_stream(request: Dict[str, Any]):
                         'partData': {
                             'mpn': part_dict.get('mfr_part_number', ''),
                             'name': part_dict.get('name', ''),
+                            'manufacturer': part_dict.get('manufacturer', ''),
+                            'description': part_dict.get('description', ''),
                             'category': part_dict.get('category', ''),
-                            'cost': cost
+                            'package': part_dict.get('package', ''),
+                            'footprint': part_dict.get('footprint', ''),
+                            'datasheet_url': part_dict.get('datasheet_url', ''),
+                            'voltage': voltage_str,
+                            'supply_voltage_range': supply_voltage_range,
+                            'operating_temp_range': part_dict.get('operating_temp_range', {}),
+                            'current_max': part_dict.get('current_max', {}),
+                            'pinout': part_dict.get('pinout', {}),
+                            'interface_type': part_dict.get('interface_type', []),
+                            'cost_estimate': {
+                                'unit': unit_cost,
+                                'value': unit_cost,
+                                'currency': currency,
+                                'quantity': cost_est.get('quantity', 1) if isinstance(cost_est, dict) else 1
+                            },
+                            'price': unit_cost,  # For backward compatibility
+                            'cost': unit_cost,   # For backward compatibility
+                            'availability_status': part_dict.get('availability_status', 'unknown'),
+                            'lifecycle_status': part_dict.get('lifecycle_status', 'unknown'),
+                            'rohs_compliant': part_dict.get('rohs_compliant', True)
                         },
                         'status': 'selected'
                     }

@@ -81,6 +81,23 @@ class DesignOrchestrator:
             )
             selected_parts.update(supporting_parts)
             
+            # Validate component count if specified
+            component_count = requirements.component_count
+            if component_count and component_count > 0:
+                total_selected = len(selected_parts)
+                if total_selected < component_count:
+                    logger.warning(
+                        f"Selected {total_selected} parts but {component_count} requested. "
+                        f"Architecture created {len(architecture.child_blocks)} child blocks."
+                    )
+                elif total_selected > component_count:
+                    logger.info(
+                        f"Selected {total_selected} parts (more than requested {component_count}). "
+                        "This is acceptable as supporting components were added."
+                    )
+                else:
+                    logger.info(f"Successfully selected {total_selected} parts matching component_count requirement")
+            
             # Step 5: Check compatibility
             logger.info("Checking part compatibility")
             for part_name, part in selected_parts.items():

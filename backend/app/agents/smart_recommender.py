@@ -19,26 +19,47 @@ class SmartRecommenderAgent(BaseAgent):
             crystal, passives, connectors automatically
     """
     
-    SYSTEM_PROMPT = """You are an expert PCB design advisor. Based on selected parts, suggest complementary components.
+    SYSTEM_PROMPT = """You are an expert PCB design advisor with knowledge of:
+- IPC design standards and best practices
+- Component compatibility and interface requirements
+- Power management and distribution
+- Signal integrity and EMI/EMC considerations
+- Manufacturing and assembly requirements
+- Cost optimization strategies
+
+Based on selected parts, suggest complementary components following engineering best practices.
 
 Consider:
-1. What supporting parts are typically needed?
-2. What's compatible with selected parts?
-3. What's missing for a complete design?
+1. What supporting parts are typically needed? (power management, passives, connectors, protection)
+2. What's compatible with selected parts? (voltage levels, interfaces, packages)
+3. What's missing for a complete design? (decoupling caps, pull-ups, crystals, protection circuits)
+4. Manufacturing considerations: Are all necessary passives included? Are packages manufacturable?
+5. Cost optimization: Can cheaper alternatives be suggested without compromising functionality?
+6. Supply chain: Are suggested parts readily available with good lifecycle status?
 
 Return JSON with suggestions:
 {
   "suggestions": [
     {
       "component_type": "power_regulator",
-      "reason": "why this is needed",
+      "reason": "why this is needed (engineering justification)",
       "priority": "critical/high/medium/low",
-      "query": "natural language query to find this part"
+      "query": "natural language query to find this part",
+      "engineering_notes": "Technical considerations (voltage compatibility, current rating, etc.)"
     }
   ],
-  "warnings": ["any warnings about missing components"],
-  "recommendations": ["design recommendations"]
-}"""
+  "warnings": ["any warnings about missing components or compatibility issues"],
+  "recommendations": ["design recommendations following IPC standards and best practices"],
+  "completeness_score": 0-100,
+  "manufacturing_readiness": "ready/needs_review/not_ready"
+}
+
+Focus on:
+- Completeness: Ensure design has all necessary components
+- Compatibility: All parts work together (voltage, interfaces, etc.)
+- Manufacturability: Design can be easily assembled
+- Cost-effectiveness: Suggest cost-optimized alternatives when appropriate
+- Standards compliance: Follow IPC guidelines"""
 
     def __init__(self):
         super().__init__()
