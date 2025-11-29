@@ -402,8 +402,16 @@ async def analyze_supply_chain(
 @mcp_router.options("/mcp/component-analysis")
 async def component_analysis_options():
     """Handle CORS preflight for component analysis"""
-    # Simple response - CORS middleware should handle headers, but explicit for safety
-    return Response(status_code=200)
+    from fastapi.responses import Response
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+            "Access-Control-Max-Age": "3600",
+        }
+    )
 
 
 @mcp_router.post("/mcp/component-analysis")
