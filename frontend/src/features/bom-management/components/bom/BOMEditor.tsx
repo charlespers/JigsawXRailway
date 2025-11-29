@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Button } from "../../../shared/components/ui/button";
+import { Badge } from "../../../shared/components/ui/badge";
 import {
   Edit2,
   Trash2,
@@ -20,7 +20,7 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
+import type { PartObject } from "../../../shared/services/types";
 import { useBOMManagement } from "../../hooks/useBOMManagement";
 import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 

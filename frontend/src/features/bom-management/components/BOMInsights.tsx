@@ -175,7 +175,7 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
             <h3 className="text-lg font-semibold text-white">Cost Optimization</h3>
           </div>
           <div className="space-y-2">
-            {costAnalysis.optimization_opportunities.slice(0, 5).map((opp, idx) => (
+            {costAnalysis.optimization_opportunities.slice(0, 5).map((opp: any, idx: number) => (
               <div key={idx} className="flex items-center justify-between p-2 bg-dark-bg rounded">
                 <div>
                   <div className="text-sm text-white">{opp.part_name}</div>
@@ -205,7 +205,7 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
             <h3 className="text-lg font-semibold text-white">Supply Chain Risks</h3>
           </div>
           <div className="space-y-2">
-            {supplyChainAnalysis.risks.slice(0, 5).map((risk, idx) => (
+            {supplyChainAnalysis.risks.slice(0, 5).map((risk: any, idx: number) => (
               <div key={idx} className="p-2 bg-dark-bg rounded">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-white">{risk.part_name}</span>
@@ -214,7 +214,7 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
                   </Badge>
                 </div>
                 <ul className="text-xs text-neutral-blue list-disc list-inside">
-                  {risk.risks.map((r, i) => (
+                  {risk.risks.map((r: string, i: number) => (
                     <li key={i}>{r}</li>
                   ))}
                 </ul>
@@ -232,7 +232,7 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
             <h3 className="text-lg font-semibold text-white">Design Validation</h3>
           </div>
           <div className="space-y-3">
-            {designValidation.issues.map((issue, idx) => {
+            {designValidation.issues.map((issue: any, idx: number) => {
               // Find fix suggestions for this issue
               const fixSuggestion = (designValidation as any).fix_suggestions?.find(
                 (fix: any) => fix.issue?.type === issue.type && fix.issue?.message === issue.message
@@ -289,7 +289,7 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
             })}
             
             {/* Warnings with fix suggestions */}
-            {designValidation.warnings.map((warning, idx) => {
+            {designValidation.warnings.map((warning: any, idx: number) => {
               // Normalize warning to object format
               const warningObj = typeof warning === "string" ? { message: warning } : warning;
               const warningText = typeof warning === "string" ? warning : warning.message;
@@ -348,12 +348,15 @@ export default function BOMInsights({ parts, connections = [], onPartAdd }: BOMI
             <h3 className="text-lg font-semibold text-white">Power by Rail</h3>
           </div>
           <div className="space-y-2">
-            {Object.entries(powerAnalysis.power_by_rail).map(([rail, power]) => (
+            {Object.entries(powerAnalysis.power_by_rail).map(([rail, power]: [string, unknown]) => {
+              const powerValue = typeof power === 'number' ? power : 0;
+              return (
               <div key={rail} className="flex items-center justify-between p-2 bg-dark-bg rounded">
                 <span className="text-sm text-white">{rail}</span>
-                <span className="text-sm font-semibold text-neon-teal">{power.toFixed(2)}W</span>
+                <span className="text-sm font-semibold text-neon-teal">{powerValue.toFixed(2)}W</span>
               </div>
-            ))}
+              );
+            })}
           </div>
         </Card>
       )}

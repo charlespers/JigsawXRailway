@@ -4,9 +4,9 @@
  */
 
 import React, { useState } from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Button } from "../../../shared/components/ui/button";
+import { Badge } from "../../../shared/components/ui/badge";
 import {
   Download,
   FileText,
@@ -15,7 +15,7 @@ import {
   Settings,
   CheckCircle2,
 } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
+import type { PartObject } from "../../../shared/services/types";
 import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface BOMExportProps {

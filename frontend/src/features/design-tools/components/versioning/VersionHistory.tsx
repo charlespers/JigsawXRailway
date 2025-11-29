@@ -4,9 +4,9 @@
  */
 
 import React, { useState } from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Button } from "../../../shared/components/ui/button";
+import { Badge } from "../../../shared/components/ui/badge";
 import {
   History,
   GitBranch,
@@ -116,7 +116,7 @@ export default function VersionHistory({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     onVersionSelect?.(version);
                   }}
@@ -128,7 +128,7 @@ export default function VersionHistory({
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={(e) => {
+                    onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                       e.stopPropagation();
                       onVersionRestore?.(version);
                     }}
@@ -140,7 +140,7 @@ export default function VersionHistory({
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={(e) => {
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                     e.stopPropagation();
                     onVersionExport?.(version);
                   }}

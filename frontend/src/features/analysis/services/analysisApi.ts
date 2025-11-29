@@ -35,7 +35,8 @@ export interface AlternativePart {
   lifecycle_status?: string;
 }
 
-// Re-export types from typesBackend for backward compatibility
+// Re-export types from shared/services/types for backward compatibility
+// These types are already imported above, so we just re-export them
 export type {
   CostAnalysis,
   SupplyChainAnalysis,
@@ -44,7 +45,7 @@ export type {
   ManufacturingReadiness,
   SignalIntegrityAnalysis,
   ThermalAnalysis,
-} from "./typesBackend";
+};
 
 export interface DesignHealthScore {
   design_health_score: number;

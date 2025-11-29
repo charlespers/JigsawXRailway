@@ -4,9 +4,9 @@
  */
 
 import React from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
-import { Button } from "../../shared/components/ui/button";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
+import { Button } from "../../../shared/components/ui/button";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -108,7 +108,7 @@ export default function AnalysisCard({
                 key={idx}
                 size="sm"
                 variant={action.variant || "outline"}
-                onClick={(e) => {
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
                   e.stopPropagation();
                   action.onClick();
                 }}

@@ -1,8 +1,8 @@
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
 import { Package, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
-import type { ManufacturingReadiness } from "../../analysis/services/analysisApi";
+import type { PartObject } from "../../../shared/services/types";
+import type { ManufacturingReadiness } from "../../../analysis/services/analysisApi";
 
 interface DFMPanelProps {
   manufacturing: ManufacturingReadiness | null;
@@ -92,9 +92,9 @@ export default function DFMPanel({ manufacturing, parts, onPartAdd }: DFMPanelPr
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">DFM Checks</h3>
           <div className="space-y-2">
-            {Object.entries(manufacturing.dfm_checks).map(([checkName, checkResult]) => {
-              const check = typeof checkResult === "object" ? checkResult : { status: "unknown", message: String(checkResult) };
-              const status = check.status || "unknown";
+            {Object.entries(manufacturing.dfm_checks).map(([checkName, checkResult]: [string, any]) => {
+              const check: { status?: string; message?: string } = typeof checkResult === "object" && checkResult !== null ? checkResult : { status: "unknown", message: String(checkResult) };
+              const status = check?.status || "unknown";
               
               return (
                 <div key={checkName} className="p-3 bg-zinc-900/50 rounded">
@@ -125,7 +125,7 @@ export default function DFMPanel({ manufacturing, parts, onPartAdd }: DFMPanelPr
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">Manufacturing Recommendations</h3>
           <div className="space-y-2">
-            {manufacturing.recommendations.map((rec, idx) => (
+            {manufacturing.recommendations.map((rec: string, idx: number) => (
               <div key={idx} className="p-2 bg-blue-900/20 border border-blue-500/50 rounded text-sm text-blue-300">
                 {rec}
               </div>

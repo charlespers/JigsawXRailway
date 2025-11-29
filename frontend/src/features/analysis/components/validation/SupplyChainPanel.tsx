@@ -1,8 +1,8 @@
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
 import { Cpu, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
-import type { SupplyChainAnalysis } from "../../analysis/services/analysisApi";
+import type { PartObject } from "../../../shared/services/types";
+import type { SupplyChainAnalysis } from "../../../analysis/services/analysisApi";
 
 interface SupplyChainPanelProps {
   supplyChain: SupplyChainAnalysis | null;
@@ -25,9 +25,9 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
   const recommendations = supplyChain.recommendations || [];
 
   // Group risks by severity
-  const highRisks = risks.filter(r => r.risk_score >= 7);
-  const mediumRisks = risks.filter(r => r.risk_score >= 4 && r.risk_score < 7);
-  const lowRisks = risks.filter(r => r.risk_score < 4);
+  const highRisks = risks.filter((r: any) => r.risk_score >= 7);
+  const mediumRisks = risks.filter((r: any) => r.risk_score >= 4 && r.risk_score < 7);
+  const lowRisks = risks.filter((r: any) => r.risk_score < 4);
 
   return (
     <div className="space-y-4">
@@ -89,7 +89,7 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
             <h3 className="text-lg font-semibold text-white">High Risk Components</h3>
           </div>
           <div className="space-y-3">
-            {highRisks.map((risk, idx) => (
+            {highRisks.map((risk: any, idx: number) => (
               <div key={idx} className="p-3 bg-red-900/20 border border-red-500/50 rounded">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
@@ -102,7 +102,7 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
                       </Badge>
                     </div>
                     <ul className="text-xs text-red-300 list-disc list-inside space-y-1">
-                      {risk.risks.map((r, i) => (
+                      {risk.risks.map((r: string, i: number) => (
                         <li key={i}>{r}</li>
                       ))}
                     </ul>
@@ -122,7 +122,7 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
             <h3 className="text-lg font-semibold text-white">Medium Risk Components</h3>
           </div>
           <div className="space-y-2">
-            {mediumRisks.map((risk, idx) => (
+            {mediumRisks.map((risk: any, idx: number) => (
               <div key={idx} className="p-3 bg-yellow-900/20 border border-yellow-500/50 rounded">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
@@ -133,7 +133,7 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
                       Risk: {risk.risk_score.toFixed(1)}
                     </Badge>
                     <ul className="text-xs text-yellow-300 list-disc list-inside">
-                      {risk.risks.slice(0, 2).map((r, i) => (
+                      {risk.risks.slice(0, 2).map((r: string, i: number) => (
                         <li key={i}>{r}</li>
                       ))}
                     </ul>
@@ -150,7 +150,7 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">Supply Chain Warnings</h3>
           <div className="space-y-2">
-            {warnings.map((warning, idx) => (
+            {warnings.map((warning: string, idx: number) => (
               <div key={idx} className="p-2 bg-yellow-900/20 border border-yellow-500/50 rounded text-sm text-yellow-300">
                 {warning}
               </div>
@@ -167,7 +167,7 @@ export default function SupplyChainPanel({ supplyChain, parts, onPartAdd }: Supp
             <h3 className="text-lg font-semibold text-white">Recommendations</h3>
           </div>
           <div className="space-y-2">
-            {recommendations.map((rec, idx) => (
+            {recommendations.map((rec: string, idx: number) => (
               <div key={idx} className="p-2 bg-blue-900/20 border border-blue-500/50 rounded text-sm text-blue-300">
                 {rec}
               </div>

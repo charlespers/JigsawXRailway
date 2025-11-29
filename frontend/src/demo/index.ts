@@ -35,7 +35,10 @@ export * from "../features/design-tools/components/versioning";
 
 // Shared
 export * from "../features/shared/components";
-export * from "../features/shared/services";
+// Explicitly export services to avoid conflicts with analysisApi types
+export * from "../features/shared/services/apiClient";
+export * from "../features/shared/services/config";
+export { default as configService } from "../features/shared/services/config";
 export * from "../features/shared/hooks/useIntersectionObserver";
 
 // Keep original exports for files that haven't moved yet

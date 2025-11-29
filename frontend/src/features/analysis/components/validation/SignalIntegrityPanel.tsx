@@ -1,8 +1,8 @@
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
 import { Zap, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
-import type { SignalIntegrityAnalysis } from "../../analysis/services/analysisApi";
+import type { PartObject } from "../../../shared/services/types";
+import type { SignalIntegrityAnalysis } from "../../../analysis/services/analysisApi";
 
 interface SignalIntegrityPanelProps {
   signalIntegrity: SignalIntegrityAnalysis | null;
@@ -33,7 +33,7 @@ export default function SignalIntegrityPanel({ signalIntegrity, parts, onPartAdd
             <h3 className="text-lg font-semibold text-white">High-Speed Signal Analysis</h3>
           </div>
           <div className="space-y-3">
-            {highSpeedSignals.map((signal, idx) => (
+            {highSpeedSignals.map((signal: any, idx: number) => (
               <div key={idx} className={`p-3 rounded ${
                 signal.impedance_ok ? "bg-green-900/20 border border-green-500/50" : "bg-red-900/20 border border-red-500/50"
               }`}>
@@ -78,7 +78,7 @@ export default function SignalIntegrityPanel({ signalIntegrity, parts, onPartAdd
             <h3 className="text-lg font-semibold text-white">Impedance Control Issues</h3>
           </div>
           <div className="space-y-2">
-            {impedanceIssues.map((issue, idx) => (
+            {impedanceIssues.map((issue: any, idx: number) => (
               <div key={idx} className="p-3 bg-red-900/20 border border-red-500/50 rounded">
                 <div className="text-sm font-medium text-white mb-2">
                   {issue.part} - {issue.interface}
@@ -99,7 +99,7 @@ export default function SignalIntegrityPanel({ signalIntegrity, parts, onPartAdd
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">EMI/EMC Recommendations</h3>
           <div className="space-y-2">
-            {signalIntegrity.emi_emc_recommendations.map((rec, idx) => (
+            {signalIntegrity.emi_emc_recommendations.map((rec: string, idx: number) => (
               <div key={idx} className="p-2 bg-blue-900/20 border border-blue-500/50 rounded text-sm text-blue-300">
                 {rec}
               </div>
@@ -113,7 +113,7 @@ export default function SignalIntegrityPanel({ signalIntegrity, parts, onPartAdd
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">Routing Recommendations</h3>
           <div className="space-y-2">
-            {signalIntegrity.routing_recommendations.map((rec, idx) => (
+            {signalIntegrity.routing_recommendations.map((rec: string, idx: number) => (
               <div key={idx} className="p-2 bg-zinc-900/50 rounded text-sm text-neutral-blue">
                 {rec}
               </div>
@@ -136,7 +136,7 @@ export default function SignalIntegrityPanel({ signalIntegrity, parts, onPartAdd
           {signalIntegrity.decoupling_analysis.recommendations && 
            signalIntegrity.decoupling_analysis.recommendations.length > 0 && (
             <div className="space-y-2">
-              {signalIntegrity.decoupling_analysis.recommendations.map((rec, idx) => (
+              {signalIntegrity.decoupling_analysis.recommendations.map((rec: string, idx: number) => (
                 <div key={idx} className="p-2 bg-yellow-900/20 border border-yellow-500/50 rounded text-sm text-yellow-300">
                   {rec}
                 </div>

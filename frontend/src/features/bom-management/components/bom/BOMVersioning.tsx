@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Button } from "../../../shared/components/ui/button";
+import { Badge } from "../../../shared/components/ui/badge";
 import {
   GitBranch,
   History,
@@ -17,7 +17,7 @@ import {
   User,
   MessageSquare,
 } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
+import type { PartObject } from "../../../shared/services/types";
 
 interface BOMVersion {
   version: string;

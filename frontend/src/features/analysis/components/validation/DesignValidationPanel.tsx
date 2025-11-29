@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
-import { Button } from "../../shared/components/ui/button";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
+import { Button } from "../../../shared/components/ui/button";
 import { 
   CheckCircle2, 
   AlertTriangle, 
@@ -22,7 +22,7 @@ import DFMPanel from "./DFMPanel";
 import SignalIntegrityPanel from "./SignalIntegrityPanel";
 import ThermalAnalysisPanel from "./ThermalAnalysisPanel";
 import SupplyChainPanel from "./SupplyChainPanel";
-import type { PartObject } from "../../shared/services/types";
+import type { PartObject } from "../../../shared/services/types";
 import {
   validateDesign,
   analyzeManufacturingReadiness,
@@ -34,7 +34,7 @@ import {
   type SignalIntegrityAnalysis,
   type ThermalAnalysis,
   type SupplyChainAnalysis,
-} from "../../analysis/services/analysisApi";
+} from "../../../analysis/services/analysisApi";
 
 interface DesignValidationPanelProps {
   parts: PartObject[];
@@ -196,7 +196,7 @@ export default function DesignValidationPanel({
                   <h3 className="text-lg font-semibold text-white">Critical Issues</h3>
                 </div>
                 <div className="space-y-2">
-                  {validation.issues.slice(0, 5).map((issue, idx) => (
+                  {validation.issues.slice(0, 5).map((issue: any, idx: number) => (
                     <div key={idx} className="p-3 bg-red-900/20 border border-red-500/50 rounded">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
@@ -235,7 +235,7 @@ export default function DesignValidationPanel({
                   <h3 className="text-lg font-semibold text-white">Warnings</h3>
                 </div>
                 <div className="space-y-2">
-                  {validation.warnings.slice(0, 5).map((warning, idx) => {
+                  {validation.warnings.slice(0, 5).map((warning: any, idx: number) => {
                     const warningObj = typeof warning === "string" ? { message: warning } : warning;
                     const warningMessage = typeof warning === "string" ? warning : warning.message;
                     const warningComponent = typeof warning === "string" ? undefined : warning.component;

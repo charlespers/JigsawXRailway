@@ -2,6 +2,5 @@
  * Analysis hooks exports
  */
 
-export { default as useAnalysis } from "./useAnalysis";
-export { useAnalysis } from "./useAnalysis";
+export { default as useAnalysis, useAnalysis } from "./useAnalysis";
 

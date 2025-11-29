@@ -199,6 +199,117 @@ export default function JigsawDemo({
     showToast(`Design exported successfully: ${validatedParts.length} part(s)`, "success", 2000);
   }, [parts, connections, analysisQuery, showToast]);
   
+  // Layout system for organized PCB placement (supports demo's component IDs)
+  // Calculate component position function - must be defined before handleLoadDesign uses it
+  const calculateComponentPosition = useCallback((
+    componentId: string,
+    existingComponents: Array<{
+      id: string;
+      position: { x: number; y: number };
+      size?: { w: number; h: number };
+    }>,
+    _hierarchyLevel: number
+  ): { x: number; y: number } => {
+    const componentTypes: Record<string, { row: number; col: number }> = {
+      // Main components (demo naming)
+      anchor: { row: 1, col: 2 }, // Anchor/MCU component
+      mcu: { row: 1, col: 2 },
+      power: { row: 0, col: 2 },
+      connector: { row: 0, col: 1 },
+      sensor: { row: 1, col: 0 },
+      sensors: { row: 1, col: 0 },
+      memory: { row: 1, col: 4 },
+      antenna: { row: 0, col: 3 },
+      passives: { row: 2, col: 2 },
+      regulator: { row: 0, col: 3 },
+      interface: { row: 2, col: 1 },
+      clock: { row: 2, col: 0 },
+      protection: { row: 1, col: 3 },
+      filter: { row: 0, col: 0 },
+      amplifier: { row: 2, col: 3 },
+      // New component types
+      test_point: { row: 3, col: 0 }, // Test points at bottom
+      fiducial: { row: 0, col: 0 }, // Fiducials at corners
+    };
+
+    const viewportWidth =
+      typeof window !== "undefined" ? window.innerWidth : 1920;
+    const viewportHeight =
+      typeof window !== "undefined" ? window.innerHeight : 1080;
+    const gridSpacing = Math.max(60, Math.min(100, viewportWidth * 0.08));
+    const startX = Math.max(150, viewportWidth * 0.15);
+    const startY = Math.max(100, viewportHeight * 0.15);
+
+    const idLower = componentId.toLowerCase();
+    
+    // Check for test points and fiducials first
+    if (idLower.includes("test_point") || idLower.startsWith("tp")) {
+      // Place test points along bottom edge
+      const tpIndex = existingComponents.filter(c => 
+        c.id.toLowerCase().includes("test_point") || c.id.toLowerCase().startsWith("tp")
+      ).length;
+      return {
+        x: startX + (tpIndex % 6) * (gridSpacing * 0.8),
+        y: startY + 4 * gridSpacing,
+      };
+    }
+    
+    if (idLower.includes("fiducial") || idLower.startsWith("fid")) {
+      // Place fiducials at corners
+      const fidIndex = existingComponents.filter(c => 
+        c.id.toLowerCase().includes("fiducial") || c.id.toLowerCase().startsWith("fid")
+      ).length;
+      const corners = [
+        { x: startX - gridSpacing * 0.5, y: startY - gridSpacing * 0.5 }, // Top-left
+        { x: startX + 5 * gridSpacing, y: startY - gridSpacing * 0.5 }, // Top-right
+        { x: startX - gridSpacing * 0.5, y: startY + 3 * gridSpacing }, // Bottom-left
+      ];
+      return corners[fidIndex] || corners[0];
+    }
+    
+    // Check for intermediaries
+    if (idLower.includes("intermediary")) {
+      // Place intermediaries near power components
+      const intermediaryIndex = existingComponents.filter(c => 
+        c.id.toLowerCase().includes("intermediary")
+      ).length;
+      return {
+        x: startX + 1 * gridSpacing + (intermediaryIndex * gridSpacing * 0.5),
+        y: startY + 0.5 * gridSpacing,
+      };
+    }
+    
+    // Check exact match first
+    const layout = componentTypes[idLower];
+    if (layout) {
+      return {
+        x: startX + layout.col * gridSpacing,
+        y: startY + layout.row * gridSpacing,
+      };
+    }
+    
+    // Check partial matches
+    for (const [key, pos] of Object.entries(componentTypes)) {
+      if (idLower.includes(key)) {
+        return {
+          x: startX + pos.col * gridSpacing,
+          y: startY + pos.row * gridSpacing,
+        };
+      }
+    }
+
+    // Default: place in grid based on existing count
+    const existingCount = existingComponents.length;
+    const colsPerRow = 4;
+    const row = Math.floor(existingCount / colsPerRow);
+    const col = existingCount % colsPerRow;
+
+    return {
+      x: startX + col * gridSpacing,
+      y: startY + (row + 3) * gridSpacing,
+    };
+  }, []);
+  
   // Load design handler
   const handleLoadDesign = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -283,75 +394,6 @@ export default function JigsawDemo({
     reader.readAsText(file);
   }, [showToast, saveToHistory, calculateComponentPosition]);
 
-  // Layout system for organized PCB placement (supports demo's component IDs)
-  // Calculate component position function - must be defined before handleLoadDesign uses it
-  const calculateComponentPosition = (
-    componentId: string,
-    existingComponents: Array<{
-      id: string;
-      position: { x: number; y: number };
-      size?: { w: number; h: number };
-    }>,
-    _hierarchyLevel: number
-  ): { x: number; y: number } => {
-    const componentTypes: Record<string, { row: number; col: number }> = {
-      // Main components (demo naming)
-      anchor: { row: 1, col: 2 }, // Anchor/MCU component
-      mcu: { row: 1, col: 2 },
-      power: { row: 0, col: 2 },
-      connector: { row: 0, col: 1 },
-      sensor: { row: 1, col: 0 },
-      regulator: { row: 0, col: 3 },
-      interface: { row: 2, col: 1 },
-      memory: { row: 2, col: 2 },
-      clock: { row: 2, col: 0 },
-      protection: { row: 1, col: 3 },
-      filter: { row: 0, col: 0 },
-      amplifier: { row: 2, col: 3 },
-    };
-
-    // Try to get predefined position from component type
-    const componentType = componentId.toLowerCase().split("_")[0];
-    const typeConfig = componentTypes[componentType];
-    
-    if (typeConfig) {
-      const baseX = typeConfig.col * 200;
-      const baseY = typeConfig.row * 150;
-      
-      // Check for collisions and adjust
-      let adjustedX = baseX;
-      let adjustedY = baseY;
-      let attempts = 0;
-      const maxAttempts = 10;
-      
-      while (
-        attempts < maxAttempts &&
-        existingComponents.some(
-          (c) =>
-            Math.abs(c.position.x - adjustedX) < 100 &&
-            Math.abs(c.position.y - adjustedY) < 100
-        )
-      ) {
-        adjustedX += 50;
-        adjustedY += 50;
-        attempts++;
-      }
-      
-      return { x: adjustedX, y: adjustedY };
-    }
-    
-    // Fallback: grid layout based on hierarchy level
-    const gridCols = 4;
-    const col = _hierarchyLevel % gridCols;
-    const row = Math.floor(_hierarchyLevel / gridCols);
-    const spacing = 200;
-    
-    return {
-      x: col * spacing + 100,
-      y: row * spacing + 100,
-    };
-  };
-
   // Update query when initialQuery changes and auto-start analysis
   useEffect(() => {
     if (
@@ -412,111 +454,6 @@ export default function JigsawDemo({
     setAnalysisQuery("");
     highestHierarchyRef.current = -1;
     previousQueryRef.current = "";
-  };
-
-  // Layout system for organized PCB placement (supports demo's component IDs)
-  // Calculate component position function
-  const calculateComponentPosition = (
-    componentId: string,
-    existingComponents: Array<{
-      id: string;
-      position: { x: number; y: number };
-      size?: { w: number; h: number };
-    }>,
-    _hierarchyLevel: number
-  ): { x: number; y: number } => {
-    const componentTypes: Record<string, { row: number; col: number }> = {
-      // Main components (demo naming)
-      anchor: { row: 1, col: 2 }, // Anchor/MCU component
-      mcu: { row: 1, col: 2 },
-      power: { row: 0, col: 2 },
-      connector: { row: 0, col: 1 },
-      sensor: { row: 1, col: 0 },
-      sensors: { row: 1, col: 0 },
-      memory: { row: 1, col: 4 },
-      antenna: { row: 0, col: 3 },
-      passives: { row: 2, col: 2 },
-      // New component types
-      test_point: { row: 3, col: 0 }, // Test points at bottom
-      fiducial: { row: 0, col: 0 }, // Fiducials at corners
-    };
-
-    const viewportWidth =
-      typeof window !== "undefined" ? window.innerWidth : 1920;
-    const viewportHeight =
-      typeof window !== "undefined" ? window.innerHeight : 1080;
-    const gridSpacing = Math.max(60, Math.min(100, viewportWidth * 0.08));
-    const startX = Math.max(150, viewportWidth * 0.15);
-    const startY = Math.max(100, viewportHeight * 0.15);
-
-    const idLower = componentId.toLowerCase();
-    
-    // Check for test points and fiducials first
-    if (idLower.includes("test_point") || idLower.startsWith("tp")) {
-      // Place test points along bottom edge
-      const tpIndex = existingComponents.filter(c => 
-        c.id.toLowerCase().includes("test_point") || c.id.toLowerCase().startsWith("tp")
-      ).length;
-      return {
-        x: startX + (tpIndex % 6) * (gridSpacing * 0.8),
-        y: startY + 4 * gridSpacing,
-      };
-    }
-    
-    if (idLower.includes("fiducial") || idLower.startsWith("fid")) {
-      // Place fiducials at corners
-      const fidIndex = existingComponents.filter(c => 
-        c.id.toLowerCase().includes("fiducial") || c.id.toLowerCase().startsWith("fid")
-      ).length;
-      const corners = [
-        { x: startX - gridSpacing * 0.5, y: startY - gridSpacing * 0.5 }, // Top-left
-        { x: startX + 5 * gridSpacing, y: startY - gridSpacing * 0.5 }, // Top-right
-        { x: startX - gridSpacing * 0.5, y: startY + 3 * gridSpacing }, // Bottom-left
-      ];
-      return corners[fidIndex] || corners[0];
-    }
-    
-    // Check for intermediaries
-    if (idLower.includes("intermediary")) {
-      // Place intermediaries near power components
-      const intermediaryIndex = existingComponents.filter(c => 
-        c.id.toLowerCase().includes("intermediary")
-      ).length;
-      return {
-        x: startX + 1 * gridSpacing + (intermediaryIndex * gridSpacing * 0.5),
-        y: startY + 0.5 * gridSpacing,
-      };
-    }
-    
-    // Check exact match first
-    const layout = componentTypes[idLower];
-    if (layout) {
-      return {
-        x: startX + layout.col * gridSpacing,
-        y: startY + layout.row * gridSpacing,
-      };
-    }
-    
-    // Check partial matches
-    for (const [key, pos] of Object.entries(componentTypes)) {
-      if (idLower.includes(key)) {
-        return {
-          x: startX + pos.col * gridSpacing,
-          y: startY + pos.row * gridSpacing,
-        };
-      }
-    }
-
-    // Default: place in grid based on existing count
-    const existingCount = existingComponents.length;
-    const colsPerRow = 4;
-    const row = Math.floor(existingCount / colsPerRow);
-    const col = existingCount % colsPerRow;
-
-    return {
-      x: startX + col * gridSpacing,
-      y: startY + (row + 3) * gridSpacing,
-    };
   };
 
   const handleComponentSelected = (

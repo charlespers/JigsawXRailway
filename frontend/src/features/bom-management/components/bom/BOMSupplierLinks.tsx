@@ -4,11 +4,11 @@
  */
 
 import React from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Button } from "../../../shared/components/ui/button";
+import { Badge } from "../../../shared/components/ui/badge";
 import { ExternalLink, ShoppingCart, Package } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
+import type { PartObject } from "../../../shared/services/types";
 
 interface BOMSupplierLinksProps {
   parts: PartObject[];

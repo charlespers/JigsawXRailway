@@ -4,9 +4,9 @@
  */
 
 import React, { useState, useMemo } from "react";
-import { Card } from "../../shared/components/ui/card";
-import { Button } from "../../shared/components/ui/button";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Button } from "../../../shared/components/ui/button";
+import { Badge } from "../../../shared/components/ui/badge";
 import {
   ShoppingCart,
   DollarSign,
@@ -18,7 +18,7 @@ import {
   Clock,
   Package,
 } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
+import type { PartObject } from "../../../shared/services/types";
 import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
 
 interface Supplier {

@@ -1,9 +1,9 @@
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
-import { Button } from "../../shared/components/ui/button";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
+import { Button } from "../../../shared/components/ui/button";
 import { Shield, CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
-import type { DesignValidation } from "../../analysis/services/analysisApi";
+import type { PartObject } from "../../../shared/services/types";
+import type { DesignValidation } from "../../../analysis/services/analysisApi";
 
 interface IPCCompliancePanelProps {
   validation: DesignValidation | null;
@@ -20,8 +20,8 @@ export default function IPCCompliancePanel({ validation, parts, onPartAdd }: IPC
     );
   }
 
-  const ipcIssues = validation.issues.filter(i => i.category === "ipc_compliance");
-  const ipcWarnings = validation.warnings.filter(w => {
+  const ipcIssues = validation.issues.filter((i: any) => i.category === "ipc_compliance");
+  const ipcWarnings = validation.warnings.filter((w: any) => {
     const wObj = typeof w === "string" ? null : w;
     return wObj?.category === "ipc_compliance";
   });
@@ -81,7 +81,7 @@ export default function IPCCompliancePanel({ validation, parts, onPartAdd }: IPC
             <h3 className="text-lg font-semibold text-white">Footprint Compliance Issues</h3>
           </div>
           <div className="space-y-2">
-            {ipcIssues.map((issue, idx) => (
+            {ipcIssues.map((issue: any, idx: number) => (
               <div key={idx} className="p-3 bg-red-900/20 border border-red-500/50 rounded">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
@@ -118,7 +118,7 @@ export default function IPCCompliancePanel({ validation, parts, onPartAdd }: IPC
             <h3 className="text-lg font-semibold text-white">IPC Compliance Warnings</h3>
           </div>
           <div className="space-y-2">
-            {ipcWarnings.map((warning, idx) => {
+            {ipcWarnings.map((warning: any, idx: number) => {
               const warningMessage = typeof warning === "string" ? warning : warning.message;
               const warningComponent = typeof warning === "string" ? undefined : warning.component;
               const warningRecommendation = typeof warning === "string" ? undefined : warning.recommendation;

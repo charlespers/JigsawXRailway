@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from "react";
 import { useDesignStore } from "../../design-generation/store/designStore";
-import { componentAnalysisApi } from "../../shared/services/componentAnalysisApi";
+import { componentAnalysisApi } from "../services/componentAnalysisApi";
 import type { PartObject } from "../../shared/services/types";
 
 function useDesignGeneration() {

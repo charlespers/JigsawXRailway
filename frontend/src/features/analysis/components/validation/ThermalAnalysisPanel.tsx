@@ -1,8 +1,8 @@
-import { Card } from "../../shared/components/ui/card";
-import { Badge } from "../../shared/components/ui/badge";
+import { Card } from "../../../shared/components/ui/card";
+import { Badge } from "../../../shared/components/ui/badge";
 import { Thermometer, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
-import type { PartObject } from "../../shared/services/types";
-import type { ThermalAnalysis } from "../../analysis/services/analysisApi";
+import type { PartObject } from "../../../shared/services/types";
+import type { ThermalAnalysis } from "../../../analysis/services/analysisApi";
 
 interface ThermalAnalysisPanelProps {
   thermal: ThermalAnalysis | null;
@@ -52,7 +52,7 @@ export default function ThermalAnalysisPanel({ thermal, parts, onPartAdd }: Ther
             <h3 className="text-lg font-semibold text-white">Thermal Hotspots</h3>
           </div>
           <div className="space-y-3">
-            {thermalIssues.map((issue, idx) => (
+            {thermalIssues.map((issue: any, idx: number) => (
               <div key={idx} className="p-3 bg-red-900/20 border border-red-500/50 rounded">
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
@@ -92,7 +92,7 @@ export default function ThermalAnalysisPanel({ thermal, parts, onPartAdd }: Ther
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">Component Thermal Data</h3>
           <div className="space-y-2">
-            {Object.entries(componentThermal).map(([partId, thermalData]) => (
+            {Object.entries(componentThermal).map(([partId, thermalData]: [string, any]) => (
               <div 
                 key={partId} 
                 className={`p-3 rounded ${
@@ -134,7 +134,7 @@ export default function ThermalAnalysisPanel({ thermal, parts, onPartAdd }: Ther
         <Card className="p-4 bg-dark-surface border-dark-border">
           <h3 className="text-lg font-semibold text-white mb-3">Thermal Recommendations</h3>
           <div className="space-y-2">
-            {thermal.recommendations.map((rec, idx) => (
+            {thermal.recommendations.map((rec: string, idx: number) => (
               <div key={idx} className="p-2 bg-blue-900/20 border border-blue-500/50 rounded text-sm text-blue-300">
                 {rec}
               </div>
