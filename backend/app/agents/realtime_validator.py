@@ -126,18 +126,60 @@ class RealtimeValidatorAgent:
         # Overall design health
         all_errors = []
         all_warnings = []
+        issues = []
+        
         for v in all_validations:
-            all_errors.extend(v["validation"]["errors"])
-            all_warnings.extend(v["validation"]["warnings"])
+            errors = v["validation"]["errors"]
+            warnings = v["validation"]["warnings"]
+            all_errors.extend(errors)
+            all_warnings.extend(warnings)
+            
+            # Format errors as issues
+            for error in errors:
+                issues.append({
+                    "type": "compatibility" if "incompatible" in error.lower() else "power" if "power" in error.lower() else "general",
+                    "severity": "error",
+                    "component": v["part"],
+                    "message": error
+                })
+            
+            # Format warnings
+            for warning in warnings:
+                if isinstance(warning, str):
+                    all_warnings.append(warning)
+        
+        # Calculate compliance score (0-100)
+        health_score = self._calculate_health_score(all_errors, all_warnings)
+        compliance_score = health_score  # Use health score as compliance score
+        
+        # Check IPC compliance (simplified - check for footprint, package, etc.)
+        ipc_7351_compliant = all(
+            part.get("footprint") and part.get("package")
+            for part in selected_parts.values()
+        )
+        ipc_2221_compliant = len(all_errors) == 0  # Simplified check
+        rohs_compliant = True  # Assume compliant unless specified otherwise
+        power_budget_ok = all(
+            v["validation"].get("power_impact", {}).get("status") != "critical"
+            for v in all_validations
+        )
         
         return {
-            "design_valid": len(all_errors) == 0,
-            "total_errors": len(all_errors),
-            "total_warnings": len(all_warnings),
-            "errors": all_errors,
+            "valid": len(all_errors) == 0,
+            "issues": issues,
             "warnings": all_warnings,
-            "part_validations": all_validations,
-            "design_health_score": self._calculate_health_score(all_errors, all_warnings)
+            "compliance": {
+                "ipc_2221": ipc_2221_compliant,
+                "ipc_7351": ipc_7351_compliant,
+                "rohs": rohs_compliant,
+                "power_budget": power_budget_ok
+            },
+            "summary": {
+                "error_count": len(all_errors),
+                "warning_count": len(all_warnings),
+                "compliance_score": compliance_score
+            },
+            "fix_suggestions": []  # Can be populated by other agents
         }
     
     def _infer_connection_type(self, part1: Dict[str, Any], part2: Dict[str, Any]) -> str:

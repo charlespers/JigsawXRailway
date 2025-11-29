@@ -15,6 +15,11 @@ import {
   Download,
   Copy,
   ExternalLink,
+  ChevronDown,
+  ChevronRight,
+  Zap,
+  Cpu,
+  FileText,
 } from "lucide-react";
 import type { PartObject } from "../../services/types";
 import { normalizePrice, normalizeQuantity } from "../../utils/partNormalizer";
@@ -36,6 +41,7 @@ export default function BOMTable({
   const [sortField, setSortField] = useState<SortField>("mpn");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   const sortedParts = useMemo(() => {
     const sorted = [...parts].sort((a, b) => {
@@ -174,98 +180,226 @@ export default function BOMTable({
             </tr>
           </thead>
           <tbody>
-            {sortedParts.map((part) => (
-              <tr
-                key={part.componentId}
-                className={`border-b border-dark-border hover:bg-zinc-900/30 transition-colors cursor-pointer ${
-                  selectedRows.has(part.componentId) ? "bg-zinc-900/50" : ""
-                }`}
-                onClick={() => onPartClick?.(part)}
-              >
-                <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                  <input
-                    type="checkbox"
-                    checked={selectedRows.has(part.componentId)}
-                    onChange={(e) => {
-                      const newSelected = new Set(selectedRows);
-                      if (e.target.checked) {
-                        newSelected.add(part.componentId);
-                      } else {
-                        newSelected.delete(part.componentId);
-                      }
-                      setSelectedRows(newSelected);
-                    }}
-                    className="rounded"
-                  />
-                </td>
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-white font-mono">{part.mpn}</span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        copyToClipboard(part.mpn);
-                      }}
-                      className="opacity-0 group-hover:opacity-100 hover:text-neon-teal transition-opacity"
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
-                  </div>
-                </td>
-                <td className="p-3 text-sm text-neutral-blue">{part.manufacturer}</td>
-                <td className="p-3 text-sm text-white max-w-xs truncate" title={part.description}>
-                  {part.description}
-                </td>
-                <td className="p-3 text-sm text-white text-right">{normalizeQuantity(part.quantity)}</td>
-                <td className="p-3 text-sm text-white text-right">
-                  ${normalizePrice(part.price).toFixed(2)}
-                </td>
-                <td className="p-3 text-sm font-medium text-white text-right">
-                  ${(normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2)}
-                </td>
-                <td className="p-3 text-sm text-neutral-blue">{part.package || "-"}</td>
-                <td className="p-3">
-                  <div className="flex items-center gap-2">
-                    {part.lifecycle_status && (
-                      <Badge
-                        variant={
-                          part.lifecycle_status === "active" ? "default" : "destructive"
-                        }
-                        className="text-xs"
-                      >
-                        {part.lifecycle_status}
-                      </Badge>
-                    )}
-                    {part.availability_status && (
-                      <Badge
-                        variant={
-                          part.availability_status === "in_stock" ? "default" : "destructive"
-                        }
-                        className="text-xs"
-                      >
-                        {part.availability_status}
-                      </Badge>
-                    )}
-                  </div>
-                </td>
-                {showActions && (
-                  <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                    <div className="flex items-center justify-center gap-1">
-                      {part.datasheet && (
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => window.open(part.datasheet, "_blank")}
-                          className="h-7 w-7 p-0"
+            {sortedParts.map((part) => {
+              const isExpanded = expandedRows.has(part.componentId);
+              const partData = (part as any).partData || part;
+              const voltage = partData.voltage || part.voltage;
+              const pinout = partData.pinout || (part as any).pinout;
+              const interfaces = partData.interfaces || part.interfaces || [];
+              const footprint = partData.footprint || part.footprint;
+              const datasheetUrl = partData.datasheet_url || part.datasheet || partData.datasheet;
+              
+              return (
+                <React.Fragment key={part.componentId}>
+                  <tr
+                    className={`border-b border-dark-border hover:bg-zinc-900/30 transition-colors ${
+                      selectedRows.has(part.componentId) ? "bg-zinc-900/50" : ""
+                    }`}
+                  >
+                    <td className="p-3">
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const newExpanded = new Set(expandedRows);
+                            if (isExpanded) {
+                              newExpanded.delete(part.componentId);
+                            } else {
+                              newExpanded.add(part.componentId);
+                            }
+                            setExpandedRows(newExpanded);
+                          }}
+                          className="text-neutral-blue hover:text-white"
                         >
-                          <ExternalLink className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  </td>
-                )}
-              </tr>
-            ))}
+                          {isExpanded ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                        </button>
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.has(part.componentId)}
+                          onChange={(e) => {
+                            const newSelected = new Set(selectedRows);
+                            if (e.target.checked) {
+                              newSelected.add(part.componentId);
+                            } else {
+                              newSelected.delete(part.componentId);
+                            }
+                            setSelectedRows(newSelected);
+                          }}
+                          className="rounded"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+                    </td>
+                    <td className="p-3" onClick={() => onPartClick?.(part)}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-white font-mono">{part.mpn}</span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            copyToClipboard(part.mpn);
+                          }}
+                          className="opacity-0 group-hover:opacity-100 hover:text-neon-teal transition-opacity"
+                        >
+                          <Copy className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </td>
+                    <td className="p-3 text-sm text-neutral-blue" onClick={() => onPartClick?.(part)}>
+                      {part.manufacturer}
+                    </td>
+                    <td className="p-3 text-sm text-white max-w-xs truncate" title={part.description} onClick={() => onPartClick?.(part)}>
+                      {part.description}
+                    </td>
+                    <td className="p-3 text-sm text-white text-right" onClick={() => onPartClick?.(part)}>
+                      {normalizeQuantity(part.quantity)}
+                    </td>
+                    <td className="p-3 text-sm text-white text-right" onClick={() => onPartClick?.(part)}>
+                      ${normalizePrice(part.price).toFixed(2)}
+                    </td>
+                    <td className="p-3 text-sm font-medium text-white text-right" onClick={() => onPartClick?.(part)}>
+                      ${(normalizePrice(part.price) * normalizeQuantity(part.quantity)).toFixed(2)}
+                    </td>
+                    <td className="p-3 text-sm text-neutral-blue" onClick={() => onPartClick?.(part)}>
+                      {part.package || "-"}
+                    </td>
+                    <td className="p-3" onClick={() => onPartClick?.(part)}>
+                      <div className="flex items-center gap-2">
+                        {part.lifecycle_status && (
+                          <Badge
+                            variant={
+                              part.lifecycle_status === "active" ? "default" : "destructive"
+                            }
+                            className="text-xs"
+                          >
+                            {part.lifecycle_status}
+                          </Badge>
+                        )}
+                        {part.availability_status && (
+                          <Badge
+                            variant={
+                              part.availability_status === "in_stock" ? "default" : "destructive"
+                            }
+                            className="text-xs"
+                          >
+                            {part.availability_status}
+                          </Badge>
+                        )}
+                      </div>
+                    </td>
+                    {showActions && (
+                      <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-center gap-1">
+                          {datasheetUrl && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => window.open(datasheetUrl, "_blank")}
+                              className="h-7 w-7 p-0"
+                              title="View Datasheet"
+                            >
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                  {isExpanded && (
+                    <tr className="bg-zinc-900/30 border-b border-dark-border">
+                      <td colSpan={showActions ? 10 : 9} className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Voltage */}
+                          {voltage && (
+                            <div className="flex items-start gap-2">
+                              <Zap className="w-4 h-4 text-yellow-400 mt-0.5" />
+                              <div>
+                                <div className="text-xs text-neutral-blue">Voltage</div>
+                                <div className="text-sm text-white">{voltage}</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Footprint */}
+                          {footprint && (
+                            <div className="flex items-start gap-2">
+                              <Cpu className="w-4 h-4 text-blue-400 mt-0.5" />
+                              <div>
+                                <div className="text-xs text-neutral-blue">Footprint</div>
+                                <div className="text-sm text-white font-mono">{footprint}</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Interfaces */}
+                          {interfaces && interfaces.length > 0 && (
+                            <div className="flex items-start gap-2">
+                              <Cpu className="w-4 h-4 text-green-400 mt-0.5" />
+                              <div>
+                                <div className="text-xs text-neutral-blue">Interfaces</div>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {(Array.isArray(interfaces) ? interfaces : [interfaces]).map((iface: string, idx: number) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">
+                                      {iface}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Pinout */}
+                          {pinout && typeof pinout === "object" && Object.keys(pinout).length > 0 && (
+                            <div className="md:col-span-2 lg:col-span-3">
+                              <div className="flex items-start gap-2">
+                                <Cpu className="w-4 h-4 text-purple-400 mt-0.5" />
+                                <div className="flex-1">
+                                  <div className="text-xs text-neutral-blue mb-2">Pinout</div>
+                                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                                    {Object.entries(pinout).slice(0, 12).map(([pin, desc]: [string, any]) => (
+                                      <div key={pin} className="text-xs bg-zinc-800/50 p-2 rounded">
+                                        <span className="text-neon-teal font-mono">{pin}:</span>{" "}
+                                        <span className="text-white">{typeof desc === "string" ? desc : JSON.stringify(desc)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  {Object.keys(pinout).length > 12 && (
+                                    <div className="text-xs text-neutral-blue mt-2">
+                                      +{Object.keys(pinout).length - 12} more pins
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Documentation */}
+                          {datasheetUrl && (
+                            <div className="flex items-start gap-2">
+                              <FileText className="w-4 h-4 text-blue-400 mt-0.5" />
+                              <div>
+                                <div className="text-xs text-neutral-blue">Documentation</div>
+                                <a
+                                  href={datasheetUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-sm text-blue-400 hover:text-blue-300 underline"
+                                >
+                                  View Datasheet
+                                </a>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    )}
+                  </tr>
+                </React.Fragment>
+              );
+            })}
           </tbody>
           <tfoot className="bg-zinc-900/50 border-t border-dark-border">
             <tr>

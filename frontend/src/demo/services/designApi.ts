@@ -284,4 +284,48 @@ export const designApi = new DesignApiService(
   false
 );
 
+// Template API functions
+export interface DesignTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  requirements?: any;
+  parts_needed?: any[];
+}
+
+export interface TemplateListResponse {
+  templates: DesignTemplate[];
+}
+
+export interface TemplateGenerateResponse {
+  success: boolean;
+  template_id: string;
+  selected_parts: Record<string, any>;
+  part_recommendations?: Record<string, any>;
+}
+
+/**
+ * Fetch available design templates from backend
+ */
+export async function fetchTemplates(): Promise<DesignTemplate[]> {
+  const apiClient = (await import('./apiClient')).default;
+  const response = await apiClient.get<TemplateListResponse>('/api/v1/design/templates');
+  return response.templates || [];
+}
+
+/**
+ * Generate design from template
+ */
+export async function generateFromTemplate(
+  templateId: string,
+  customizations?: Record<string, any>
+): Promise<TemplateGenerateResponse> {
+  const apiClient = (await import('./apiClient')).default;
+  return apiClient.post<TemplateGenerateResponse>(
+    `/api/v1/design/templates/${templateId}/generate`,
+    customizations || {}
+  );
+}
+
 export { DesignApiService };

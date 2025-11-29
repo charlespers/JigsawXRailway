@@ -514,6 +514,17 @@ def _bom_items_to_selected_parts(bom_items: List[Dict[str, Any]]) -> Dict[str, D
         selected_parts[key] = part_data
     return selected_parts
 
+# Helper function to extract bom_items from request body (handles both wrapped and unwrapped formats)
+def _extract_bom_items(request_body: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """Extract bom_items from request body, handling both { bom_items: [...] } and direct list formats"""
+    if "bom_items" in request_body:
+        return request_body["bom_items"]
+    elif isinstance(request_body, list):
+        return request_body
+    else:
+        # Try to find bom_items as a key or return empty list
+        return request_body.get("bom_items", [])
+
 
 # Analysis endpoints (matching frontend expectations - accepts bom_items format)
 @router.post("/analysis/power")
@@ -709,7 +720,7 @@ async def analysis_validation(
     """Design validation endpoint - accepts bom_items format"""
     try:
         selected_parts = _bom_items_to_selected_parts(bom_items)
-        validation = realtime_validator.validate_design(selected_parts)
+        validation = realtime_validator.validate_design(selected_parts, connections)
         
         # Ensure response matches frontend DesignValidation type
         if not isinstance(validation, dict):
@@ -718,6 +729,16 @@ async def analysis_validation(
         # Ensure fix_suggestions is included if available
         if "fix_suggestions" not in validation:
             validation["fix_suggestions"] = []
+        
+        # Ensure summary exists with compliance_score
+        if "summary" not in validation:
+            validation["summary"] = {
+                "error_count": len(validation.get("issues", [])),
+                "warning_count": len(validation.get("warnings", [])),
+                "compliance_score": validation.get("compliance_score", 100)
+            }
+        elif "compliance_score" not in validation["summary"]:
+            validation["summary"]["compliance_score"] = validation.get("compliance_score", 100)
         
         return validation
     except Exception as e:
