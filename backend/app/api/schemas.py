@@ -37,3 +37,23 @@ class ErrorResponse(BaseModel):
     error: str
     details: Optional[Dict[str, Any]] = None
 
+
+class SpecSearchRequest(BaseModel):
+    """Request to search parts by specifications"""
+    query: Optional[str] = Field(None, description="Natural language query")
+    specifications: Optional[Dict[str, Any]] = Field(None, description="Exact specifications")
+    category: Optional[str] = None
+    max_results: int = Field(default=10, ge=1, le=50)
+
+
+class PowerAnalysisRequest(BaseModel):
+    """Request for power analysis"""
+    selected_parts: Dict[str, Dict[str, Any]]
+    power_supply: Optional[Dict[str, Any]] = None
+
+
+class DFMCheckRequest(BaseModel):
+    """Request for DFM check"""
+    bom: BOM
+    selected_parts: Dict[str, Dict[str, Any]]
+

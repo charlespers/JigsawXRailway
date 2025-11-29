@@ -9,6 +9,8 @@ from app.agents.architecture import ArchitectureAgent
 from app.agents.part_selection import PartSelectionAgent
 from app.agents.compatibility import CompatibilityAgent
 from app.agents.bom_generator import BOMGenerator
+from app.agents.power_analyzer import PowerAnalyzerAgent
+from app.agents.dfm_checker import DFMCheckerAgent
 from app.domain.models import Design, Requirements, Architecture
 from app.core.exceptions import PCBDesignException
 
@@ -24,6 +26,8 @@ class DesignOrchestrator:
         self.part_selection_agent = PartSelectionAgent()
         self.compatibility_agent = CompatibilityAgent()
         self.bom_generator = BOMGenerator()
+        self.power_analyzer = PowerAnalyzerAgent()
+        self.dfm_checker = DFMCheckerAgent()
     
     def generate_design(self, query: str) -> Design:
         """
@@ -102,7 +106,18 @@ class DesignOrchestrator:
                 }
             )
             
+            # Step 8: Power analysis
+            logger.info("Analyzing power budget")
+            power_analysis = self.power_analyzer.analyze_power_budget(selected_parts)
+            design.design_metadata["power_analysis"] = power_analysis
+            
+            # Step 9: DFM check
+            logger.info("Checking manufacturability")
+            dfm_analysis = self.dfm_checker.check_design(bom, selected_parts)
+            design.design_metadata["dfm_analysis"] = dfm_analysis
+            
             logger.info(f"Design generation complete: {len(selected_parts)} parts, {len(connections)} nets")
+            logger.info(f"Power budget: {power_analysis['total_power_watts']}W, DFM score: {dfm_analysis['dfm_score']}/100")
             return design
             
         except Exception as e:
