@@ -1,0 +1,362 @@
+{
+  "parts": [
+    {
+      "id": "STANDOFF-M3-6MM-FEMALE",
+      "name": "M3 Standoff 6mm Female-Female",
+      "category": "mechanical_standoff",
+      "manufacturer": "Keystone",
+      "mfr_part_number": "1908-6",
+      "description": "M3 threaded standoff, 6mm length, female-female, brass",
+      "datasheet_url": "https://www.keyelco.com/product-pdf.cfm?p=1908",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {},
+      "package": "Through-hole",
+      "footprint": "STANDOFF-M3",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "mechanical_specs": {
+        "thread_size": "M3",
+        "length": 6,
+        "length_unit": "mm",
+        "type": "female-female"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "PCB mounting, spacing",
+        "note": "Common standoff size"
+      }
+    },
+    {
+      "id": "STANDOFF-M3-10MM-FEMALE",
+      "name": "M3 Standoff 10mm Female-Female",
+      "category": "mechanical_standoff",
+      "manufacturer": "Keystone",
+      "mfr_part_number": "1908-10",
+      "description": "M3 threaded standoff, 10mm length, female-female, brass",
+      "datasheet_url": "https://www.keyelco.com/product-pdf.cfm?p=1908",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {},
+      "package": "Through-hole",
+      "footprint": "STANDOFF-M3",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.18,
+        "quantity": 1000
+      },
+      "mechanical_specs": {
+        "thread_size": "M3",
+        "length": 10,
+        "length_unit": "mm",
+        "type": "female-female"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "PCB mounting, spacing",
+        "note": "Common standoff size"
+      }
+    },
+    {
+      "id": "SCREW-M3-6MM",
+      "name": "M3 Screw 6mm",
+      "category": "mechanical_screw",
+      "manufacturer": "Generic",
+      "mfr_part_number": "M3-6MM-PAN",
+      "description": "M3 pan head screw, 6mm length, stainless steel",
+      "datasheet_url": null,
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {},
+      "package": "Bulk",
+      "footprint": null,
+      "operating_temp_range": null,
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.05,
+        "quantity": 1000
+      },
+      "mechanical_specs": {
+        "thread_size": "M3",
+        "length": 6,
+        "length_unit": "mm",
+        "head_type": "pan"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "PCB mounting",
+        "note": "Common screw size"
+      }
+    },
+    {
+      "id": "SWITCH-TACTILE-6MM",
+      "name": "Tactile Switch 6mm",
+      "category": "mechanical_switch",
+      "manufacturer": "Omron",
+      "mfr_part_number": "B3F-4055",
+      "description": "Tactile switch, 6mm x 6mm, SMT, 50mA @ 12V",
+      "datasheet_url": "https://omronfs.omron.com/en_US/ecb/products/pdf/en-b3f.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "rating": 0.05,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2",
+        "PIN3": "Terminal 3",
+        "PIN4": "Terminal 4"
+      },
+      "package": "SMT",
+      "footprint": "SWITCH-TACTILE-6MM",
+      "operating_temp_range": {
+        "min": -25,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.20,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Pull-up resistor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "User input, reset button",
+        "note": "Common tactile switch"
+      }
+    },
+    {
+      "id": "SWITCH-SLIDE-SPDT",
+      "name": "Slide Switch SPDT",
+      "category": "mechanical_switch",
+      "manufacturer": "C&K",
+      "mfr_part_number": "OS102011MS2QS1",
+      "description": "Slide switch, SPDT, through-hole, 0.3A @ 30V",
+      "datasheet_url": "https://www.ckswitches.com/media/1422/os.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "rating": 0.3,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "COM": "Common terminal",
+        "NO": "Normally open",
+        "NC": "Normally closed"
+      },
+      "package": "Through-hole",
+      "footprint": "SWITCH-SLIDE-SPDT",
+      "operating_temp_range": {
+        "min": -20,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Power switch, mode selection",
+        "note": "Common slide switch"
+      }
+    },
+    {
+      "id": "RELAY-SPDT-5V",
+      "name": "SPDT Relay 5V",
+      "category": "mechanical_relay",
+      "manufacturer": "Omron",
+      "mfr_part_number": "G5V-2-5VDC",
+      "description": "SPDT relay, 5V coil, 2A @ 30V DC, through-hole",
+      "datasheet_url": "https://omronfs.omron.com/en_US/ecb/products/pdf/en-g5v.pdf",
+      "supply_voltage_range": {
+        "coil": {
+          "min": 4.5,
+          "max": 5.5,
+          "nominal": 5.0,
+          "unit": "V"
+        }
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "contact": 2.0,
+        "coil": 0.071,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "COIL+": "Coil positive",
+        "COIL-": "Coil negative",
+        "COM": "Common contact",
+        "NO": "Normally open",
+        "NC": "Normally closed"
+      },
+      "package": "Through-hole",
+      "footprint": "RELAY-SPDT-5V",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.25,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "diode",
+          "part": "1N4148",
+          "purpose": "Flyback diode for coil",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Switching high current loads",
+        "note": "Common relay for power switching"
+      }
+    },
+    {
+      "id": "FAN-5V-40MM",
+      "name": "5V DC Fan 40mm",
+      "category": "mechanical_fan",
+      "manufacturer": "Sunon",
+      "mfr_part_number": "MF40101V1-1000U-A99",
+      "description": "5V DC brushless fan, 40mm x 40mm x 10mm, 0.12A",
+      "datasheet_url": "https://www.sunon.com/usa/products/dc-fans/40x40x10mm",
+      "supply_voltage_range": {
+        "min": 4.0,
+        "max": 5.5,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.12,
+        "max": 0.15,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "RED": "Positive (5V)",
+        "BLACK": "Negative (GND)"
+      },
+      "package": "Through-hole",
+      "footprint": "FAN-40MM",
+      "operating_temp_range": {
+        "min": -10,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.50,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Cooling, ventilation",
+        "note": "Small DC fan for cooling"
+      }
+    },
+    {
+      "id": "FAN-12V-40MM",
+      "name": "12V DC Fan 40mm",
+      "category": "mechanical_fan",
+      "manufacturer": "Sunon",
+      "mfr_part_number": "MF40101V2-1000U-A99",
+      "description": "12V DC brushless fan, 40mm x 40mm x 10mm, 0.08A",
+      "datasheet_url": "https://www.sunon.com/usa/products/dc-fans/40x40x10mm",
+      "supply_voltage_range": {
+        "min": 10.8,
+        "max": 13.2,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.08,
+        "max": 0.10,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "RED": "Positive (12V)",
+        "BLACK": "Negative (GND)"
+      },
+      "package": "Through-hole",
+      "footprint": "FAN-40MM",
+      "operating_temp_range": {
+        "min": -10,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.75,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Cooling, ventilation",
+        "note": "Small DC fan for cooling"
+      }
+    }
+  ]
+}
+

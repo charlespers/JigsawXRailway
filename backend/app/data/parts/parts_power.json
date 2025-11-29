@@ -1,0 +1,1700 @@
+{
+  "parts": [
+    {
+      "id": "USB-C-USB2.0",
+      "name": "USB Type-C Receptacle USB 2.0",
+      "category": "connector_usb_c",
+      "manufacturer": "GCT",
+      "mfr_part_number": "USB4105-GF-A",
+      "description": "USB Type-C receptacle, USB 2.0 only, SMT, 5V power delivery",
+      "datasheet_url": "https://gct.co/files/drawings/usb4105.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 1.5,
+        "max": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["USB-C", "USB2.0"],
+      "pinout": {
+        "VBUS": "Power input 5V",
+        "GND": "Ground",
+        "D+": "USB Data+",
+        "D-": "USB Data-",
+        "CC1": "Configuration Channel 1",
+        "CC2": "Configuration Channel 2",
+        "SBU1": "Sideband Use 1",
+        "SBU2": "Sideband Use 2"
+      },
+      "package": "SMT",
+      "footprint": "USB-C-USB4105",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "5.1k",
+          "package": "0603",
+          "purpose": "CC1 pull-down (5V sink)",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "5.1k",
+          "package": "0603",
+          "purpose": "CC2 pull-down (5V sink)",
+          "quantity": 1
+        },
+        {
+          "type": "tvs_diode",
+          "part": "USBLC6-2SC6",
+          "purpose": "ESD protection D+/D-/VBUS",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["5V_VBUS"],
+        "required_interfaces": ["USB2.0"],
+        "cc_resistor_value": "5.1k",
+        "note": "For 5V-only sink mode"
+      }
+    },
+    {
+      "id": "AMS1117-3.3",
+      "name": "AMS1117 3.3V LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "AMS",
+      "mfr_part_number": "AMS1117-3.3",
+      "description": "1A low dropout voltage regulator, fixed 3.3V output",
+      "datasheet_url": "https://www.advanced-monolithic.com/pdf/ds1117.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 15.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.8,
+        "max": 1.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 4.5-15V",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V"
+      },
+      "package": "SOT-223",
+      "footprint": "SOT-223",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.25,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.02,
+        "unit": "V"
+      },
+      "dropout_voltage": {
+        "value": 1.2,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "25V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5V",
+        "output_voltage": "3.3V",
+        "max_current": "1A",
+        "note": "Requires input and output capacitors"
+      }
+    },
+    {
+      "id": "LM1117-3.3",
+      "name": "LM1117 3.3V LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM1117-3.3",
+      "description": "800mA low dropout voltage regulator, fixed 3.3V output",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm1117.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 15.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.7,
+        "max": 0.8,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 4.5-15V",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V"
+      },
+      "package": "SOT-223",
+      "footprint": "SOT-223",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.30,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.015,
+        "unit": "V"
+      },
+      "dropout_voltage": {
+        "value": 1.2,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "25V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5V",
+        "output_voltage": "3.3V",
+        "max_current": "800mA",
+        "note": "Requires input and output capacitors"
+      }
+    },
+    {
+      "id": "POLYFUSE-500mA",
+      "name": "500mA Resettable Fuse",
+      "category": "protection_polyfuse",
+      "manufacturer": "Bourns",
+      "mfr_part_number": "MF-MSMF050",
+      "description": "500mA resettable fuse, surface mount, 60V max voltage",
+      "datasheet_url": "https://www.bourns.com/docs/product-datasheets/mf-msmf.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "hold": 0.5,
+        "trip": 1.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "1206",
+      "footprint": "1206",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "placement": "In series with power input",
+        "note": "Protects against overcurrent"
+      }
+    },
+    {
+      "id": "TVS-USB",
+      "name": "USB ESD Protection Diode",
+      "category": "protection_tvs",
+      "manufacturer": "STMicroelectronics",
+      "mfr_part_number": "USBLC6-2SC6",
+      "description": "ESD protection for USB 2.0 lines (D+/D-/VBUS)",
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/usblc6-2sc6.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VBUS": "VBUS protection",
+        "D+": "D+ protection",
+        "D-": "D- protection",
+        "GND": "Ground"
+      },
+      "package": "SC-70-6",
+      "footprint": "SC-70-6",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.20,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "placement": "Between USB connector and downstream circuits",
+        "note": "Protects against ESD events"
+      }
+    },
+    {
+      "id": "LM2596S-3.3",
+      "name": "LM2596S 3.3V Buck Converter",
+      "category": "regulator_buck",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM2596S-3.3",
+      "description": "3A step-down switching regulator, fixed 3.3V output, 92% efficiency",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm2596.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 40.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 2.5,
+        "max": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 4.5-40V",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V",
+        "FB": "Feedback pin (internal)",
+        "ON/OFF": "Enable pin"
+      },
+      "package": "TO-263-5",
+      "footprint": "TO-263-5",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.85,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.04,
+        "unit": "V"
+      },
+      "efficiency": {
+        "typical": 92,
+        "unit": "%"
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "47uH",
+          "current_rating": "3A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "100uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "220uF",
+          "voltage_rating": "16V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "diode",
+          "part": "1N5822",
+          "purpose": "Schottky freewheeling diode",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5-40V",
+        "output_voltage": "3.3V",
+        "max_current": "3A",
+        "note": "Switching regulator, requires inductor and diode"
+      }
+    },
+    {
+      "id": "TPS62133",
+      "name": "TPS62133 3.3V Buck Converter",
+      "category": "regulator_buck",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TPS62133",
+      "description": "3A synchronous step-down converter, fixed 3.3V output, 95% efficiency",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/tps62133.pdf",
+      "supply_voltage_range": {
+        "min": 4.75,
+        "max": 28.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 2.5,
+        "max": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 4.75-28V",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V",
+        "EN": "Enable pin",
+        "PG": "Power good output"
+      },
+      "package": "SOT-23-8",
+      "footprint": "SOT-23-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 2.15,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.02,
+        "unit": "V"
+      },
+      "efficiency": {
+        "typical": 95,
+        "unit": "%"
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "4.7uH",
+          "current_rating": "4A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "47uF",
+          "voltage_rating": "16V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5-28V",
+        "output_voltage": "3.3V",
+        "max_current": "3A",
+        "note": "Synchronous buck converter, no external diode needed"
+      }
+    },
+    {
+      "id": "LM1117-ADJ",
+      "name": "LM1117 Adjustable LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM1117-ADJ",
+      "description": "800mA adjustable low dropout voltage regulator",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm1117.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 15.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.7,
+        "max": 0.8,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 4.5-15V",
+        "GND": "Ground",
+        "VOUT": "Output voltage (adjustable)",
+        "ADJ": "Adjustment pin"
+      },
+      "package": "SOT-223",
+      "footprint": "SOT-223",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "min": 1.25,
+        "max": 13.8,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "dropout_voltage": {
+        "value": 1.2,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "25V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "240",
+          "package": "0603",
+          "purpose": "ADJ feedback resistor R1",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "1k",
+          "package": "0603",
+          "purpose": "ADJ feedback resistor R2 (for 3.3V)",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5V",
+        "output_voltage": "Adjustable (1.25V-13.8V)",
+        "max_current": "800mA",
+        "note": "Requires external feedback resistors for voltage setting"
+      }
+    },
+    {
+      "id": "AP2112K-3.3",
+      "name": "AP2112K 3.3V LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "Diodes Incorporated",
+      "mfr_part_number": "AP2112K-3.3TRG1",
+      "description": "600mA low dropout regulator, fixed 3.3V output, low quiescent current",
+      "datasheet_url": "https://www.diodes.com/assets/Datasheets/AP2112.pdf",
+      "supply_voltage_range": {
+        "min": 2.5,
+        "max": 6.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.5,
+        "max": 0.6,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 2.5-6V",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V",
+        "EN": "Enable pin"
+      },
+      "package": "SOT-23-5",
+      "footprint": "SOT-23-5",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.28,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.02,
+        "unit": "V"
+      },
+      "dropout_voltage": {
+        "value": 0.3,
+        "unit": "V",
+        "at_current": "600mA"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "2.2uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5V",
+        "output_voltage": "3.3V",
+        "max_current": "600mA",
+        "note": "Low dropout, suitable for battery-powered applications"
+      }
+    },
+    {
+      "id": "USB-C-USB3.0",
+      "name": "USB Type-C Receptacle USB 3.0",
+      "category": "connector_usb_c",
+      "manufacturer": "Molex",
+      "mfr_part_number": "47346-0001",
+      "description": "USB Type-C receptacle, USB 3.0/3.1 Gen1, SMT, 5V power delivery",
+      "datasheet_url": "https://www.molex.com/pdm_docs/sd/473460001_sd.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 3.0,
+        "max": 5.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["USB-C", "USB3.0"],
+      "pinout": {
+        "VBUS": "Power input 5V",
+        "GND": "Ground",
+        "D+": "USB Data+",
+        "D-": "USB Data-",
+        "TX1+": "USB3.0 TX+",
+        "TX1-": "USB3.0 TX-",
+        "RX1+": "USB3.0 RX+",
+        "RX1-": "USB3.0 RX-",
+        "CC1": "Configuration Channel 1",
+        "CC2": "Configuration Channel 2",
+        "SBU1": "Sideband Use 1",
+        "SBU2": "Sideband Use 2"
+      },
+      "package": "SMT",
+      "footprint": "USB-C-MOLEX-47346",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.85,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "5.1k",
+          "package": "0603",
+          "purpose": "CC1 pull-down (5V sink)",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "5.1k",
+          "package": "0603",
+          "purpose": "CC2 pull-down (5V sink)",
+          "quantity": 1
+        },
+        {
+          "type": "tvs_diode",
+          "part": "USBLC6-2SC6",
+          "purpose": "ESD protection",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["5V_VBUS"],
+        "required_interfaces": ["USB3.0"],
+        "cc_resistor_value": "5.1k"
+      }
+    },
+    {
+      "id": "POLYFUSE-750mA",
+      "name": "750mA Resettable Fuse",
+      "category": "protection_polyfuse",
+      "manufacturer": "Bourns",
+      "mfr_part_number": "MF-MSMF075",
+      "description": "750mA resettable fuse, surface mount, 60V max voltage",
+      "datasheet_url": "https://www.bourns.com/docs/product-datasheets/mf-msmf.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "hold": 0.75,
+        "trip": 1.5,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "1206",
+      "footprint": "1206",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.18,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "placement": "In series with power input",
+        "note": "Protects against overcurrent"
+      }
+    },
+    {
+      "id": "POLYFUSE-1A",
+      "name": "1A Resettable Fuse",
+      "category": "protection_polyfuse",
+      "manufacturer": "Bourns",
+      "mfr_part_number": "MF-MSMF100",
+      "description": "1A resettable fuse, surface mount, 60V max voltage",
+      "datasheet_url": "https://www.bourns.com/docs/product-datasheets/mf-msmf.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": {
+        "hold": 1.0,
+        "trip": 2.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "PIN1": "Terminal 1",
+        "PIN2": "Terminal 2"
+      },
+      "package": "1206",
+      "footprint": "1206",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.20,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "placement": "In series with power input",
+        "note": "Protects against overcurrent"
+      }
+    },
+    {
+      "id": "MCP1700-3.3",
+      "name": "MCP1700 3.3V LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "Microchip",
+      "mfr_part_number": "MCP1700-3302E/TO",
+      "description": "250mA low dropout regulator, fixed 3.3V output, ultra-low quiescent current",
+      "datasheet_url": "https://ww1.microchip.com/downloads/en/DeviceDoc/20001826D.pdf",
+      "supply_voltage_range": {
+        "min": 2.7,
+        "max": 6.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 0.2,
+        "max": 0.25,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 2.7-6V",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V"
+      },
+      "package": "SOT-23-3",
+      "footprint": "SOT-23-3",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.22,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.02,
+        "unit": "V"
+      },
+      "dropout_voltage": {
+        "value": 0.178,
+        "unit": "V",
+        "at_current": "250mA"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5V",
+        "output_voltage": "3.3V",
+        "max_current": "250mA",
+        "note": "Ultra-low quiescent current, ideal for battery applications"
+      }
+    },
+    {
+      "id": "TPS5430",
+      "name": "TPS5430 3A Buck Converter",
+      "category": "regulator_buck",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TPS5430",
+      "description": "3A step-down switching regulator, adjustable output, 90% efficiency",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/tps5430.pdf",
+      "supply_voltage_range": {
+        "min": 5.5,
+        "max": 36.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 2.5,
+        "max": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 5.5-36V",
+        "GND": "Ground",
+        "VOUT": "Output voltage (adjustable)",
+        "FB": "Feedback pin",
+        "EN": "Enable pin",
+        "COMP": "Compensation pin"
+      },
+      "package": "SOIC-8",
+      "footprint": "SOIC-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.50,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "min": 1.22,
+        "max": 31.32,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "efficiency": {
+        "typical": 90,
+        "unit": "%"
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "22uH",
+          "current_rating": "3A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "47uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "100uF",
+          "voltage_rating": "16V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Feedback resistor R1",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "3.3k",
+          "package": "0603",
+          "purpose": "Feedback resistor R2 (for 3.3V)",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "5-36V",
+        "output_voltage": "Adjustable (1.22V-31.32V)",
+        "max_current": "3A",
+        "note": "Switching regulator, requires inductor and feedback resistors"
+      }
+    },
+    {
+      "id": "MT3608",
+      "name": "MT3608 Boost Converter",
+      "category": "regulator_boost",
+      "manufacturer": "Microchip",
+      "mfr_part_number": "MT3608",
+      "description": "2A step-up switching regulator, adjustable output, 93% efficiency",
+      "datasheet_url": "https://datasheet.lcsc.com/lcsc/1811151637_XI-AN-Aerosemi-Tech-MT3608_C123456.pdf",
+      "supply_voltage_range": {
+        "min": 2.0,
+        "max": 24.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 1.5,
+        "max": 2.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 2-24V",
+        "GND": "Ground",
+        "VOUT": "Output voltage (adjustable)",
+        "FB": "Feedback pin",
+        "EN": "Enable pin"
+      },
+      "package": "SOT-23-6",
+      "footprint": "SOT-23-6",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "min": 2.0,
+        "max": 28.0,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "efficiency": {
+        "typical": 93,
+        "unit": "%"
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "22uH",
+          "current_rating": "2A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "47uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Feedback resistor R1",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "2.2k",
+          "package": "0603",
+          "purpose": "Feedback resistor R2 (for 12V)",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "2-24V",
+        "output_voltage": "Adjustable (2V-28V)",
+        "max_current": "2A",
+        "note": "Boost converter, requires inductor and feedback resistors"
+      }
+    },
+    {
+      "id": "TPS61040",
+      "name": "TPS61040 Boost Converter",
+      "category": "regulator_boost",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TPS61040",
+      "description": "1.5A step-up switching regulator, adjustable output, 95% efficiency",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/tps61040.pdf",
+      "supply_voltage_range": {
+        "min": 0.9,
+        "max": 5.5,
+        "nominal": 3.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "typical": 1.2,
+        "max": 1.5,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage 0.9-5.5V",
+        "GND": "Ground",
+        "VOUT": "Output voltage (adjustable)",
+        "FB": "Feedback pin",
+        "EN": "Enable pin"
+      },
+      "package": "MSOP-8",
+      "footprint": "MSOP-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.25,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "min": 1.8,
+        "max": 5.5,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "efficiency": {
+        "typical": 95,
+        "unit": "%"
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "10uH",
+          "current_rating": "2A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "0.9-5.5V",
+        "output_voltage": "Adjustable (1.8V-5.5V)",
+        "max_current": "1.5A",
+        "note": "High-efficiency boost converter for battery applications"
+      }
+    },
+    {
+      "id": "TVS-5V-SOT23",
+      "name": "5V TVS Diode",
+      "category": "protection_tvs",
+      "manufacturer": "STMicroelectronics",
+      "mfr_part_number": "SMAJ5.0A",
+      "description": "5V unidirectional TVS diode, 400W peak power, SOT-23 package",
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/smaj.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": {
+        "peak": 400,
+        "unit": "W"
+      },
+      "interface_type": [],
+      "pinout": {
+        "ANODE": "Anode",
+        "CATHODE": "Cathode"
+      },
+      "package": "SOT-23",
+      "footprint": "SOT-23",
+      "operating_temp_range": {
+        "min": -55,
+        "max": 150,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "voltage_rating": {
+        "standoff": 5.0,
+        "breakdown": 6.4,
+        "unit": "V"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Transient voltage suppression, ESD protection",
+        "note": "Protects against voltage spikes"
+      }
+    },
+    {
+      "id": "ESD-PROTECTION-USB",
+      "name": "USB ESD Protection Array",
+      "category": "protection_esd",
+      "manufacturer": "STMicroelectronics",
+      "mfr_part_number": "USBLC6-2SC6",
+      "description": "ESD protection for USB 2.0 lines (D+/D-/VBUS), 15kV",
+      "datasheet_url": "https://www.st.com/resource/en/datasheet/usblc6-2sc6.pdf",
+      "supply_voltage_range": null,
+      "io_voltage_levels": null,
+      "current_max": null,
+      "power_rating": null,
+      "interface_type": ["USB2.0"],
+      "pinout": {
+        "VBUS": "VBUS protection",
+        "D+": "D+ protection",
+        "D-": "D- protection",
+        "GND": "Ground"
+      },
+      "package": "SC-70-6",
+      "footprint": "SC-70-6",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.20,
+        "quantity": 1000
+      },
+      "esd_rating": {
+        "value": 15,
+        "unit": "kV"
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "placement": "Between USB connector and downstream circuits",
+        "note": "Protects against ESD events on USB lines"
+      }
+    },
+    {
+      "id": "AMS1117-5.0",
+      "name": "AMS1117 5.0V LDO Regulator",
+      "category": "regulator_ldo",
+      "manufacturer": "AMS",
+      "mfr_part_number": "AMS1117-5.0",
+      "description": "1A low dropout voltage regulator, fixed 5.0V output",
+      "datasheet_url": "https://www.advanced-monolithic.com/pdf/ds1117.pdf",
+      "supply_voltage_range": {
+        "min": 6.0,
+        "max": 15.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "nominal": 5.0,
+        "tolerance": 0.02,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.8,
+        "max": 1.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOT-223",
+      "footprint": "SOT-223",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "25V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "22uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "6-15V",
+        "output_voltage": "5.0V",
+        "max_current": "1A"
+      }
+    },
+    {
+      "id": "LM2596-ADJ",
+      "name": "LM2596 Adjustable Switching Regulator",
+      "category": "regulator_switching",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM2596S-ADJ",
+      "description": "3A step-down switching regulator, adjustable output 1.23V to 37V, 150kHz",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm2596.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 40.0,
+        "nominal": 12.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "min": 1.23,
+        "max": 37.0,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 2.5,
+        "max": 3.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "TO-263-5",
+      "footprint": "TO-263-5",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.80,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "100uH",
+          "current_rating": "3A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "100uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "220uF",
+          "voltage_rating": "25V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "diode",
+          "part": "1N5822",
+          "purpose": "Schottky rectifier",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "1k",
+          "package": "0603",
+          "purpose": "Feedback divider (adjustable)",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "4.5-40V",
+        "output_voltage": "1.23-37V (adjustable)",
+        "max_current": "3A",
+        "efficiency": "80-90%"
+      }
+    },
+    {
+      "id": "XL6009",
+      "name": "XL6009 Boost Converter",
+      "category": "regulator_switching",
+      "manufacturer": "XLSEMI",
+      "mfr_part_number": "XL6009",
+      "description": "4A step-up switching regulator, adjustable output up to 35V, 400kHz",
+      "datasheet_url": "https://www.xlsemi.com/datasheet/xl6009%20datasheet.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 32.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "min": 5.0,
+        "max": 35.0,
+        "adjustable": true,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 3.5,
+        "max": 4.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOP-8",
+      "footprint": "SOP-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.85,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "inductor",
+          "value": "47uH",
+          "current_rating": "4A",
+          "package": "SMD",
+          "purpose": "Switching inductor",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "100uF",
+          "voltage_rating": "50V",
+          "package": "1210",
+          "purpose": "Output capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "diode",
+          "part": "SS34",
+          "purpose": "Schottky rectifier",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Feedback divider",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "3-32V",
+        "output_voltage": "5-35V (adjustable)",
+        "max_current": "4A",
+        "efficiency": "85-92%"
+      }
+    },
+    {
+      "id": "TP4056",
+      "name": "TP4056 Li-ion Battery Charger",
+      "category": "battery_charger",
+      "manufacturer": "Top Power",
+      "mfr_part_number": "TP4056",
+      "description": "1A linear Li-ion battery charger with charge termination, USB powered",
+      "datasheet_url": "https://datasheet.lcsc.com/lcsc/1811061432_Top-Power-Assembly-TP4056_C82425.pdf",
+      "supply_voltage_range": {
+        "min": 4.5,
+        "max": 8.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "nominal": 4.2,
+        "tolerance": 0.01,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.8,
+        "max": 1.0,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOP-8",
+      "footprint": "SOP-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.25,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "1.2k",
+          "package": "0603",
+          "purpose": "Charge current set (1A)",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        },
+        {
+          "type": "LED",
+          "color": "red",
+          "package": "0603",
+          "purpose": "Charging indicator",
+          "quantity": 1
+        },
+        {
+          "type": "LED",
+          "color": "blue",
+          "package": "0603",
+          "purpose": "Charge complete indicator",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "4.5-8V (USB)",
+        "output_voltage": "4.2V (Li-ion)",
+        "charge_current": "1A",
+        "charge_termination": "CC/CV with auto-termination"
+      }
+    },
+    {
+      "id": "MCP73831",
+      "name": "MCP73831 Li-ion Battery Charger",
+      "category": "battery_charger",
+      "manufacturer": "Microchip",
+      "mfr_part_number": "MCP73831-2ACI/OT",
+      "description": "500mA linear Li-ion battery charger with charge termination, thermal regulation",
+      "datasheet_url": "https://ww1.microchip.com/downloads/en/DeviceDoc/20001984g.pdf",
+      "supply_voltage_range": {
+        "min": 4.25,
+        "max": 6.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "output_voltage": {
+        "nominal": 4.2,
+        "tolerance": 0.01,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.45,
+        "max": 0.5,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "package": "SOT-23-5",
+      "footprint": "SOT-23-5",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.55,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "2k",
+          "package": "0603",
+          "purpose": "Charge current set (500mA)",
+          "quantity": 1
+        },
+        {
+          "type": "capacitor",
+          "value": "10uF",
+          "voltage_rating": "16V",
+          "package": "0805",
+          "purpose": "Input capacitor",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "input_voltage": "4.25-6V",
+        "output_voltage": "4.2V (Li-ion)",
+        "charge_current": "500mA",
+        "thermal_regulation": "Yes"
+      }
+    },
+    {
+      "id": "MAX17048",
+      "name": "MAX17048 Fuel Gauge",
+      "category": "battery_monitor",
+      "manufacturer": "Maxim Integrated",
+      "mfr_part_number": "MAX17048G+",
+      "description": "Li-ion fuel gauge IC, I2C interface, battery capacity and voltage monitoring",
+      "datasheet_url": "https://datasheets.maximintegrated.com/en/ds/MAX17048-MAX17049.pdf",
+      "supply_voltage_range": {
+        "min": 2.5,
+        "max": 5.5,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "logic_high_min": 0.7,
+        "logic_high_max": 5.5,
+        "logic_low_max": 0.3,
+        "unit": "V"
+      },
+      "current_max": {
+        "typical": 0.000015,
+        "max": 0.00003,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VDD": "Power supply 2.5-5.5V",
+        "GND": "Ground",
+        "SDA": "I2C Data",
+        "SCL": "I2C Clock",
+        "ALERT": "Low battery alert"
+      },
+      "package": "TDFN-8",
+      "footprint": "TDFN-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 1.50,
+        "quantity": 1000
+      },
+      "i2c_address": "0x36",
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Decoupling VDD",
+          "quantity": 1
+        },
+        {
+          "type": "resistor",
+          "value": "4.7k",
+          "package": "0603",
+          "purpose": "I2C pull-up",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "power_rails": ["3.3V"],
+        "required_interfaces": ["I2C"],
+        "monitors": "Battery voltage, capacity, state of charge",
+        "pullup_voltage": "3.3V"
+      }
+    }
+  ]
+}
+

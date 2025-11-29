@@ -1,0 +1,592 @@
+{
+  "parts": [
+    {
+      "id": "LM358",
+      "name": "LM358 Dual Op-Amp",
+      "category": "ic_opamp",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM358",
+      "description": "Dual operational amplifier, single supply, rail-to-rail output",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm358.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 32.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "output": 0.04,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCC": "Positive supply",
+        "GND": "Ground",
+        "OUT1": "Output 1",
+        "IN1+": "Non-inverting input 1",
+        "IN1-": "Inverting input 1",
+        "OUT2": "Output 2",
+        "IN2+": "Non-inverting input 2",
+        "IN2-": "Inverting input 2"
+      },
+      "package": "SOIC-8",
+      "footprint": "SOIC-8",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.25,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Amplification, filtering, signal conditioning",
+        "note": "Very common op-amp"
+      }
+    },
+    {
+      "id": "LM324",
+      "name": "LM324 Quad Op-Amp",
+      "category": "ic_opamp",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM324",
+      "description": "Quad operational amplifier, single supply, rail-to-rail output",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm324.pdf",
+      "supply_voltage_range": {
+        "min": 3.0,
+        "max": 32.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "output": 0.04,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCC": "Positive supply",
+        "GND": "Ground",
+        "OUT1": "Output 1",
+        "IN1+": "Non-inverting input 1",
+        "IN1-": "Inverting input 1",
+        "OUT2": "Output 2",
+        "IN2+": "Non-inverting input 2",
+        "IN2-": "Inverting input 2",
+        "OUT3": "Output 3",
+        "IN3+": "Non-inverting input 3",
+        "IN3-": "Inverting input 3",
+        "OUT4": "Output 4",
+        "IN4+": "Non-inverting input 4",
+        "IN4-": "Inverting input 4"
+      },
+      "package": "SOIC-14",
+      "footprint": "SOIC-14",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.35,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Amplification, filtering, signal conditioning",
+        "note": "Common quad op-amp"
+      }
+    },
+    {
+      "id": "TL072",
+      "name": "TL072 Dual Op-Amp",
+      "category": "ic_opamp",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TL072",
+      "description": "Dual JFET-input operational amplifier, low noise",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/tl072.pdf",
+      "supply_voltage_range": {
+        "min": 6.0,
+        "max": 36.0,
+        "nominal": 15.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "output": 0.01,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCC+": "Positive supply",
+        "VCC-": "Negative supply",
+        "OUT1": "Output 1",
+        "IN1+": "Non-inverting input 1",
+        "IN1-": "Inverting input 1",
+        "OUT2": "Output 2",
+        "IN2+": "Non-inverting input 2",
+        "IN2-": "Inverting input 2"
+      },
+      "package": "SOIC-8",
+      "footprint": "SOIC-8",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.45,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Audio amplification, low-noise applications",
+        "note": "Low-noise op-amp for audio"
+      }
+    },
+    {
+      "id": "LM393",
+      "name": "LM393 Dual Comparator",
+      "category": "ic_comparator",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM393",
+      "description": "Dual voltage comparator, open-drain output",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm393.pdf",
+      "supply_voltage_range": {
+        "min": 2.0,
+        "max": 36.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "output": 0.016,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCC": "Positive supply",
+        "GND": "Ground",
+        "OUT1": "Output 1 (open drain)",
+        "IN1+": "Non-inverting input 1",
+        "IN1-": "Inverting input 1",
+        "OUT2": "Output 2 (open drain)",
+        "IN2+": "Non-inverting input 2",
+        "IN2-": "Inverting input 2"
+      },
+      "package": "SOIC-8",
+      "footprint": "SOIC-8",
+      "operating_temp_range": {
+        "min": 0,
+        "max": 70,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.20,
+        "quantity": 1000
+      },
+      "recommended_external_components": [
+        {
+          "type": "resistor",
+          "value": "10k",
+          "package": "0603",
+          "purpose": "Pull-up resistor for open-drain output",
+          "quantity": 2
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Voltage comparison, level detection",
+        "note": "Common comparator IC"
+      }
+    },
+    {
+      "id": "74HC00",
+      "name": "74HC00 Quad NAND Gate",
+      "category": "ic_logic",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "SN74HC00",
+      "description": "Quad 2-input NAND gate, CMOS",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/sn74hc00.pdf",
+      "supply_voltage_range": {
+        "min": 2.0,
+        "max": 6.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "high": 3.5,
+        "low": 1.5,
+        "unit": "V"
+      },
+      "current_max": {
+        "output": 0.025,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCC": "Positive supply",
+        "GND": "Ground",
+        "1A": "Input A1",
+        "1B": "Input B1",
+        "1Y": "Output Y1",
+        "2A": "Input A2",
+        "2B": "Input B2",
+        "2Y": "Output Y2",
+        "3Y": "Output Y3",
+        "3A": "Input A3",
+        "3B": "Input B3",
+        "4Y": "Output Y4",
+        "4A": "Input A4",
+        "4B": "Input B4"
+      },
+      "package": "SOIC-14",
+      "footprint": "SOIC-14",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Logic operations, signal gating",
+        "note": "Common logic gate"
+      }
+    },
+    {
+      "id": "74HC08",
+      "name": "74HC08 Quad AND Gate",
+      "category": "ic_logic",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "SN74HC08",
+      "description": "Quad 2-input AND gate, CMOS",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/sn74hc08.pdf",
+      "supply_voltage_range": {
+        "min": 2.0,
+        "max": 6.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "high": 3.5,
+        "low": 1.5,
+        "unit": "V"
+      },
+      "current_max": {
+        "output": 0.025,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCC": "Positive supply",
+        "GND": "Ground",
+        "1A": "Input A1",
+        "1B": "Input B1",
+        "1Y": "Output Y1",
+        "2A": "Input A2",
+        "2B": "Input B2",
+        "2Y": "Output Y2",
+        "3Y": "Output Y3",
+        "3A": "Input A3",
+        "3B": "Input B3",
+        "4Y": "Output Y4",
+        "4A": "Input A4",
+        "4B": "Input B4"
+      },
+      "package": "SOIC-14",
+      "footprint": "SOIC-14",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.15,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Logic operations, signal gating",
+        "note": "Common logic gate"
+      }
+    },
+    {
+      "id": "TXS0108E",
+      "name": "TXS0108E 8-Bit Level Shifter",
+      "category": "ic_level_shifter",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "TXS0108E",
+      "description": "8-bit bidirectional voltage-level translator, 1.2V to 3.6V",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/txs0108e.pdf",
+      "supply_voltage_range": {
+        "min": 1.2,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "A_side": {
+          "min": 1.2,
+          "max": 3.6,
+          "unit": "V"
+        },
+        "B_side": {
+          "min": 1.65,
+          "max": 5.5,
+          "unit": "V"
+        }
+      },
+      "current_max": {
+        "output": 0.05,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VCCA": "A-side supply",
+        "VCCB": "B-side supply",
+        "GND": "Ground",
+        "OE": "Output enable",
+        "A1": "A-side I/O 1",
+        "B1": "B-side I/O 1",
+        "A2": "A-side I/O 2",
+        "B2": "B-side I/O 2",
+        "A3": "A-side I/O 3",
+        "B3": "B-side I/O 3",
+        "A4": "A-side I/O 4",
+        "B4": "B-side I/O 4",
+        "A5": "A-side I/O 5",
+        "B5": "B-side I/O 5",
+        "A6": "A-side I/O 6",
+        "B6": "B-side I/O 6",
+        "A7": "A-side I/O 7",
+        "B7": "B-side I/O 7",
+        "A8": "A-side I/O 8",
+        "B8": "B-side I/O 8"
+      },
+      "package": "TSSOP-20",
+      "footprint": "TSSOP-20",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.75,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Level shifting between 1.8V/3.3V/5V logic",
+        "note": "Common level shifter for I2C/SPI"
+      }
+    },
+    {
+      "id": "PCA9306",
+      "name": "PCA9306 Dual I2C Level Shifter",
+      "category": "ic_level_shifter",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "PCA9306",
+      "description": "Dual bidirectional I2C-bus and SMBus voltage-level translator",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/pca9306.pdf",
+      "supply_voltage_range": {
+        "min": 1.0,
+        "max": 3.6,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": {
+        "A_side": {
+          "min": 1.0,
+          "max": 3.6,
+          "unit": "V"
+        },
+        "B_side": {
+          "min": 1.8,
+          "max": 5.5,
+          "unit": "V"
+        }
+      },
+      "current_max": {
+        "output": 0.1,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": ["I2C"],
+      "pinout": {
+        "VREF1": "A-side reference voltage",
+        "VREF2": "B-side reference voltage",
+        "GND": "Ground",
+        "EN": "Enable",
+        "SCL1": "A-side SCL",
+        "SCL2": "B-side SCL",
+        "SDA1": "A-side SDA",
+        "SDA2": "B-side SDA"
+      },
+      "package": "TSSOP-8",
+      "footprint": "TSSOP-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.50,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "I2C level shifting between different voltage domains",
+        "note": "Common I2C level shifter"
+      }
+    },
+    {
+      "id": "MCP6002",
+      "name": "MCP6002 Dual Op-Amp",
+      "category": "ic_opamp",
+      "manufacturer": "Microchip",
+      "mfr_part_number": "MCP6002",
+      "description": "Dual operational amplifier, rail-to-rail, low power",
+      "datasheet_url": "https://ww1.microchip.com/downloads/en/DeviceDoc/21733j.pdf",
+      "supply_voltage_range": {
+        "min": 1.8,
+        "max": 6.0,
+        "nominal": 3.3,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "output": 0.023,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VDD": "Positive supply",
+        "VSS": "Ground",
+        "OUT1": "Output 1",
+        "IN1+": "Non-inverting input 1",
+        "IN1-": "Inverting input 1",
+        "OUT2": "Output 2",
+        "IN2+": "Non-inverting input 2",
+        "IN2-": "Inverting input 2"
+      },
+      "package": "SOIC-8",
+      "footprint": "SOIC-8",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 125,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.30,
+        "quantity": 1000
+      },
+      "recommended_external_components": [],
+      "typical_circuit": {
+        "usage": "Low-power amplification, battery-powered applications",
+        "note": "Low-power op-amp"
+      }
+    },
+    {
+      "id": "LM4040-3.3",
+      "name": "LM4040 3.3V Voltage Reference",
+      "category": "ic_voltage_reference",
+      "manufacturer": "Texas Instruments",
+      "mfr_part_number": "LM4040CIM3-3.3",
+      "description": "Precision 3.3V voltage reference, ±0.1% accuracy",
+      "datasheet_url": "https://www.ti.com/lit/ds/symlink/lm4040.pdf",
+      "supply_voltage_range": {
+        "min": 3.3,
+        "max": 20.0,
+        "nominal": 5.0,
+        "unit": "V"
+      },
+      "io_voltage_levels": null,
+      "current_max": {
+        "output": 0.015,
+        "unit": "A"
+      },
+      "power_rating": null,
+      "interface_type": [],
+      "pinout": {
+        "VIN": "Input voltage",
+        "GND": "Ground",
+        "VOUT": "Output voltage 3.3V"
+      },
+      "package": "SOT-23-3",
+      "footprint": "SOT-23-3",
+      "operating_temp_range": {
+        "min": -40,
+        "max": 85,
+        "unit": "C"
+      },
+      "availability_status": "in_stock",
+      "lifecycle_status": "active",
+      "cost_estimate": {
+        "currency": "USD",
+        "value": 0.40,
+        "quantity": 1000
+      },
+      "output_voltage": {
+        "value": 3.3,
+        "tolerance": 0.001,
+        "unit": "V"
+      },
+      "recommended_external_components": [
+        {
+          "type": "capacitor",
+          "value": "0.1uF",
+          "voltage_rating": "16V",
+          "package": "0603",
+          "purpose": "Input/output decoupling",
+          "quantity": 1
+        }
+      ],
+      "typical_circuit": {
+        "usage": "Precision voltage reference for ADC/DAC",
+        "note": "High-precision voltage reference"
+      }
+    }
+  ]
+}
+
