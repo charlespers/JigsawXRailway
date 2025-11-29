@@ -4,6 +4,7 @@ Application configuration
 import os
 from typing import List
 from pydantic_settings import BaseSettings
+from pydantic import computed_field
 
 
 class Settings(BaseSettings):
@@ -12,11 +13,33 @@ class Settings(BaseSettings):
     # API Configuration
     API_V1_PREFIX: str = "/api/v1"
     
-    # CORS Configuration
-    _cors_origins_env = os.getenv("CORS_ORIGINS", "*")
-    CORS_ORIGINS: List[str] = _cors_origins_env.split(",") if _cors_origins_env != "*" else ["*"]
-    # If CORS_ORIGINS is "*", credentials must be False (browser security)
-    CORS_CREDENTIALS: bool = _cors_origins_env != "*"
+    # CORS Configuration - store as string to avoid JSON parsing issues
+    # pydantic_settings will read CORS_ORIGINS env var and map it to this field
+    # We use a different field name to avoid List[str] type parsing
+    CORS_ORIGINS_STR: str = "*"
+    
+    class Config:
+        env_file = ".env"
+        case_sensitive = True
+        # Map CORS_ORIGINS env var to CORS_ORIGINS_STR field
+        fields = {
+            "CORS_ORIGINS_STR": {"env": "CORS_ORIGINS"}
+        }
+    
+    @computed_field
+    @property
+    def CORS_ORIGINS(self) -> List[str]:
+        """Parse CORS_ORIGINS from string"""
+        if self.CORS_ORIGINS_STR == "*":
+            return ["*"]
+        # Split comma-separated values
+        return [origin.strip() for origin in self.CORS_ORIGINS_STR.split(",") if origin.strip()]
+    
+    @computed_field
+    @property
+    def CORS_CREDENTIALS(self) -> bool:
+        """Set credentials based on CORS_ORIGINS"""
+        return self.CORS_ORIGINS_STR != "*"
     
     # LLM Configuration
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "xai")
@@ -28,10 +51,6 @@ class Settings(BaseSettings):
     
     # Logging
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
-    
-    class Config:
-        env_file = ".env"
-        case_sensitive = True
 
 
 settings = Settings()
