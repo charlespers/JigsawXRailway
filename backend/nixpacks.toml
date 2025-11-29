@@ -12,4 +12,4 @@ cmds = [
 cmds = ["echo 'Build complete'"]
 
 [start]
-cmd = "/opt/venv/bin/python -m app.main"
+cmd = "/opt/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port $PORT"

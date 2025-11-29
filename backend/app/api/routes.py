@@ -401,17 +401,14 @@ async def analyze_supply_chain(
 
 @mcp_router.options("/mcp/component-analysis")
 async def component_analysis_options():
-    """Handle CORS preflight for component analysis"""
+    """Handle CORS preflight for component analysis.
+
+    NOTE: This stays intentionally simple and relies on CORSMiddleware
+    for most behavior. We just ensure a 200 is returned so Railway/clients
+    see a successful preflight.
+    """
     from fastapi.responses import Response
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "3600",
-        }
-    )
+    return Response(status_code=200)
 
 
 @mcp_router.post("/mcp/component-analysis")
@@ -489,21 +486,15 @@ async def component_analysis_stream(request: Dict[str, Any]):
             }
             yield f"data: {json.dumps(error_data)}\n\n"
     
-    # CORS headers for SSE stream
-    cors_headers = {
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-        "X-Session-Id": session_id or "new-session",
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
-        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
-        "Access-Control-Expose-Headers": "*",
-    }
-    
     return StreamingResponse(
         generate_stream(),
         media_type="text/event-stream",
-        headers=cors_headers
+        headers={
+            # Only non-CORS headers here; CORS is handled globally
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Session-Id": session_id or "new-session",
+        }
     )
 
 
