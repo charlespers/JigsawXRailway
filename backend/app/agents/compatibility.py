@@ -3,7 +3,7 @@ Compatibility checking agent
 Checks electrical and mechanical compatibility between parts
 """
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from app.core.exceptions import CompatibilityError
 
 logger = logging.getLogger(__name__)

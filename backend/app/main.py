@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from app.api.routes import router
+from app.api.routes import router, mcp_router
 from app.core.config import settings
 from app.core.logging import setup_logging
 
@@ -35,6 +35,7 @@ app.add_middleware(
 
 # Include routes
 app.include_router(router)
+app.include_router(mcp_router)  # MCP endpoints (no prefix)
 
 @app.get("/health")
 async def health_check():

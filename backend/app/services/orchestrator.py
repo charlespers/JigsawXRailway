@@ -11,6 +11,7 @@ from app.agents.compatibility import CompatibilityAgent
 from app.agents.bom_generator import BOMGenerator
 from app.agents.power_analyzer import PowerAnalyzerAgent
 from app.agents.dfm_checker import DFMCheckerAgent
+from app.agents.supply_chain_intelligence import SupplyChainIntelligenceAgent
 from app.domain.models import Design, Requirements, Architecture
 from app.core.exceptions import PCBDesignException
 
@@ -28,6 +29,7 @@ class DesignOrchestrator:
         self.bom_generator = BOMGenerator()
         self.power_analyzer = PowerAnalyzerAgent()
         self.dfm_checker = DFMCheckerAgent()
+        self.supply_chain = SupplyChainIntelligenceAgent()
     
     def generate_design(self, query: str) -> Design:
         """
@@ -116,8 +118,14 @@ class DesignOrchestrator:
             dfm_analysis = self.dfm_checker.check_design(bom, selected_parts)
             design.design_metadata["dfm_analysis"] = dfm_analysis
             
+            # Step 10: Supply chain analysis
+            logger.info("Analyzing supply chain")
+            supply_chain_analysis = self.supply_chain.analyze_supply_chain(selected_parts, bom.model_dump())
+            design.design_metadata["supply_chain_analysis"] = supply_chain_analysis
+            
             logger.info(f"Design generation complete: {len(selected_parts)} parts, {len(connections)} nets")
             logger.info(f"Power budget: {power_analysis['total_power_watts']}W, DFM score: {dfm_analysis['dfm_score']}/100")
+            logger.info(f"Supply chain risk: {supply_chain_analysis['overall_risk']}")
             return design
             
         except Exception as e:
