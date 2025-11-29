@@ -238,11 +238,34 @@ class BOMGenerator:
             notes.append(f"⚠️ High package diversity ({len(packages)} types) - may increase assembly complexity")
         
         # Thermal considerations
-        high_power_parts = [p for p in selected_parts.values() 
-                           if p.get("power_rating", 0) > 1.0 or 
-                           (p.get("supply_current_ma", 0) > 500 and p.get("supply_voltage_range", {}).get("nominal", 0) > 3)]
+        high_power_parts = []
+        for p in selected_parts.values():
+            # Safely extract numeric power rating
+            power_rating = p.get("power_rating")
+            try:
+                power_rating_val = float(power_rating) if power_rating is not None else 0.0
+            except (TypeError, ValueError):
+                power_rating_val = 0.0
+
+            # Safely extract current and voltage
+            current_ma = p.get("supply_current_ma") or 0
+            try:
+                current_ma_val = float(current_ma)
+            except (TypeError, ValueError):
+                current_ma_val = 0.0
+
+            supply_range = p.get("supply_voltage_range", {}) or {}
+            nominal_v = supply_range.get("nominal") or supply_range.get("max") or 0
+            try:
+                nominal_v_val = float(nominal_v)
+            except (TypeError, ValueError):
+                nominal_v_val = 0.0
+
+            if power_rating_val > 1.0 or (current_ma_val > 500 and nominal_v_val > 3.0):
+                high_power_parts.append(p)
+
         if high_power_parts:
-            notes.append(f"⚠️ High-power components detected - ensure adequate thermal management (thermal vias, heatsinks if needed)")
+            notes.append("⚠️ High-power components detected - ensure adequate thermal management (thermal vias, heatsinks if needed)")
         
         # Cost optimization suggestions
         high_cost_items = [item for item in items if item.unit_cost > 5.0]
