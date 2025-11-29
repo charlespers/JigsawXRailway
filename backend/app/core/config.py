@@ -40,7 +40,7 @@ class Settings(BaseSettings):
     # LLM Configuration
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "xai")
     XAI_API_KEY: str = os.getenv("XAI_API_KEY", "")
-    XAI_MODEL: str = os.getenv("XAI_MODEL", "grok-beta")
+    XAI_MODEL: str = os.getenv("XAI_MODEL", "grok-3")  # grok-beta deprecated 2025-09-15
     XAI_BASE_URL: str = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
     
     # Database
