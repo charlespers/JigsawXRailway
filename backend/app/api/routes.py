@@ -481,17 +481,21 @@ async def component_analysis_stream(request: Dict[str, Any]):
             }
             yield f"data: {json.dumps(error_data)}\n\n"
     
+    # CORS headers for SSE stream
+    cors_headers = {
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive",
+        "X-Session-Id": session_id or "new-session",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization, Accept",
+        "Access-Control-Expose-Headers": "*",
+    }
+    
     return StreamingResponse(
         generate_stream(),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "X-Session-Id": session_id or "new-session",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "POST, OPTIONS",
-            "Access-Control-Allow-Headers": "Content-Type"
-        }
+        headers=cors_headers
     )
 
 

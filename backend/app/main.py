@@ -4,8 +4,10 @@ Main FastAPI application entry point
 import os
 import sys
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
+from starlette.middleware.base import BaseHTTPMiddleware
 import uvicorn
 
 from app.api.routes import router, mcp_router
@@ -23,6 +25,22 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Add CORS headers to ALL responses (bulletproof approach)
+class CORSHeaderMiddleware(BaseHTTPMiddleware):
+    """Add CORS headers to all responses - ensures headers are always present"""
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        # Add CORS headers to every response
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "false"
+        response.headers["Access-Control-Max-Age"] = "3600"
+        return response
+
+# Add CORS header middleware FIRST (before CORS middleware)
+app.add_middleware(CORSHeaderMiddleware)
 
 # CORS middleware - must be added before routes
 # Handle both "*" and specific origins
@@ -72,21 +90,26 @@ app.include_router(router)
 app.include_router(mcp_router)  # MCP endpoints (no prefix)
 
 # Catch-all OPTIONS handler for CORS preflight (must be after routes)
-@app.options("/{path:path}")
-async def options_handler(path: str):
-    """Catch-all OPTIONS handler for CORS preflight requests"""
-    from fastapi import Request
+# This MUST be simple and never crash - Railway edge proxy depends on it
+@app.options("/{full_path:path}")
+async def options_handler(full_path: str):
+    """Catch-all OPTIONS handler for CORS preflight requests - MUST NOT CRASH"""
     from fastapi.responses import Response
-    
-    return Response(
-        status_code=200,
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Max-Age": "3600",
-        }
-    )
+    try:
+        return Response(
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS, HEAD, PATCH",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Allow-Credentials": "false",
+                "Access-Control-Max-Age": "3600",
+            }
+        )
+    except Exception as e:
+        # Even if there's an error, return something
+        logger.error(f"OPTIONS handler error: {e}", exc_info=True)
+        return Response(status_code=200, headers={"Access-Control-Allow-Origin": "*"})
 
 @app.get("/health")
 async def health_check():
