@@ -510,7 +510,7 @@ def get_intermediary_candidates(
         score = 0.0
         
         # Prefer higher efficiency - use safe_float_extract for consistency
-        from agents.design_analyzer import safe_float_extract
+        from agents.design.design_analyzer import safe_float_extract
         efficiency_val = part.get("efficiency", 0)
         efficiency = safe_float_extract(
             efficiency_val,

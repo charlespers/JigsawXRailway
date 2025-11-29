@@ -20,18 +20,21 @@ def setup_middleware(app: FastAPI):
     # CORS middleware
     cors_origins = os.getenv("CORS_ORIGINS", "*")
     if cors_origins == "*":
+        # When using wildcard, cannot use allow_credentials=True
         allow_origins = ["*"]
+        allow_credentials = False
     else:
         allow_origins = [origin.strip() for origin in cors_origins.split(",")]
+        allow_credentials = True
     
     app.add_middleware(
         CORSMiddleware,
         allow_origins=allow_origins,
-        allow_credentials=True,
+        allow_credentials=allow_credentials,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    logger.info(f"[MIDDLEWARE] CORS configured with origins: {allow_origins}")
+    logger.info(f"[MIDDLEWARE] CORS configured with origins: {allow_origins}, credentials: {allow_credentials}")
     
     # Error handling middleware
     try:

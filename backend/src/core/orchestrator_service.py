@@ -10,8 +10,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from agents.design_orchestrator import DesignOrchestrator
-from agents.query_router_agent import QueryRouterAgent
+from agents.core.design_orchestrator import DesignOrchestrator
+from agents.core.query_router_agent import QueryRouterAgent
 from core.cache import get_cache_manager
 from core.exceptions import OrchestrationException, AgentException
 from api.data_mapper import part_data_to_part_object

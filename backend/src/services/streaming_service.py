@@ -9,7 +9,7 @@ import os
 import time
 from typing import Dict, Any, Optional, Callable
 
-from agents.design_orchestrator import DesignOrchestrator
+from agents.core.design_orchestrator import DesignOrchestrator
 from api.data_mapper import part_data_to_part_object
 
 logger = logging.getLogger(__name__)
@@ -172,7 +172,7 @@ async def _process_block_async(
         current_max = part.get("current_max", {})
         if isinstance(voltage_range, dict) and isinstance(current_max, dict):
             # CRITICAL: Use safe extraction to prevent dict * float errors
-            from agents.design_analyzer import safe_float_extract
+            from agents.design.design_analyzer import safe_float_extract
             voltage = safe_float_extract(voltage_range.get("nominal") or voltage_range.get("max", 0), default=0.0, context=f"voltage for {block_name}")
             current = safe_float_extract(current_max.get("max") or current_max.get("typical", 0), default=0.0, context=f"current for {block_name}")
             if voltage > 0 and current > 0:
@@ -1076,7 +1076,7 @@ async def refine_design_stream(
             # This is a placeholder for the refinement logic
         
         # Regenerate connections and BOM with timeout handling
-        from agents.output_generator import OutputGenerator
+        from agents.design.output_generator import OutputGenerator
         output_gen = OutputGenerator()
         
         try:
@@ -1155,7 +1155,7 @@ async def answer_question(
         answer = ""
         
         if question_type == "cost":
-            from agents.cost_optimizer_agent import CostOptimizerAgent
+            from agents.analysis.cost_optimizer_agent import CostOptimizerAgent
             cost_agent = CostOptimizerAgent()
             # CRITICAL: Ensure selected_parts is a dict and validate structure
             ensure_selected_parts_is_dict(orchestrator.design_state)
@@ -1190,7 +1190,7 @@ async def answer_question(
                 answer = f"Error calculating cost: {str(e)}"
         
         elif question_type == "power":
-            from agents.power_calculator_agent import PowerCalculatorAgent
+            from agents.analysis.power_calculator_agent import PowerCalculatorAgent
             power_agent = PowerCalculatorAgent()
             # CRITICAL: Ensure selected_parts is a dict and validate structure
             ensure_selected_parts_is_dict(orchestrator.design_state)
