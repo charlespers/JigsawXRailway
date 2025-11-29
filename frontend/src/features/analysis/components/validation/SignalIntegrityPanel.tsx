@@ -2,7 +2,7 @@ import { Card } from "../../shared/components/ui/card";
 import { Badge } from "../../shared/components/ui/badge";
 import { Zap, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import type { PartObject } from "../../shared/services/types";
-import type { SignalIntegrityAnalysis } from "../../shared/services/analysisApi";
+import type { SignalIntegrityAnalysis } from "../../analysis/services/analysisApi";
 
 interface SignalIntegrityPanelProps {
   signalIntegrity: SignalIntegrityAnalysis | null;

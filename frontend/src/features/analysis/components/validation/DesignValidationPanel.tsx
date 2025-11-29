@@ -34,7 +34,7 @@ import {
   type SignalIntegrityAnalysis,
   type ThermalAnalysis,
   type SupplyChainAnalysis,
-} from "../../shared/services/analysisApi";
+} from "../../analysis/services/analysisApi";
 
 interface DesignValidationPanelProps {
   parts: PartObject[];

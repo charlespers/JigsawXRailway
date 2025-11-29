@@ -2,7 +2,7 @@ import { Card } from "../../shared/components/ui/card";
 import { Badge } from "../../shared/components/ui/badge";
 import { Cpu, AlertTriangle, CheckCircle2, TrendingUp } from "lucide-react";
 import type { PartObject } from "../../shared/services/types";
-import type { SupplyChainAnalysis } from "../../shared/services/analysisApi";
+import type { SupplyChainAnalysis } from "../../analysis/services/analysisApi";
 
 interface SupplyChainPanelProps {
   supplyChain: SupplyChainAnalysis | null;

@@ -2,7 +2,7 @@ import { Card } from "../../shared/components/ui/card";
 import { Badge } from "../../shared/components/ui/badge";
 import { Thermometer, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import type { PartObject } from "../../shared/services/types";
-import type { ThermalAnalysis } from "../../shared/services/analysisApi";
+import type { ThermalAnalysis } from "../../analysis/services/analysisApi";
 
 interface ThermalAnalysisPanelProps {
   thermal: ThermalAnalysis | null;

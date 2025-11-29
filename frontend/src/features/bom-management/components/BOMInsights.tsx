@@ -16,7 +16,7 @@ import {
   type SupplyChainAnalysis,
   type PowerAnalysis,
   type DesignValidation,
-} from "../../shared/services/analysisApi";
+} from "../../analysis/services/analysisApi";
 import { normalizePrice } from "../utils/partNormalizer";
 
 // Helper function to convert backend part data to PartObject

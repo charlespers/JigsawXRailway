@@ -2,7 +2,7 @@ import { Card } from "../../shared/components/ui/card";
 import { Badge } from "../../shared/components/ui/badge";
 import { Package, CheckCircle2, XCircle, AlertTriangle } from "lucide-react";
 import type { PartObject } from "../../shared/services/types";
-import type { ManufacturingReadiness } from "../../shared/services/analysisApi";
+import type { ManufacturingReadiness } from "../../analysis/services/analysisApi";
 
 interface DFMPanelProps {
   manufacturing: ManufacturingReadiness | null;
