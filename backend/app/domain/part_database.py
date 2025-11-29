@@ -40,11 +40,15 @@ class PartDatabase:
         paths_to_try.append(current_file.parent.parent / "data" / "parts")
         
         # 4. Fallback locations (Railway-specific paths first)
+        # In Railway, working dir is /app, so code is at /app/app/...
         paths_to_try.extend([
             Path("/app/app/data/parts"),  # Railway: code at /app/app, data at /app/app/data/parts
+            current_file.parent.parent / "data" / "parts",  # Relative from part_database.py: app/data/parts
             app_dir / "app" / "data" / "parts",  # Local: backend/app/data/parts or Railway: /app/app/data/parts
             Path("/app/data/parts"),  # Railway alternative (if code structure differs)
             app_dir / "data" / "parts",  # backend/data/parts
+            # Also try relative to where we are
+            Path(__file__).parent.parent / "data" / "parts",  # app/data/parts from part_database.py
         ])
         
         # Try each path until we find one that exists
