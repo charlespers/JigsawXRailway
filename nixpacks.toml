@@ -1,8 +1,10 @@
 [phases.setup]
-nixPkgs = ["python311", "pip"]
+# Use the full Python distribution so we get pip and standard tooling
+nixPkgs = ["python311Full"]
 
 [phases.install]
-cmds = ["cd charles_agentPCB_folder && pip install -r requirements.txt"]
+# Use python -m pip to ensure we’re using the interpreter from nixPkgs
+cmds = ["cd charles_agentPCB_folder && python -m pip install -r requirements.txt"]
 
 [phases.build]
 cmds = ["echo 'Build complete'"]
