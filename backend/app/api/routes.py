@@ -399,6 +399,14 @@ async def analyze_supply_chain(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@mcp_router.options("/mcp/component-analysis")
+async def component_analysis_options():
+    """Handle CORS preflight for component analysis"""
+    return {
+        "status": "ok"
+    }
+
+
 @mcp_router.post("/mcp/component-analysis")
 async def component_analysis_stream(request: Dict[str, Any]):
     """

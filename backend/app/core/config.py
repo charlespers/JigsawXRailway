@@ -13,8 +13,10 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     
     # CORS Configuration
-    CORS_ORIGINS: List[str] = os.getenv("CORS_ORIGINS", "*").split(",") if os.getenv("CORS_ORIGINS") != "*" else ["*"]
-    CORS_CREDENTIALS: bool = os.getenv("CORS_ORIGINS", "*") != "*"
+    _cors_origins_env = os.getenv("CORS_ORIGINS", "*")
+    CORS_ORIGINS: List[str] = _cors_origins_env.split(",") if _cors_origins_env != "*" else ["*"]
+    # If CORS_ORIGINS is "*", credentials must be False (browser security)
+    CORS_CREDENTIALS: bool = _cors_origins_env != "*"
     
     # LLM Configuration
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "xai")
