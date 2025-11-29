@@ -41,6 +41,9 @@ class Settings(BaseSettings):
     LLM_PROVIDER: str = os.getenv("LLM_PROVIDER", "xai")
     XAI_API_KEY: str = os.getenv("XAI_API_KEY", "")
     XAI_MODEL: str = os.getenv("XAI_MODEL", "grok-beta")
+    XAI_BASE_URL: str = os.getenv("XAI_BASE_URL", "https://api.x.ai/v1")
+    XAI_CHAT_COMPLETIONS_PATH: str = os.getenv("XAI_CHAT_COMPLETIONS_PATH", "/chat/completions")
+    XAI_MESSAGES_PATH: str = os.getenv("XAI_MESSAGES_PATH", "/messages")
     
     # Database
     PARTS_DATABASE_PATH: str = os.getenv("PARTS_DATABASE_PATH", "app/data/parts")
