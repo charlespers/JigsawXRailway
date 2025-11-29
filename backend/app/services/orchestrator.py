@@ -59,7 +59,16 @@ class DesignOrchestrator:
             )
             
             if not anchor_part:
-                raise PCBDesignException("Failed to select anchor part")
+                # Check if database is empty
+                from app.domain.part_database import get_part_database
+                db = get_part_database()
+                all_parts = db.get_all_parts()
+                if len(all_parts) == 0:
+                    raise PCBDesignException(
+                        "Parts database is empty. No parts available for selection. "
+                        "Please ensure app/data/parts/*.json files are deployed."
+                    )
+                raise PCBDesignException("Failed to select anchor part - no matching parts found in database")
             
             selected_parts = {"anchor": anchor_part}
             

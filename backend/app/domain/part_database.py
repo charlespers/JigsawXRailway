@@ -36,33 +36,59 @@ class PartDatabase:
             # Also try without "app/" prefix
             paths_to_try.append(app_dir / db_path_str.replace("app/", ""))
         
-        # 3. Relative to current file location
+        # 3. Relative to current file location (most reliable)
         paths_to_try.append(current_file.parent.parent / "data" / "parts")
         
         # 4. Fallback locations (Railway-specific paths first)
         # In Railway, working dir is /app, so code is at /app/app/...
         paths_to_try.extend([
             Path("/app/app/data/parts"),  # Railway: code at /app/app, data at /app/app/data/parts
-            current_file.parent.parent / "data" / "parts",  # Relative from part_database.py: app/data/parts
             app_dir / "app" / "data" / "parts",  # Local: backend/app/data/parts or Railway: /app/app/data/parts
             Path("/app/data/parts"),  # Railway alternative (if code structure differs)
             app_dir / "data" / "parts",  # backend/data/parts
-            # Also try relative to where we are
-            Path(__file__).parent.parent / "data" / "parts",  # app/data/parts from part_database.py
         ])
         
-        # Try each path until we find one that exists
+        # Try each path until we find one that exists AND has JSON files
         self.db_path = None
+        all_tried_paths = []
+        
         for path in paths_to_try:
+            all_tried_paths.append(str(path))
             if path.exists() and path.is_dir():
-                self.db_path = path
-                logger.info(f"Found parts database at: {path}")
-                break
+                # Verify it has JSON files
+                json_files = list(path.glob("parts_*.json"))
+                if json_files:
+                    self.db_path = path
+                    logger.info(f"✅ Found parts database at: {path} ({len(json_files)} files)")
+                    break
+                else:
+                    logger.debug(f"Path {path} exists but has no parts_*.json files")
+        
+        # If still not found, try Railway-specific paths
+        if not self.db_path:
+            railway_paths = [
+                Path("/app/data/parts"),  # Railway root
+                Path("/app/app/data/parts"),  # Railway with backend/ structure
+                Path("/app/backend/app/data/parts"),  # Alternative Railway structure
+            ]
+            for path in railway_paths:
+                all_tried_paths.append(str(path))
+                if path.exists() and path.is_dir():
+                    json_files = list(path.glob("parts_*.json"))
+                    if json_files:
+                        self.db_path = path
+                        logger.info(f"✅ Found parts database at Railway path: {path} ({len(json_files)} files)")
+                        break
         
         if not self.db_path:
+            # CRITICAL: Database is required for app to work!
             # Use first path as default (will log warning in _load_database)
             self.db_path = paths_to_try[0] if paths_to_try else Path(db_path_str)
-            logger.warning(f"Parts database path not found. Will try: {self.db_path}")
+            logger.error(f"❌ CRITICAL: Parts database path not found! Tried {len(all_tried_paths)} paths:")
+            for p in all_tried_paths[:15]:  # Log first 15
+                logger.error(f"  - {p}")
+            logger.error(f"⚠️ Will use: {self.db_path} (database will be EMPTY - app may fail!)")
+            logger.error("⚠️ Make sure app/data/parts/*.json files are committed to git and deployed!")
         
         self._cache: Dict[str, Dict[str, Any]] = {}
         self._load_database()
